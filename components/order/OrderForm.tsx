@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ACCENT_BUTTON, type Product } from "@/lib/products";
+import ProductThumb from "@/components/ProductThumb";
 
 export default function OrderForm({ product }: { product: Product }) {
   const router = useRouter();
@@ -54,6 +55,26 @@ export default function OrderForm({ product }: { product: Product }) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 md:gap-8">
+      {/* Mobile: compact summary chip first */}
+      <div className="lg:hidden rounded-xl border border-white/10 bg-surface/50 p-3 flex items-center gap-3">
+        <ProductThumb
+          product={product}
+          className="w-12 h-12 shrink-0 rounded-lg border border-white/10"
+          iconClassName="text-xl"
+        />
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-display font-bold text-white leading-tight line-clamp-1">
+            {product.title}
+          </h3>
+          <p className="text-[10px] font-mono text-gray-500 line-clamp-1">
+            {product.delivery} · {product.warranty}
+          </p>
+        </div>
+        <div className="text-xl font-display font-bold text-white shrink-0">
+          ${product.price}
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-5">
         <Field label="Як до вас звертатися?" required>
           <input
@@ -142,22 +163,19 @@ export default function OrderForm({ product }: { product: Product }) {
         </p>
       </form>
 
-      {/* Order summary */}
-      <aside className="lg:sticky lg:top-28 lg:self-start">
+      {/* Order summary — desktop only */}
+      <aside className="hidden lg:block lg:sticky lg:top-28 lg:self-start">
         <div className="rounded-2xl border border-white/10 bg-surface/50 backdrop-blur p-5 md:p-6">
           <div className="text-[10px] font-mono text-neon-blue tracking-widest uppercase mb-3">
             // ВАШЕ ЗАМОВЛЕННЯ
           </div>
 
           <div className="flex gap-3 mb-5">
-            <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-white/10 bg-surface2 shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`https://placehold.co/200x200/111827/${product.thumbColor}?text=${product.badge}`}
-                alt={product.title}
-                className="absolute inset-0 w-full h-full object-cover opacity-70 mix-blend-screen"
-              />
-            </div>
+            <ProductThumb
+              product={product}
+              className="w-20 h-20 shrink-0 rounded-lg border border-white/10"
+              iconClassName="text-2xl"
+            />
             <div className="min-w-0">
               <h3 className="text-sm font-display font-bold text-white leading-tight line-clamp-2 mb-1">
                 {product.title}

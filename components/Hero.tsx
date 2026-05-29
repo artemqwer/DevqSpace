@@ -110,39 +110,38 @@ export default function Hero() {
 
           {/* Mobile preview card */}
           <div className="md:hidden relative">
-            <div className="glass rounded-2xl p-5 border border-white/10 shadow-[0_0_50px_rgba(0,240,255,0.1)] relative overflow-hidden">
+            <Link
+              href="/catalog/ai-support-bot"
+              className="block glass rounded-2xl p-4 border border-white/10 shadow-[0_0_50px_rgba(0,240,255,0.1)] relative overflow-hidden active:scale-[0.99] transition-transform"
+            >
               <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-neon-blue/30 blur-3xl" />
               <div className="absolute -bottom-12 -left-12 w-32 h-32 rounded-full bg-neon-purple/30 blur-3xl" />
 
-              <div className="relative flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-neon-blue to-neon-purple p-[1px]">
-                  <div className="w-full h-full bg-surface2 rounded-full flex items-center justify-center">
+              <div className="relative flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-neon-blue to-neon-purple p-[1px]">
+                  <div className="w-full h-full bg-surface2 rounded-[11px] flex items-center justify-center">
                     <i className="ph-fill ph-robot text-white" />
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-display font-bold text-white truncate">
-                    AI Auto-Responder
+                  <div className="text-[10px] font-mono text-neon-blue tracking-widest uppercase mb-0.5">
+                    // featured
                   </div>
-                  <div className="text-[10px] font-mono text-gray-500">
-                    Python 3.11 · Aiogram3
+                  <div className="text-sm font-display font-bold text-white leading-tight truncate">
+                    AI Support Bot з GPT-4
                   </div>
                 </div>
-                <span className="text-[10px] font-mono text-neon-blue border border-neon-blue/30 px-2 py-0.5 rounded bg-neon-blue/10 shrink-0">
-                  v2.0.4
-                </span>
               </div>
 
               <div className="relative flex items-center justify-between">
                 <div className="flex items-center gap-1 text-[11px] text-neon-green font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-neon-green animate-pulse" />
-                  Верифіковано
+                  <i className="ph-fill ph-shield-check" />1 рік саппорту
                 </div>
-                <div className="text-xl font-display font-bold text-white flex items-center gap-1">
-                  0.45 <i className="ph-fill ph-currency-eth text-gray-400 text-base" />
+                <div className="text-xl font-display font-bold text-white">
+                  $59
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
 
           {/* Desktop visual */}
@@ -196,10 +195,10 @@ export default function Hero() {
               </span>
             </div>
             <div
-              className="absolute bottom-10 right-0 w-44 h-24 glass rounded-xl border border-white/5 flex items-center justify-center gap-3 z-30"
+              className="absolute bottom-10 right-0 w-44 h-24 glass rounded-xl border border-white/5 flex items-center px-4 gap-3 z-30"
               style={{ transform: "rotate(5deg)" }}
             >
-              <div className="w-10 h-10 rounded-full bg-neon-green/10 border border-neon-green/30 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-neon-green/10 border border-neon-green/30 flex items-center justify-center shrink-0">
                 <i className="ph-fill ph-shield-check text-neon-green text-xl" />
               </div>
               <div className="leading-tight">

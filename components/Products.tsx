@@ -5,6 +5,7 @@ import {
   ACCENT_BORDER,
   type Product,
 } from "@/lib/products";
+import ProductThumb from "@/components/ProductThumb";
 
 const HOME_PRODUCTS = PRODUCTS.slice(0, 4);
 const FEATURED = HOME_PRODUCTS[0];
@@ -56,12 +57,10 @@ export default function Products() {
             className="block mx-4 relative rounded-2xl overflow-hidden bg-surface border border-white/10"
           >
             <div className="relative h-44 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#0a0a0a] to-[#1a1a2e]" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`https://placehold.co/600x400/111827/${FEATURED.thumbColor}?text=${FEATURED.thumbText}`}
-                alt={FEATURED.title}
-                className="absolute inset-0 w-full h-full object-cover opacity-50 mix-blend-screen"
+              <ProductThumb
+                product={FEATURED}
+                className="absolute inset-0"
+                iconClassName="text-7xl"
               />
               <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-surface to-transparent" />
 
@@ -134,13 +133,11 @@ export default function Products() {
               href={`/catalog/${p.slug}`}
               className="neon-card rounded-xl overflow-hidden flex flex-col bg-surface group"
             >
-              <div className="relative h-44 bg-surface2 overflow-hidden border-b border-white/5">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#0a0a0a] to-[#1a1a2e]" />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`https://placehold.co/600x400/111827/${p.thumbColor}?text=${p.thumbText}`}
-                  alt={p.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-60 mix-blend-screen relative z-10"
+              <div className="relative h-44 overflow-hidden border-b border-white/5">
+                <ProductThumb
+                  product={p}
+                  className="absolute inset-0 group-hover:scale-105 transition-transform duration-500"
+                  iconClassName="text-6xl"
                 />
 
                 <div className="absolute top-3 left-3 z-20">
@@ -217,12 +214,10 @@ function MobileProductCard({ product: p }: { product: Product }) {
       className="snap-start shrink-0 w-[72%] rounded-2xl overflow-hidden bg-surface border border-white/10 block"
     >
       <div className="relative h-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0a0a0a] to-[#1a1a2e]" />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={`https://placehold.co/600x400/111827/${p.thumbColor}?text=${p.thumbText}`}
-          alt={p.title}
-          className="absolute inset-0 w-full h-full object-cover opacity-50 mix-blend-screen"
+        <ProductThumb
+          product={p}
+          className="absolute inset-0"
+          iconClassName="text-5xl"
         />
         <div className="absolute top-2 left-2">
           <span

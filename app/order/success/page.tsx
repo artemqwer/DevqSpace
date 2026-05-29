@@ -12,7 +12,7 @@ export default function OrderSuccessPage() {
     <>
       <div className="glow-orb bg-neon-green w-[28rem] h-[28rem] top-1/3 left-1/2 -translate-x-1/2 animate-pulse-slow opacity-30" />
       <Navbar />
-      <main className="pt-24 md:pt-32 pb-32 md:pb-24 px-4 md:px-8 max-w-3xl mx-auto text-center">
+      <main className="pt-20 md:pt-32 pb-28 md:pb-24 px-4 md:px-8 max-w-3xl mx-auto text-center">
         <div className="inline-flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-full bg-neon-green/10 border border-neon-green/30 mb-6 md:mb-8">
           <i className="ph-fill ph-check text-neon-green text-4xl md:text-5xl" />
         </div>

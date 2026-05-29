@@ -26,7 +26,7 @@ export default function CustomPage() {
         style={{ animationDelay: "2s" }}
       />
       <Navbar />
-      <main className="pt-24 md:pt-32 pb-24 md:pb-24 px-4 md:px-8 max-w-6xl mx-auto">
+      <main className="pt-20 md:pt-32 pb-28 md:pb-24 px-4 md:px-8 max-w-6xl mx-auto">
         {/* Hero */}
         <div className="mb-10 md:mb-14">
           <div className="text-[10px] md:text-xs font-mono text-neon-pink tracking-widest uppercase mb-2">
