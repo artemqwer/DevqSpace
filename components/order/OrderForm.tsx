@@ -14,6 +14,7 @@ export default function OrderForm({ product }: { product: Product }) {
   >("telegram");
   const [contact, setContact] = useState("");
   const [message, setMessage] = useState("");
+  const [company, setCompany] = useState(""); // honeypot
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +39,7 @@ export default function OrderForm({ product }: { product: Product }) {
           contactMethod,
           contact: contact.trim(),
           message: message.trim(),
+          company,
         }),
       });
       const data = (await res.json()) as { ok: boolean; error?: string };
@@ -76,6 +78,17 @@ export default function OrderForm({ product }: { product: Product }) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Honeypot — приховане поле для ботів */}
+        <input
+          type="text"
+          name="company"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          value={company}
+          onChange={(e) => setCompany(e.target.value)}
+          className="absolute -left-[9999px] w-px h-px opacity-0"
+        />
         <Field label="Як до вас звертатися?" required>
           <input
             type="text"

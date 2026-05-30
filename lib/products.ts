@@ -19,6 +19,7 @@ export type Product = {
   description: string;
   thumbColor: string;
   thumbText: string;
+  image?: string; // URL реального зображення; якщо є — показується замість градієнта
   price: number;
   currency: "USD";
   delivery: string;

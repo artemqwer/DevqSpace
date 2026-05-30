@@ -1,4 +1,11 @@
-import { TG_CONFIG, tgSendMessage } from "@/lib/telegram";
+import {
+  TG_CONFIG,
+  tgSendMessage,
+  tgAnswerCallback,
+  tgEditReplyMarkup,
+  ORDER_STATUS_LABEL,
+} from "@/lib/telegram";
+import { updateOrderStatus, type OrderStatus } from "@/lib/store";
 
 // Telegram webhook endpoint. Викликається тільки Telegram-ом — кожне
 // повідомлення вашому боту приходить сюди як POST з JSON update.
@@ -17,7 +24,24 @@ type TgMessage = {
   date: number;
   text?: string;
 };
-type TgUpdate = { update_id: number; message?: TgMessage };
+type TgCallbackQuery = {
+  id: string;
+  from: TgUser;
+  data?: string;
+  message?: TgMessage;
+};
+type TgUpdate = {
+  update_id: number;
+  message?: TgMessage;
+  callback_query?: TgCallbackQuery;
+};
+
+const VALID_STATUS: OrderStatus[] = [
+  "new",
+  "in_progress",
+  "done",
+  "rejected",
+];
 
 export async function POST(req: Request) {
   // 1. Secret token check
@@ -32,6 +56,12 @@ export async function POST(req: Request) {
     update = (await req.json()) as TgUpdate;
   } catch {
     return Response.json({ ok: false }, { status: 400 });
+  }
+
+  // 2a. Callback від inline-кнопок (зміна статусу замовлення)
+  if (update.callback_query) {
+    await handleCallback(update.callback_query);
+    return Response.json({ ok: true });
   }
 
   const msg = update.message;
@@ -96,6 +126,47 @@ export async function POST(req: Request) {
 
   // Невідома команда / просто текст — мовчимо.
   return Response.json({ ok: true });
+}
+
+async function handleCallback(cb: TgCallbackQuery): Promise<void> {
+  const adminId = TG_CONFIG.adminChatId;
+  const fromId = cb.message?.chat.id ?? cb.from.id;
+  const isAdmin = adminId ? String(fromId) === String(adminId) : false;
+
+  if (!isAdmin) {
+    await tgAnswerCallback(cb.id, "Немає доступу");
+    return;
+  }
+
+  // data формат: "st:<orderId>:<status>"
+  const parts = (cb.data ?? "").split(":");
+  if (parts[0] !== "st" || parts.length !== 3) {
+    await tgAnswerCallback(cb.id, "?");
+    return;
+  }
+  const [, orderId, status] = parts;
+  if (!VALID_STATUS.includes(status as OrderStatus)) {
+    await tgAnswerCallback(cb.id, "Невідомий статус");
+    return;
+  }
+
+  const ok = await updateOrderStatus(orderId, status as OrderStatus);
+  await tgAnswerCallback(
+    cb.id,
+    ok
+      ? `Статус: ${ORDER_STATUS_LABEL[status]}`
+      : "Замовлення не знайдено",
+  );
+
+  // Оновлюємо кнопки під повідомленням (позначка активного статусу)
+  if (ok && cb.message) {
+    await tgEditReplyMarkup(
+      cb.message.chat.id,
+      cb.message.message_id,
+      orderId,
+      status,
+    );
+  }
 }
 
 export async function GET() {

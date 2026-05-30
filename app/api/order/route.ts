@@ -1,12 +1,33 @@
 import { sendOrderToTelegram, type OrderPayload } from "@/lib/telegram";
-import { getProductBySlug, addOrder } from "@/lib/store";
+import { getProductBySlug, addOrder, rateLimit } from "@/lib/store";
+
+type OrderBody = Partial<OrderPayload> & { company?: string };
 
 export async function POST(req: Request) {
-  let body: Partial<OrderPayload>;
+  let body: OrderBody;
   try {
-    body = (await req.json()) as Partial<OrderPayload>;
+    body = (await req.json()) as OrderBody;
   } catch {
     return Response.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
+  }
+
+  // 1. Honeypot — приховане поле "company". Боти його заповнюють.
+  //    Вдаємо успіх, але нічого не робимо.
+  if (body.company && body.company.trim() !== "") {
+    return Response.json({ ok: true });
+  }
+
+  // 2. Rate-limit по IP: максимум 5 заявок за 10 хвилин.
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown";
+  const allowed = await rateLimit(`order:${ip}`, 5, 600);
+  if (!allowed) {
+    return Response.json(
+      { ok: false, error: "Забагато заявок. Спробуйте за кілька хвилин." },
+      { status: 429 },
+    );
   }
 
   const name = (body.name ?? "").trim();
@@ -94,14 +115,16 @@ export async function POST(req: Request) {
   }
 
   // 1. Зберігаємо замовлення (головне — не втратити заявку)
+  let orderId: string | undefined;
   try {
-    await addOrder(orderData);
+    const saved = await addOrder(orderData);
+    orderId = saved.id;
   } catch (e) {
     console.error("[order] failed to persist:", e);
   }
 
-  // 2. Сповіщення в Telegram (best-effort)
-  await sendOrderToTelegram(payload);
+  // 2. Сповіщення в Telegram з inline-кнопками статусу (best-effort)
+  await sendOrderToTelegram(payload, orderId);
 
   return Response.json({ ok: true });
 }

@@ -49,6 +49,7 @@ function buildProduct(body: Record<string, unknown>): Product | null {
     description: String(body.description ?? "").trim(),
     thumbColor: String(body.thumbColor ?? "").trim() || "00F0FF",
     thumbText: String(body.thumbText ?? "").trim() || slug,
+    image: String(body.image ?? "").trim() || undefined,
     price,
     currency: "USD",
     delivery: String(body.delivery ?? "").trim() || "1 день",

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ACCENT_TEXT, type Product } from "@/lib/products";
+import { type Product } from "@/lib/products";
+import ProductThumb from "@/components/ProductThumb";
 
 const CAT_LABEL: Record<string, string> = {
   "telegram-bots": "Telegram",
@@ -42,11 +43,11 @@ export default function ProductsList({ products }: { products: Product[] }) {
           key={p.slug}
           className="rounded-xl border border-white/10 bg-surface/50 p-3 flex items-center gap-3"
         >
-          <span
-            className={`w-9 h-9 rounded-lg bg-surface2 border border-white/10 flex items-center justify-center shrink-0 ${ACCENT_TEXT[p.accent]}`}
-          >
-            <i className="ph ph-cube" />
-          </span>
+          <ProductThumb
+            product={p}
+            className="w-10 h-10 rounded-lg border border-white/10 shrink-0"
+            iconClassName="text-lg"
+          />
           <div className="min-w-0 flex-1">
             <div className="text-sm text-white truncate">{p.title}</div>
             <div className="text-[11px] font-mono text-gray-500 truncate">

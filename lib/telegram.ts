@@ -57,7 +57,7 @@ export async function tgSetWebhook(
       body: JSON.stringify({
         url,
         secret_token: secretToken,
-        allowed_updates: ["message"],
+        allowed_updates: ["message", "callback_query"],
         drop_pending_updates: true,
       }),
       cache: "no-store",
@@ -159,12 +159,84 @@ function escape(s: string): string {
     .replace(/>/g, "&gt;");
 }
 
-export async function sendOrderToTelegram(payload: OrderPayload): Promise<
-  | { ok: true }
-  | { ok: false; error: string }
-> {
+// ---- Inline keyboard для замовлень ----------------------------------
+
+export const ORDER_STATUS_LABEL: Record<string, string> = {
+  new: "🆕 Нове",
+  in_progress: "⏳ В роботі",
+  done: "✅ Закрито",
+  rejected: "❌ Відхилено",
+};
+
+type InlineButton = { text: string; callback_data: string };
+
+export function buildOrderKeyboard(
+  orderId: string,
+  current?: string,
+): { inline_keyboard: InlineButton[][] } {
+  const btn = (label: string, status: string): InlineButton => ({
+    text: current === status ? `• ${label} •` : label,
+    callback_data: `st:${orderId}:${status}`,
+  });
+  return {
+    inline_keyboard: [
+      [btn("⏳ В роботі", "in_progress"), btn("✅ Закрити", "done")],
+      [btn("❌ Відхилити", "rejected")],
+    ],
+  };
+}
+
+export async function tgAnswerCallback(
+  callbackQueryId: string,
+  text: string,
+): Promise<void> {
+  if (!BOT_TOKEN) return;
+  try {
+    await fetch(
+      `https://api.telegram.org/bot${BOT_TOKEN}/answerCallbackQuery`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ callback_query_id: callbackQueryId, text }),
+        cache: "no-store",
+      },
+    );
+  } catch (e) {
+    console.error("[telegram] answerCallback error:", e);
+  }
+}
+
+export async function tgEditReplyMarkup(
+  chatId: string | number,
+  messageId: number,
+  orderId: string,
+  current: string,
+): Promise<void> {
+  if (!BOT_TOKEN) return;
+  try {
+    await fetch(
+      `https://api.telegram.org/bot${BOT_TOKEN}/editMessageReplyMarkup`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          message_id: messageId,
+          reply_markup: buildOrderKeyboard(orderId, current),
+        }),
+        cache: "no-store",
+      },
+    );
+  } catch (e) {
+    console.error("[telegram] editReplyMarkup error:", e);
+  }
+}
+
+export async function sendOrderToTelegram(
+  payload: OrderPayload,
+  orderId?: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
   if (!BOT_TOKEN || !ADMIN_CHAT_ID) {
-    // У dev без токена — лог в консоль і робимо вигляд що OK
     console.warn(
       "[telegram] TELEGRAM_BOT_TOKEN або TELEGRAM_ADMIN_CHAT_ID не задано — повідомлення не надіслано",
     );
@@ -184,6 +256,7 @@ export async function sendOrderToTelegram(payload: OrderPayload): Promise<
         text,
         parse_mode: "HTML",
         disable_web_page_preview: true,
+        reply_markup: orderId ? buildOrderKeyboard(orderId, "new") : undefined,
       }),
       cache: "no-store",
     });

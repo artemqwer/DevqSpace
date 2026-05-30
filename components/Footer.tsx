@@ -1,15 +1,15 @@
 const EXCHANGE_LINKS = [
-  "Каталог",
-  "Telegram боти",
-  "Web / SaaS",
-  "Автоматизація",
+  { label: "Каталог", href: "/catalog" },
+  { label: "Telegram боти", href: "/catalog" },
+  { label: "Web / SaaS", href: "/catalog" },
+  { label: "Автоматизація", href: "/catalog" },
 ];
 
 const DEV_LINKS = [
-  "Про студію",
-  "Кейси",
-  "Замовити кастом",
-  "Контакти",
+  { label: "Про студію", href: "/about" },
+  { label: "Кейси", href: "/cases" },
+  { label: "Замовити кастом", href: "/custom" },
+  { label: "Контакти", href: "https://t.me/" },
 ];
 
 export default function Footer() {
@@ -67,9 +67,12 @@ export default function Footer() {
           <FooterAccordion title="ПРОДУКТИ" accent="text-neon-blue">
             <ul className="space-y-2 text-sm text-gray-400 font-mono">
               {EXCHANGE_LINKS.map((l) => (
-                <li key={l}>
-                  <a href="#" className="hover:text-white transition-colors">
-                    &gt; {l}
+                <li key={l.label}>
+                  <a
+                    href={l.href}
+                    className="hover:text-white transition-colors"
+                  >
+                    &gt; {l.label}
                   </a>
                 </li>
               ))}
@@ -78,9 +81,12 @@ export default function Footer() {
           <FooterAccordion title="СТУДІЯ" accent="text-neon-purple">
             <ul className="space-y-2 text-sm text-gray-400 font-mono">
               {DEV_LINKS.map((l) => (
-                <li key={l}>
-                  <a href="#" className="hover:text-white transition-colors">
-                    &gt; {l}
+                <li key={l.label}>
+                  <a
+                    href={l.href}
+                    className="hover:text-white transition-colors"
+                  >
+                    &gt; {l.label}
                   </a>
                 </li>
               ))}
@@ -122,9 +128,12 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 text-sm text-gray-400 font-mono">
               {EXCHANGE_LINKS.map((l) => (
-                <li key={l}>
-                  <a href="#" className="hover:text-white transition-colors">
-                    &gt; {l}
+                <li key={l.label}>
+                  <a
+                    href={l.href}
+                    className="hover:text-white transition-colors"
+                  >
+                    &gt; {l.label}
                   </a>
                 </li>
               ))}
@@ -137,9 +146,12 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 text-sm text-gray-400 font-mono">
               {DEV_LINKS.map((l) => (
-                <li key={l}>
-                  <a href="#" className="hover:text-white transition-colors">
-                    &gt; {l}
+                <li key={l.label}>
+                  <a
+                    href={l.href}
+                    className="hover:text-white transition-colors"
+                  >
+                    &gt; {l.label}
                   </a>
                 </li>
               ))}

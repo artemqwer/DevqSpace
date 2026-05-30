@@ -31,21 +31,21 @@ export default function Navbar() {
             >
               Кастом
             </Link>
-            <a
-              href="#"
+            <Link
+              href="/cases"
               className="text-gray-400 hover:text-white font-medium text-sm transition-colors uppercase tracking-wider"
             >
               Кейси
-            </a>
+            </Link>
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
-            <a
-              href="#"
+            <Link
+              href="/about"
               className="text-gray-300 hover:text-white font-display font-medium px-4 py-2 transition-colors"
             >
               Про нас
-            </a>
+            </Link>
             <Link
               href="/custom"
               className="relative group overflow-hidden rounded-md px-6 py-2 font-display font-bold text-black bg-neon-blue transition-all hover:shadow-[0_0_20px_rgba(0,240,255,0.4)]"

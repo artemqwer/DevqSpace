@@ -33,6 +33,7 @@ export default function CustomForm() {
   >("telegram");
   const [contact, setContact] = useState("");
   const [message, setMessage] = useState("");
+  const [company, setCompany] = useState(""); // honeypot
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,6 +68,7 @@ export default function CustomForm() {
           contactMethod,
           contact: contact.trim(),
           message: message.trim(),
+          company,
         }),
       });
       const data = (await res.json()) as { ok: boolean; error?: string };
@@ -84,6 +86,17 @@ export default function CustomForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+      {/* Honeypot */}
+      <input
+        type="text"
+        name="company"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        value={company}
+        onChange={(e) => setCompany(e.target.value)}
+        className="absolute -left-[9999px] w-px h-px opacity-0"
+      />
       {/* Type */}
       <section>
         <SectionLabel n="01" title="Що потрібно зробити" required />

@@ -30,6 +30,22 @@ export default function ProductThumb({
   const category = CATEGORIES.find((c) => c.id === product.category);
   const icon = category?.icon ?? "ph-cube";
 
+  // Якщо є реальне зображення — показуємо його замість градієнта
+  if (product.image) {
+    return (
+      <div
+        className={`relative overflow-hidden bg-surface2 ${rounded} ${className}`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={product.image}
+          alt={product.title}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className={`relative overflow-hidden bg-gradient-to-br ${GRADIENTS[product.accent]} ${rounded} ${className}`}

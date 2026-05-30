@@ -280,6 +280,40 @@ export async function getStats(): Promise<Stats> {
   };
 }
 
+// =====================================================================
+// Rate limiting (Redis INCR + EXPIRE, in-memory fallback)
+// =====================================================================
+
+const memHits = new Map<string, { count: number; resetAt: number }>();
+
+/**
+ * Повертає true якщо запит дозволено, false якщо ліміт вичерпано.
+ * limit — к-сть запитів за windowSec секунд для одного ключа.
+ */
+export async function rateLimit(
+  key: string,
+  limit: number,
+  windowSec: number,
+): Promise<boolean> {
+  const redis = getRedis();
+  const rk = `rl:${key}`;
+
+  if (!redis) {
+    const now = Date.now();
+    const cur = memHits.get(rk);
+    if (!cur || cur.resetAt < now) {
+      memHits.set(rk, { count: 1, resetAt: now + windowSec * 1000 });
+      return true;
+    }
+    cur.count++;
+    return cur.count <= limit;
+  }
+
+  const count = await redis.incr(rk);
+  if (count === 1) await redis.expire(rk, windowSec);
+  return count <= limit;
+}
+
 // ---- utils ----------------------------------------------------------
 
 function genId(): string {

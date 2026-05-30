@@ -30,9 +30,11 @@ export default function ProductForm({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const [uploading, setUploading] = useState(false);
   const [f, setF] = useState({
     title: product?.title ?? "",
     slug: product?.slug ?? "",
+    image: product?.image ?? "",
     category: product?.category ?? "telegram-bots",
     accent: product?.accent ?? "blue",
     badge: product?.badge ?? "NEW",
@@ -51,6 +53,32 @@ export default function ProductForm({
 
   const set = (k: keyof typeof f, v: string) =>
     setF((prev) => ({ ...prev, [k]: v }));
+
+  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const data = (await res.json()) as {
+        ok: boolean;
+        url?: string;
+        error?: string;
+      };
+      if (data.ok && data.url) {
+        set("image", data.url);
+      } else {
+        setError(data.error || "Не вдалося завантажити");
+      }
+    } catch {
+      setError("Помилка завантаження");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +112,58 @@ export default function ProductForm({
           className={inputCls}
           placeholder="Telegram Shop з CryptoPay"
         />
+      </Field>
+
+      {/* Image */}
+      <Field label="Зображення" hint="URL або завантажте файл">
+        <div className="flex items-start gap-3">
+          <div className="w-24 h-24 shrink-0 rounded-lg overflow-hidden border border-white/10 bg-surface2 flex items-center justify-center">
+            {f.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={f.image}
+                alt="preview"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <i className="ph ph-image text-2xl text-gray-600" />
+            )}
+          </div>
+          <div className="flex-1 space-y-2">
+            <input
+              value={f.image}
+              onChange={(e) => set("image", e.target.value)}
+              className={inputCls}
+              placeholder="https://... або завантажте нижче"
+            />
+            <div className="flex items-center gap-2">
+              <label className="cursor-pointer inline-flex items-center gap-2 text-xs font-mono px-3 py-2 rounded-lg bg-surface2 border border-white/10 text-gray-300 hover:border-neon-blue/40 transition-colors">
+                {uploading ? (
+                  <i className="ph-bold ph-circle-notch animate-spin" />
+                ) : (
+                  <i className="ph-bold ph-upload-simple" />
+                )}
+                Завантажити
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={onUpload}
+                  disabled={uploading}
+                  className="hidden"
+                />
+              </label>
+              {f.image && (
+                <button
+                  type="button"
+                  onClick={() => set("image", "")}
+                  className="text-xs font-mono text-gray-500 hover:text-neon-pink transition-colors"
+                >
+                  прибрати
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </Field>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
