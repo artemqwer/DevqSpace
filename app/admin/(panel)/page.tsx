@@ -54,8 +54,8 @@ export default async function DashboardPage() {
         />
         <StatCard
           icon="ph-currency-dollar"
-          label="Дохід (закриті)"
-          value={`$${stats.revenueEstimate}`}
+          label={`Оплачено (${stats.paidCount})`}
+          value={`$${stats.paidRevenue}`}
           accent="text-neon-green"
         />
       </div>

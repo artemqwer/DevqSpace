@@ -132,6 +132,11 @@ export default function OrdersBoard({
                       ${o.productPrice}
                     </span>
                   ) : null}
+                  {o.paid && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded border shrink-0 bg-neon-green/10 text-neon-green border-neon-green/30 flex items-center gap-1">
+                      <i className="ph-fill ph-check-circle" /> Оплачено
+                    </span>
+                  )}
                   <span
                     className={`text-[10px] font-mono px-2 py-0.5 rounded border shrink-0 ${STATUS_STYLE[o.status]}`}
                   >
@@ -161,6 +166,16 @@ export default function OrdersBoard({
                         </>
                       )}
                       <Row label="ID">{o.id}</Row>
+                      {o.paid && (
+                        <Row label="Оплата">
+                          <span className="text-neon-green">
+                            {o.payAmount} {o.payAsset} ·{" "}
+                            {o.paidAt
+                              ? new Date(o.paidAt).toLocaleString("uk-UA")
+                              : "оплачено"}
+                          </span>
+                        </Row>
+                      )}
                     </dl>
 
                     {o.message && (

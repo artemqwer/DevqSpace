@@ -23,6 +23,12 @@ export type StoredOrder = {
   message: string;
   status: OrderStatus;
   createdAt: number;
+  // Оплата (CryptoPay)
+  paid?: boolean;
+  paidAt?: number;
+  invoiceId?: number;
+  payAmount?: string;
+  payAsset?: string;
 };
 
 // ---- Redis client (lazy) --------------------------------------------
@@ -211,6 +217,43 @@ export async function updateOrderStatus(
   return true;
 }
 
+export async function markOrderPaid(
+  id: string,
+  info: { invoiceId?: number; amount?: string; asset?: string },
+): Promise<boolean> {
+  const order = await getOrder(id);
+  if (!order) return false;
+  order.paid = true;
+  order.paidAt = Date.now();
+  if (info.invoiceId !== undefined) order.invoiceId = info.invoiceId;
+  if (info.amount) order.payAmount = info.amount;
+  if (info.asset) order.payAsset = info.asset;
+  // Оплачене замовлення автоматично переходить "в роботу"
+  if (order.status === "new") order.status = "in_progress";
+  const redis = getRedis();
+  if (!redis) {
+    mem().orders.set(id, order);
+    return true;
+  }
+  await redis.set(K.order(id), order);
+  return true;
+}
+
+export async function setOrderInvoice(
+  id: string,
+  invoiceId: number,
+): Promise<void> {
+  const order = await getOrder(id);
+  if (!order) return;
+  order.invoiceId = invoiceId;
+  const redis = getRedis();
+  if (!redis) {
+    mem().orders.set(id, order);
+    return;
+  }
+  await redis.set(K.order(id), order);
+}
+
 export async function deleteOrder(id: string): Promise<void> {
   const redis = getRedis();
   if (!redis) {
@@ -231,7 +274,9 @@ export type Stats = {
   total: number;
   byStatus: Record<OrderStatus, number>;
   byType: { product: number; custom: number };
-  revenueEstimate: number; // сума цін продуктових замовлень зі статусом done
+  revenueEstimate: number; // сума цін закритих продуктових замовлень
+  paidRevenue: number; // сума фактично оплачених замовлень
+  paidCount: number;
   last7days: number;
   topProducts: { title: string; count: number }[];
 };
@@ -246,6 +291,8 @@ export async function getStats(): Promise<Stats> {
   };
   const byType = { product: 0, custom: 0 };
   let revenueEstimate = 0;
+  let paidRevenue = 0;
+  let paidCount = 0;
   let last7days = 0;
   const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const titleCount = new Map<string, number>();
@@ -256,6 +303,10 @@ export async function getStats(): Promise<Stats> {
     if (o.createdAt >= weekAgo) last7days++;
     if (o.type === "product" && o.status === "done" && o.productPrice) {
       revenueEstimate += o.productPrice;
+    }
+    if (o.paid && o.productPrice) {
+      paidRevenue += o.productPrice;
+      paidCount++;
     }
     if (o.type === "product" && o.productTitle) {
       titleCount.set(
@@ -275,6 +326,8 @@ export async function getStats(): Promise<Stats> {
     byStatus,
     byType,
     revenueEstimate,
+    paidRevenue,
+    paidCount,
     last7days,
     topProducts,
   };

@@ -6,7 +6,13 @@ import { useState } from "react";
 import { ACCENT_BUTTON, type Product } from "@/lib/products";
 import ProductThumb from "@/components/ProductThumb";
 
-export default function OrderForm({ product }: { product: Product }) {
+export default function OrderForm({
+  product,
+  cryptoEnabled = false,
+}: {
+  product: Product;
+  cryptoEnabled?: boolean;
+}) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [contactMethod, setContactMethod] = useState<
@@ -16,7 +22,45 @@ export default function OrderForm({ product }: { product: Product }) {
   const [message, setMessage] = useState("");
   const [company, setCompany] = useState(""); // honeypot
   const [submitting, setSubmitting] = useState(false);
+  const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handlePay = async () => {
+    setError(null);
+    if (!name.trim() || !contact.trim()) {
+      setError("Заповніть ім'я та контакт — щоб ми надіслали вам товар");
+      return;
+    }
+    setPaying(true);
+    try {
+      const res = await fetch("/api/pay/crypto", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productSlug: product.slug,
+          name: name.trim(),
+          contactMethod,
+          contact: contact.trim(),
+          message: message.trim(),
+          company,
+        }),
+      });
+      const data = (await res.json()) as {
+        ok: boolean;
+        url?: string;
+        error?: string;
+      };
+      if (!data.ok || !data.url) {
+        setError(data.error || "Не вдалося створити оплату");
+        setPaying(false);
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setError("Помилка мережі");
+      setPaying(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,10 +197,35 @@ export default function OrderForm({ product }: { product: Product }) {
           </div>
         )}
 
+        {cryptoEnabled && (
+          <button
+            type="button"
+            onClick={handlePay}
+            disabled={paying || submitting}
+            className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-green to-neon-blue text-black shadow-[0_10px_30px_-10px_rgba(0,255,102,0.5)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {paying ? (
+              <>
+                <i className="ph-bold ph-circle-notch animate-spin" />
+                Створюємо інвойс...
+              </>
+            ) : (
+              <>
+                <i className="ph-bold ph-currency-circle-dollar text-lg" />
+                Сплатити криптою · ${product.price}
+              </>
+            )}
+          </button>
+        )}
+
         <button
           type="submit"
-          disabled={submitting}
-          className={`w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed ${ACCENT_BUTTON[product.accent]}`}
+          disabled={submitting || paying}
+          className={
+            cryptoEnabled
+              ? "w-full flex items-center justify-center gap-2 font-display font-medium rounded-xl px-6 py-3.5 bg-surface2 border border-white/10 text-white hover:border-neon-blue/50 active:scale-[0.98] transition-all disabled:opacity-60"
+              : `w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed ${ACCENT_BUTTON[product.accent]}`
+          }
         >
           {submitting ? (
             <>
@@ -166,13 +235,15 @@ export default function OrderForm({ product }: { product: Product }) {
           ) : (
             <>
               <i className="ph-bold ph-paper-plane-tilt" />
-              Надіслати заявку
+              {cryptoEnabled ? "Або залишити заявку" : "Надіслати заявку"}
             </>
           )}
         </button>
 
         <p className="text-xs text-gray-500 font-mono text-center">
-          Відповімо в Telegram протягом 2 годин у робочий час
+          {cryptoEnabled
+            ? "Оплата криптою → миттєва видача. Або зв'яжемось вручну."
+            : "Відповімо в Telegram протягом 2 годин у робочий час"}
         </p>
       </form>
 
