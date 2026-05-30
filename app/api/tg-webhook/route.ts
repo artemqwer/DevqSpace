@@ -5,7 +5,12 @@ import {
   tgEditReplyMarkup,
   ORDER_STATUS_LABEL,
 } from "@/lib/telegram";
-import { updateOrderStatus, type OrderStatus } from "@/lib/store";
+import {
+  updateOrderStatus,
+  markOrderPaid,
+  getOrder,
+  type OrderStatus,
+} from "@/lib/store";
 
 // Telegram webhook endpoint. Викликається тільки Telegram-ом — кожне
 // повідомлення вашому боту приходить сюди як POST з JSON update.
@@ -138,8 +143,35 @@ async function handleCallback(cb: TgCallbackQuery): Promise<void> {
     return;
   }
 
+  const data = cb.data ?? "";
+
+  // Ручне підтвердження оплати: "paid:<orderId>"
+  if (data.startsWith("paid:")) {
+    const orderId = data.slice("paid:".length);
+    const order = await getOrder(orderId);
+    if (!order) {
+      await tgAnswerCallback(cb.id, "Замовлення не знайдено");
+      return;
+    }
+    if (order.paid) {
+      await tgAnswerCallback(cb.id, "Вже оплачено ✅");
+      return;
+    }
+    await markOrderPaid(orderId, {});
+    await tgAnswerCallback(cb.id, "💰 Позначено оплаченим");
+    if (cb.message) {
+      await tgEditReplyMarkup(
+        cb.message.chat.id,
+        cb.message.message_id,
+        orderId,
+        "in_progress",
+      );
+    }
+    return;
+  }
+
   // data формат: "st:<orderId>:<status>"
-  const parts = (cb.data ?? "").split(":");
+  const parts = data.split(":");
   if (parts[0] !== "st" || parts.length !== 3) {
     await tgAnswerCallback(cb.id, "?");
     return;

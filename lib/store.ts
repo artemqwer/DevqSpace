@@ -23,7 +23,8 @@ export type StoredOrder = {
   message: string;
   status: OrderStatus;
   createdAt: number;
-  // Оплата (CryptoPay)
+  // Оплата
+  payMethod?: "crypto" | "jar";
   paid?: boolean;
   paidAt?: number;
   invoiceId?: number;

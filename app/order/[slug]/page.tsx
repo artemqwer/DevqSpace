@@ -6,6 +6,7 @@ import BottomNav from "@/components/BottomNav";
 import OrderForm from "@/components/order/OrderForm";
 import { getProductBySlug } from "@/lib/store";
 import { nowPaymentsEnabled } from "@/lib/nowpayments";
+import { jarEnabled, usdToUah } from "@/lib/monojar";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +64,12 @@ export default async function OrderPage({ params }: Props) {
           </p>
         </div>
 
-        <OrderForm product={product} cryptoEnabled={nowPaymentsEnabled()} />
+        <OrderForm
+          product={product}
+          cryptoEnabled={nowPaymentsEnabled()}
+          jarEnabled={jarEnabled()}
+          jarAmountUah={usdToUah(product.price)}
+        />
       </main>
       <BottomNav />
     </>

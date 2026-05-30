@@ -1,5 +1,10 @@
 import { getSession } from "@/lib/session";
-import { updateOrderStatus, deleteOrder, type OrderStatus } from "@/lib/store";
+import {
+  updateOrderStatus,
+  markOrderPaid,
+  deleteOrder,
+  type OrderStatus,
+} from "@/lib/store";
 
 const STATUSES: OrderStatus[] = ["new", "in_progress", "done", "rejected"];
 
@@ -7,14 +12,28 @@ export async function PATCH(req: Request) {
   if (!(await getSession())) {
     return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
-  let body: { id?: string; status?: string };
+  let body: { id?: string; status?: string; paid?: boolean };
   try {
-    body = (await req.json()) as { id?: string; status?: string };
+    body = (await req.json()) as {
+      id?: string;
+      status?: string;
+      paid?: boolean;
+    };
   } catch {
     return Response.json({ ok: false }, { status: 400 });
   }
-  const { id, status } = body;
-  if (!id || !status || !STATUSES.includes(status as OrderStatus)) {
+  const { id, status, paid } = body;
+  if (!id) {
+    return Response.json({ ok: false, error: "Bad data" }, { status: 400 });
+  }
+
+  // Ручне підтвердження оплати
+  if (paid === true) {
+    const ok = await markOrderPaid(id, {});
+    return Response.json({ ok });
+  }
+
+  if (!status || !STATUSES.includes(status as OrderStatus)) {
     return Response.json({ ok: false, error: "Bad data" }, { status: 400 });
   }
   const ok = await updateOrderStatus(id, status as OrderStatus);

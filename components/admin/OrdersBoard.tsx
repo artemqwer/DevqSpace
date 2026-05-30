@@ -65,6 +65,29 @@ export default function OrdersBoard({
     router.refresh();
   };
 
+  const markPaid = async (id: string) => {
+    setBusy(id);
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === id
+          ? {
+              ...o,
+              paid: true,
+              paidAt: Date.now(),
+              status: o.status === "new" ? "in_progress" : o.status,
+            }
+          : o,
+      ),
+    );
+    await fetch("/api/admin/orders", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, paid: true }),
+    });
+    setBusy(null);
+    router.refresh();
+  };
+
   return (
     <div>
       {/* Filters */}
@@ -166,6 +189,13 @@ export default function OrdersBoard({
                         </>
                       )}
                       <Row label="ID">{o.id}</Row>
+                      {o.payMethod && (
+                        <Row label="Спосіб">
+                          {o.payMethod === "jar"
+                            ? "Картка (банка)"
+                            : "Крипта"}
+                        </Row>
+                      )}
                       {o.paid && (
                         <Row label="Оплата">
                           <span className="text-neon-green">
@@ -214,6 +244,15 @@ export default function OrdersBoard({
                       >
                         <i className="ph-bold ph-chat-circle" /> Написати
                       </a>
+                      {!o.paid && (
+                        <button
+                          onClick={() => markPaid(o.id)}
+                          disabled={busy === o.id}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neon-green/30 bg-neon-green/10 text-neon-green text-xs font-mono transition-colors disabled:opacity-40"
+                        >
+                          <i className="ph-bold ph-money" /> Оплачено
+                        </button>
+                      )}
                       <button
                         onClick={() => remove(o.id)}
                         disabled={busy === o.id}

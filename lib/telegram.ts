@@ -181,7 +181,10 @@ export function buildOrderKeyboard(
   return {
     inline_keyboard: [
       [btn("⏳ В роботі", "in_progress"), btn("✅ Закрити", "done")],
-      [btn("❌ Відхилити", "rejected")],
+      [
+        btn("❌ Відхилити", "rejected"),
+        { text: "💰 Оплачено", callback_data: `paid:${orderId}` },
+      ],
     ],
   };
 }

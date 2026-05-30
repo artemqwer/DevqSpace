@@ -9,9 +9,13 @@ import ProductThumb from "@/components/ProductThumb";
 export default function OrderForm({
   product,
   cryptoEnabled = false,
+  jarEnabled = false,
+  jarAmountUah = 0,
 }: {
   product: Product;
   cryptoEnabled?: boolean;
+  jarEnabled?: boolean;
+  jarAmountUah?: number;
 }) {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -23,7 +27,57 @@ export default function OrderForm({
   const [company, setCompany] = useState(""); // honeypot
   const [submitting, setSubmitting] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [jarPaying, setJarPaying] = useState(false);
+  const [jarInfo, setJarInfo] = useState<{
+    orderId: string;
+    jarUrl: string;
+    amountUah: number;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const handleJar = async () => {
+    setError(null);
+    if (!name.trim() || !contact.trim()) {
+      setError("Заповніть ім'я та контакт — щоб ми надіслали вам товар");
+      return;
+    }
+    setJarPaying(true);
+    try {
+      const res = await fetch("/api/pay/jar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productSlug: product.slug,
+          name: name.trim(),
+          contactMethod,
+          contact: contact.trim(),
+          message: message.trim(),
+          company,
+        }),
+      });
+      const data = (await res.json()) as {
+        ok: boolean;
+        orderId?: string;
+        jarUrl?: string;
+        amountUah?: number;
+        error?: string;
+      };
+      if (!data.ok || !data.jarUrl || !data.orderId) {
+        setError(data.error || "Не вдалося створити оплату");
+        setJarPaying(false);
+        return;
+      }
+      setJarInfo({
+        orderId: data.orderId,
+        jarUrl: data.jarUrl,
+        amountUah: data.amountUah ?? jarAmountUah,
+      });
+    } catch {
+      setError("Помилка мережі");
+    } finally {
+      setJarPaying(false);
+    }
+  };
 
   const handlePay = async () => {
     setError(null);
@@ -98,6 +152,69 @@ export default function OrderForm({
       setSubmitting(false);
     }
   };
+
+  // Екран інструкцій після створення замовлення на банку
+  if (jarInfo) {
+    return (
+      <div className="max-w-xl mx-auto">
+        <div className="rounded-2xl border border-neon-green/30 bg-surface/50 p-6 text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-neon-green/10 border border-neon-green/30 mb-4">
+            <i className="ph-fill ph-credit-card text-neon-green text-2xl" />
+          </div>
+          <h2 className="text-xl font-display font-bold text-white mb-1">
+            Замовлення створено
+          </h2>
+          <p className="text-xs font-mono text-gray-500 mb-5">
+            #{jarInfo.orderId}
+          </p>
+
+          <div className="bg-surface2 rounded-xl p-4 mb-4 text-left space-y-3">
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm text-gray-400">До сплати:</span>
+              <span className="text-2xl font-display font-bold text-white">
+                {jarInfo.amountUah} грн
+              </span>
+            </div>
+            <div className="text-xs text-gray-500 font-mono">
+              ≈ ${product.price} · картка будь-якого банку
+            </div>
+          </div>
+
+          <a
+            href={jarInfo.jarUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="w-full flex items-center justify-center gap-2 bg-neon-green text-black font-display font-bold rounded-xl px-6 py-4 active:scale-[0.98] transition-transform mb-4"
+          >
+            <i className="ph-bold ph-credit-card text-lg" />
+            Перейти до оплати на банку
+          </a>
+
+          <div className="text-left text-sm text-gray-400 space-y-2 mb-2">
+            <p className="flex items-start gap-2">
+              <i className="ph-bold ph-number-circle-one text-neon-green mt-0.5" />
+              Переказати <b className="text-white">{jarInfo.amountUah} грн</b> на
+              банку
+            </p>
+            <p className="flex items-start gap-2">
+              <i className="ph-bold ph-number-circle-two text-neon-green mt-0.5" />У
+              коментарі вказати{" "}
+              <b className="text-white">#{jarInfo.orderId}</b>
+            </p>
+            <p className="flex items-start gap-2">
+              <i className="ph-bold ph-number-circle-three text-neon-green mt-0.5" />
+              Після оплати надішлемо товар на{" "}
+              <b className="text-white">{contact}</b>
+            </p>
+          </div>
+
+          <p className="text-[11px] font-mono text-gray-600 mt-4">
+            Підтверджуємо оплату вручну — зазвичай протягом 1–2 годин.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 md:gap-8">
@@ -197,11 +314,32 @@ export default function OrderForm({
           </div>
         )}
 
+        {jarEnabled && (
+          <button
+            type="button"
+            onClick={handleJar}
+            disabled={jarPaying || paying || submitting}
+            className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-white text-black shadow-[0_10px_30px_-10px_rgba(255,255,255,0.3)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {jarPaying ? (
+              <>
+                <i className="ph-bold ph-circle-notch animate-spin" />
+                Створюємо...
+              </>
+            ) : (
+              <>
+                <i className="ph-bold ph-credit-card text-lg" />
+                Сплатити карткою{jarAmountUah ? ` · ${jarAmountUah} грн` : ""}
+              </>
+            )}
+          </button>
+        )}
+
         {cryptoEnabled && (
           <button
             type="button"
             onClick={handlePay}
-            disabled={paying || submitting}
+            disabled={paying || jarPaying || submitting}
             className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-green to-neon-blue text-black shadow-[0_10px_30px_-10px_rgba(0,255,102,0.5)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {paying ? (
@@ -220,9 +358,9 @@ export default function OrderForm({
 
         <button
           type="submit"
-          disabled={submitting || paying}
+          disabled={submitting || paying || jarPaying}
           className={
-            cryptoEnabled
+            cryptoEnabled || jarEnabled
               ? "w-full flex items-center justify-center gap-2 font-display font-medium rounded-xl px-6 py-3.5 bg-surface2 border border-white/10 text-white hover:border-neon-blue/50 active:scale-[0.98] transition-all disabled:opacity-60"
               : `w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed ${ACCENT_BUTTON[product.accent]}`
           }
@@ -241,8 +379,8 @@ export default function OrderForm({
         </button>
 
         <p className="text-xs text-gray-500 font-mono text-center">
-          {cryptoEnabled
-            ? "Оплата криптою → миттєва видача. Або зв'яжемось вручну."
+          {cryptoEnabled || jarEnabled
+            ? "Оплата карткою чи криптою. Або просто залиште заявку."
             : "Відповімо в Telegram протягом 2 годин у робочий час"}
         </p>
       </form>
