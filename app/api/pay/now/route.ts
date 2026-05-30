@@ -1,4 +1,4 @@
-import { createInvoice, cryptoPayEnabled } from "@/lib/cryptopay";
+import { createInvoice, nowPaymentsEnabled } from "@/lib/nowpayments";
 import {
   getProductBySlug,
   addOrder,
@@ -17,9 +17,9 @@ type Body = {
 };
 
 export async function POST(req: Request) {
-  if (!cryptoPayEnabled()) {
+  if (!nowPaymentsEnabled()) {
     return Response.json(
-      { ok: false, error: "Крипто-оплата тимчасово недоступна" },
+      { ok: false, error: "Оплата тимчасово недоступна" },
       { status: 501 },
     );
   }
@@ -60,7 +60,10 @@ export async function POST(req: Request) {
     contactMethod !== "email" &&
     contactMethod !== "phone"
   ) {
-    return Response.json({ ok: false, error: "Невірний контакт" }, { status: 400 });
+    return Response.json(
+      { ok: false, error: "Невірний контакт" },
+      { status: 400 },
+    );
   }
 
   const product = await getProductBySlug(body.productSlug ?? "");
@@ -73,7 +76,6 @@ export async function POST(req: Request) {
 
   const message = (body.message ?? "").trim();
 
-  // 1. Створюємо замовлення (поки не оплачене)
   const order = await addOrder({
     type: "product",
     productSlug: product.slug,
@@ -85,27 +87,27 @@ export async function POST(req: Request) {
     message,
   });
 
-  // 2. Створюємо інвойс Crypto Pay
   const proto =
     req.headers.get("x-forwarded-proto") ??
     new URL(req.url).protocol.replace(":", "");
   const host = req.headers.get("x-forwarded-host") ?? new URL(req.url).host;
-  const returnUrl = `${proto}://${host}/order/success?p=${product.slug}`;
+  const origin = `${proto}://${host}`;
 
   const inv = await createInvoice({
     amount: product.price,
     description: `${product.title} — NEXUS`,
-    payload: order.id,
-    returnUrl,
+    orderId: order.id,
+    successUrl: `${origin}/order/success?p=${product.slug}`,
+    cancelUrl: `${origin}/catalog/${product.slug}`,
+    ipnUrl: `${origin}/api/pay/now/webhook`,
   });
 
   if (!inv.ok) {
     return Response.json({ ok: false, error: inv.error }, { status: 502 });
   }
 
-  await setOrderInvoice(order.id, inv.invoiceId);
+  await setOrderInvoice(order.id, Number(inv.invoiceId) || 0);
 
-  // 3. Сповіщення в Telegram: створено замовлення з очікуванням оплати
   const payload: OrderPayload = {
     type: "product",
     productSlug: product.slug,
@@ -115,8 +117,8 @@ export async function POST(req: Request) {
     contactMethod,
     contact,
     message: message
-      ? `${message}\n\n⏳ Очікує оплати криптою`
-      : "⏳ Очікує оплати криптою",
+      ? `${message}\n\n⏳ Очікує оплати (NOWPayments)`
+      : "⏳ Очікує оплати (NOWPayments)",
   };
   await sendOrderToTelegram(payload, order.id);
 

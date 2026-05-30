@@ -33,7 +33,7 @@ export default function OrderForm({
     }
     setPaying(true);
     try {
-      const res = await fetch("/api/pay/crypto", {
+      const res = await fetch("/api/pay/now", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

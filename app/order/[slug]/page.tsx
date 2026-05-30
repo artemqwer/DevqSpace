@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import OrderForm from "@/components/order/OrderForm";
 import { getProductBySlug } from "@/lib/store";
-import { cryptoPayEnabled } from "@/lib/cryptopay";
+import { nowPaymentsEnabled } from "@/lib/nowpayments";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +63,7 @@ export default async function OrderPage({ params }: Props) {
           </p>
         </div>
 
-        <OrderForm product={product} cryptoEnabled={cryptoPayEnabled()} />
+        <OrderForm product={product} cryptoEnabled={nowPaymentsEnabled()} />
       </main>
       <BottomNav />
     </>
