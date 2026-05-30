@@ -1,5 +1,5 @@
 import { sendOrderToTelegram, type OrderPayload } from "@/lib/telegram";
-import { getProduct } from "@/lib/products";
+import { getProductBySlug, addOrder } from "@/lib/store";
 
 export async function POST(req: Request) {
   let body: Partial<OrderPayload>;
@@ -9,7 +9,6 @@ export async function POST(req: Request) {
     return Response.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
   }
 
-  // Базова валідація
   const name = (body.name ?? "").trim();
   const contact = (body.contact ?? "").trim();
   const contactMethod = body.contactMethod;
@@ -35,11 +34,13 @@ export async function POST(req: Request) {
     return Response.json({ ok: false, error: "Невірний type" }, { status: 400 });
   }
 
+  const message = (body.message ?? "").trim();
   let payload: OrderPayload;
+  let orderData: Parameters<typeof addOrder>[0];
 
   if (type === "product") {
     const slug = body.productSlug ?? "";
-    const product = getProduct(slug);
+    const product = await getProductBySlug(slug);
     if (!product) {
       return Response.json(
         { ok: false, error: "Товар не знайдено" },
@@ -54,24 +55,53 @@ export async function POST(req: Request) {
       name,
       contactMethod,
       contact,
-      message: (body.message ?? "").trim(),
+      message,
     };
-  } else {
-    payload = {
-      type: "custom",
-      customType: (body.customType ?? "").trim() || "—",
-      budget: (body.budget ?? "").trim() || "—",
-      deadline: (body.deadline ?? "").trim() || "—",
+    orderData = {
+      type: "product",
+      productSlug: product.slug,
+      productTitle: product.title,
+      productPrice: product.price,
       name,
       contactMethod,
       contact,
-      message: (body.message ?? "").trim(),
+      message,
+    };
+  } else {
+    const customType = (body.customType ?? "").trim() || "—";
+    const budget = (body.budget ?? "").trim() || "—";
+    const deadline = (body.deadline ?? "").trim() || "—";
+    payload = {
+      type: "custom",
+      customType,
+      budget,
+      deadline,
+      name,
+      contactMethod,
+      contact,
+      message,
+    };
+    orderData = {
+      type: "custom",
+      customType,
+      budget,
+      deadline,
+      name,
+      contactMethod,
+      contact,
+      message,
     };
   }
 
-  const result = await sendOrderToTelegram(payload);
-  if (!result.ok) {
-    return Response.json({ ok: false, error: result.error }, { status: 502 });
+  // 1. Зберігаємо замовлення (головне — не втратити заявку)
+  try {
+    await addOrder(orderData);
+  } catch (e) {
+    console.error("[order] failed to persist:", e);
   }
+
+  // 2. Сповіщення в Telegram (best-effort)
+  await sendOrderToTelegram(payload);
+
   return Response.json({ ok: true });
 }

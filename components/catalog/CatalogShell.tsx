@@ -3,22 +3,22 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
-  PRODUCTS,
   CATEGORIES,
   ACCENT_TEXT,
   ACCENT_BORDER,
   type CategoryId,
+  type Product,
 } from "@/lib/products";
 import ProductThumb from "@/components/ProductThumb";
 
 type Filter = "all" | CategoryId;
 
-export default function CatalogShell() {
+export default function CatalogShell({ products }: { products: Product[] }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
-    return PRODUCTS.filter((p) => {
+    return products.filter((p) => {
       if (filter !== "all" && p.category !== filter) return false;
       if (query.trim()) {
         const q = query.toLowerCase();
@@ -30,7 +30,7 @@ export default function CatalogShell() {
       }
       return true;
     });
-  }, [filter, query]);
+  }, [filter, query, products]);
 
   return (
     <div className="pt-20 md:pt-32 pb-28 md:pb-24 px-4 md:px-8 max-w-7xl mx-auto">
@@ -43,7 +43,7 @@ export default function CatalogShell() {
           Усі <span className="text-gradient">продукти</span>
         </h1>
         <p className="text-xs md:text-base text-gray-400 font-light max-w-2xl">
-          {PRODUCTS.length} готових рішень з підтримкою. Або замовте кастомну
+          {products.length} готових рішень з підтримкою. Або замовте кастомну
           розробку.
         </p>
       </div>
@@ -66,10 +66,10 @@ export default function CatalogShell() {
           active={filter === "all"}
           onClick={() => setFilter("all")}
           label="Усі"
-          count={PRODUCTS.length}
+          count={products.length}
         />
         {CATEGORIES.map((c) => {
-          const count = PRODUCTS.filter((p) => p.category === c.id).length;
+          const count = products.filter((p) => p.category === c.id).length;
           return (
             <CategoryButton
               key={c.id}

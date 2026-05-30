@@ -5,24 +5,21 @@ import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import ProductThumb from "@/components/ProductThumb";
 import {
-  PRODUCTS,
   CATEGORIES,
-  getProduct,
   ACCENT_TEXT,
   ACCENT_BORDER,
   ACCENT_BG,
   ACCENT_BUTTON,
 } from "@/lib/products";
+import { getProductBySlug, getAllProducts } from "@/lib/store";
+
+export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ slug: string }> };
 
-export async function generateStaticParams() {
-  return PRODUCTS.map((p) => ({ slug: p.slug }));
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProductBySlug(slug);
   if (!product) return { title: "Продукт не знайдено" };
   return {
     title: `${product.title} | NEXUS`,
@@ -32,13 +29,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
 
   const category = CATEGORIES.find((c) => c.id === product.category);
-  const related = PRODUCTS.filter(
-    (p) => p.category === product.category && p.slug !== product.slug,
-  ).slice(0, 3);
+  const all = await getAllProducts();
+  const related = all
+    .filter((p) => p.category === product.category && p.slug !== product.slug)
+    .slice(0, 3);
 
   return (
     <>

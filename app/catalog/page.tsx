@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import CatalogShell from "@/components/catalog/CatalogShell";
+import { getAllProducts } from "@/lib/store";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Каталог продуктів | NEXUS",
@@ -9,7 +12,8 @@ export const metadata: Metadata = {
     "Готові Telegram-боти, веб-додатки та мобільні застосунки. Купуй з миттєвою доставкою і саппортом.",
 };
 
-export default function CatalogPage() {
+export default async function CatalogPage() {
+  const products = await getAllProducts();
   return (
     <>
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
@@ -21,7 +25,7 @@ export default function CatalogPage() {
       </div>
       <Navbar />
       <main>
-        <CatalogShell />
+        <CatalogShell products={products} />
       </main>
       <BottomNav />
     </>
