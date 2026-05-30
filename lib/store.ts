@@ -368,6 +368,35 @@ export async function rateLimit(
   return count <= limit;
 }
 
+// =====================================================================
+// Generic cache (Redis з TTL + in-memory fallback)
+// =====================================================================
+
+const memCache = new Map<string, { value: unknown; expireAt: number }>();
+
+export async function getCache<T>(key: string): Promise<T | null> {
+  const redis = getRedis();
+  if (!redis) {
+    const c = memCache.get(key);
+    if (!c || c.expireAt < Date.now()) return null;
+    return c.value as T;
+  }
+  return (await redis.get<T>(`cache:${key}`)) ?? null;
+}
+
+export async function setCache<T>(
+  key: string,
+  value: T,
+  ttlSec: number,
+): Promise<void> {
+  const redis = getRedis();
+  if (!redis) {
+    memCache.set(key, { value, expireAt: Date.now() + ttlSec * 1000 });
+    return;
+  }
+  await redis.set(`cache:${key}`, value, { ex: ttlSec });
+}
+
 // ---- utils ----------------------------------------------------------
 
 function genId(): string {

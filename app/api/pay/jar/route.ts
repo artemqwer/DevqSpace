@@ -70,7 +70,7 @@ export async function POST(req: Request) {
   }
 
   const message = (body.message ?? "").trim();
-  const amountUah = usdToUah(product.price);
+  const amountUah = await usdToUah(product.price);
 
   const order = await addOrder({
     type: "product",

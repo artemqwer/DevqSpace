@@ -25,6 +25,9 @@ export default async function OrderPage({ params }: Props) {
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
+  const jarOn = jarEnabled();
+  const jarAmountUah = jarOn ? await usdToUah(product.price) : 0;
+
   return (
     <>
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
@@ -67,8 +70,8 @@ export default async function OrderPage({ params }: Props) {
         <OrderForm
           product={product}
           cryptoEnabled={nowPaymentsEnabled()}
-          jarEnabled={jarEnabled()}
-          jarAmountUah={usdToUah(product.price)}
+          jarEnabled={jarOn}
+          jarAmountUah={jarAmountUah}
         />
       </main>
       <BottomNav />
