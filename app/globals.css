@@ -33,12 +33,20 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
   background-color: #050505;
   color: #e5e7eb;
-  overflow-x: hidden;
+  overflow-x: clip;
+  max-width: 100vw;
+}
+
+main,
+main > section,
+footer {
+  overflow-x: clip;
 }
 
 .glass {

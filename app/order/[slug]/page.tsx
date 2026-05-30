@@ -27,7 +27,9 @@ export default async function OrderPage({ params }: Props) {
 
   return (
     <>
-      <div className="glow-orb bg-neon-blue w-96 h-96 top-0 left-0 -translate-x-1/2 -translate-y-1/2 animate-pulse-slow" />
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="glow-orb bg-neon-blue w-96 h-96 top-0 left-0 -translate-x-1/2 -translate-y-1/2 animate-pulse-slow" />
+      </div>
       <Navbar />
       <main className="pt-20 md:pt-32 pb-28 md:pb-24 px-4 md:px-8 max-w-6xl mx-auto">
         <nav className="flex items-center gap-2 text-xs font-mono text-gray-500 mb-6">

@@ -20,11 +20,13 @@ const BULLETS = [
 export default function CustomPage() {
   return (
     <>
-      <div className="glow-orb bg-neon-blue w-96 h-96 top-0 left-0 -translate-x-1/2 -translate-y-1/2 animate-pulse-slow" />
-      <div
-        className="glow-orb bg-neon-purple w-[28rem] h-[28rem] top-1/2 right-0 translate-x-1/3 animate-pulse-slow"
-        style={{ animationDelay: "2s" }}
-      />
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="glow-orb bg-neon-blue w-96 h-96 top-0 left-0 -translate-x-1/2 -translate-y-1/2 animate-pulse-slow" />
+        <div
+          className="glow-orb bg-neon-purple w-[28rem] h-[28rem] top-1/2 right-0 translate-x-1/3 animate-pulse-slow"
+          style={{ animationDelay: "2s" }}
+        />
+      </div>
       <Navbar />
       <main className="pt-20 md:pt-32 pb-28 md:pb-24 px-4 md:px-8 max-w-6xl mx-auto">
         {/* Hero */}
