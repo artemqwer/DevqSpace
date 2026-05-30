@@ -68,13 +68,6 @@ const ACCENT_TEXT: Record<Category["accent"], string> = {
   green: "text-neon-green",
 };
 
-const ACCENT_GLOW: Record<Category["accent"], string> = {
-  blue: "from-neon-blue/20",
-  purple: "from-neon-purple/20",
-  pink: "from-neon-pink/20",
-  green: "from-neon-green/20",
-};
-
 export default function Categories() {
   return (
     <section className="py-12 md:py-20 relative z-10 border-t border-white/5 bg-surface/50">
@@ -97,45 +90,47 @@ export default function Categories() {
           </a>
         </div>
 
-        {/* Mobile: horizontal snap scroll */}
-        <div className="md:hidden -mx-4 px-4 overflow-x-auto snap-x snap-mandatory custom-scrollbar">
-          <div className="flex gap-3 pb-3">
-            {CATEGORIES.map((c) => (
-              <a
-                key={c.number}
-                href={c.href}
-                className={`snap-start shrink-0 w-[68%] relative rounded-2xl p-5 bg-surface border ${ACCENT_BORDER[c.accent]} overflow-hidden`}
-              >
+        {/* Mobile: 2x2 grid */}
+        <div className="md:hidden grid grid-cols-2 gap-3 px-4">
+          {CATEGORIES.map((c) => (
+            <a
+              key={c.number}
+              href={c.href}
+              className={`relative rounded-2xl p-4 bg-surface border ${ACCENT_BORDER[c.accent]} overflow-hidden`}
+            >
+              <div
+                className="absolute -top-12 -right-12 w-28 h-28 rounded-full blur-2xl opacity-60"
+                style={{
+                  background: `radial-gradient(circle, currentColor 0%, transparent 70%)`,
+                  color: "transparent",
+                }}
+              />
+              <div className="flex justify-between items-start mb-6 relative">
                 <div
-                  className={`absolute -top-12 -right-12 w-32 h-32 rounded-full bg-gradient-radial blur-2xl ${ACCENT_GLOW[c.accent]} to-transparent opacity-60`}
-                  style={{
-                    background: `radial-gradient(circle, currentColor 0%, transparent 70%)`,
-                    color: "transparent",
-                  }}
-                />
-                <div className="flex justify-between items-start mb-8 relative">
-                  <div className={`w-12 h-12 rounded-xl bg-surface2 flex items-center justify-center border ${ACCENT_BORDER[c.accent]}`}>
-                    <i className={`ph ${c.icon} text-2xl ${ACCENT_ICON[c.accent]}`} />
-                  </div>
-                  <span className="text-[10px] font-mono text-gray-500">
-                    {c.number}
-                  </span>
-                </div>
-                <h3 className="text-lg font-display font-bold text-white mb-1 relative">
-                  {c.title}
-                </h3>
-                <p className="text-xs text-gray-500 font-light mb-3 relative line-clamp-2">
-                  {c.description}
-                </p>
-                <div
-                  className={`text-[11px] font-mono ${ACCENT_TEXT[c.accent]} relative flex items-center gap-1`}
+                  className={`w-10 h-10 rounded-lg bg-surface2 flex items-center justify-center border ${ACCENT_BORDER[c.accent]}`}
                 >
-                  {c.count}
-                  <i className="ph-bold ph-arrow-right text-xs" />
+                  <i
+                    className={`ph ${c.icon} text-xl ${ACCENT_ICON[c.accent]}`}
+                  />
                 </div>
-              </a>
-            ))}
-          </div>
+                <span className="text-[10px] font-mono text-gray-500">
+                  {c.number}
+                </span>
+              </div>
+              <h3 className="text-sm font-display font-bold text-white mb-1 relative leading-tight">
+                {c.title}
+              </h3>
+              <p className="text-[11px] text-gray-500 font-light mb-3 relative line-clamp-2">
+                {c.description}
+              </p>
+              <div
+                className={`text-[10px] font-mono ${ACCENT_TEXT[c.accent]} relative flex items-center gap-1`}
+              >
+                {c.count}
+                <i className="ph-bold ph-arrow-right text-[10px]" />
+              </div>
+            </a>
+          ))}
         </div>
 
         {/* Desktop: grid */}

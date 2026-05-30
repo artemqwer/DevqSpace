@@ -8,7 +8,6 @@ import {
 import ProductThumb from "@/components/ProductThumb";
 
 const HOME_PRODUCTS = PRODUCTS.slice(0, 4);
-const FEATURED = HOME_PRODUCTS[0];
 
 export default function Products() {
   return (
@@ -50,79 +49,21 @@ export default function Products() {
           </Link>
         </div>
 
-        {/* Mobile: featured + carousel */}
-        <div className="md:hidden space-y-4">
+        {/* Mobile: 2x2 grid */}
+        <div className="md:hidden grid grid-cols-2 gap-3 px-4">
+          {HOME_PRODUCTS.map((p) => (
+            <MobileProductCard key={p.slug} product={p} />
+          ))}
+        </div>
+
+        <div className="md:hidden mt-6 px-4">
           <Link
-            href={`/catalog/${FEATURED.slug}`}
-            className="block mx-4 relative rounded-2xl overflow-hidden bg-surface border border-white/10"
+            href="/catalog"
+            className="w-full flex items-center justify-center gap-2 bg-surface2 border border-white/10 text-white font-mono text-xs py-3 rounded-xl hover:border-neon-blue/50 transition-colors"
           >
-            <div className="relative h-44 overflow-hidden">
-              <ProductThumb
-                product={FEATURED}
-                className="absolute inset-0"
-                iconClassName="text-7xl"
-              />
-              <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-surface to-transparent" />
-
-              <div className="absolute top-3 left-3 flex gap-2">
-                <span
-                  className={`bg-black/80 backdrop-blur text-[10px] font-mono px-2 py-1 rounded border ${ACCENT_TEXT[FEATURED.accent]} ${ACCENT_BORDER[FEATURED.accent]}`}
-                >
-                  {FEATURED.badge}
-                </span>
-                <span className="bg-neon-pink/10 text-neon-pink border border-neon-pink/30 text-[10px] font-mono px-2 py-1 rounded">
-                  ТОП
-                </span>
-              </div>
-            </div>
-
-            <div className="p-4 -mt-6 relative">
-              <h3 className="text-base font-display font-bold text-white leading-tight mb-2">
-                {FEATURED.title}
-              </h3>
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {FEATURED.stack.slice(0, 3).map((s) => (
-                  <span
-                    key={s}
-                    className="text-[10px] font-mono px-2 py-0.5 bg-surface2 border border-white/10 rounded text-gray-400"
-                  >
-                    {s}
-                  </span>
-                ))}
-              </div>
-              <div className="flex items-center gap-3 mb-3 text-[11px] font-mono text-gray-400">
-                <span className="flex items-center gap-1 text-yellow-500">
-                  <i className="ph-fill ph-star" /> {FEATURED.rating}
-                </span>
-                <span className="flex items-center gap-1">
-                  <i className="ph ph-package" /> {FEATURED.sold} продано
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 mb-4 text-[10px] font-mono text-neon-green">
-                <i className="ph-fill ph-shield-check" />
-                {FEATURED.warranty}
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="flex-1 bg-neon-blue text-black font-display font-bold py-2.5 rounded-lg text-center text-sm">
-                  Деталі · ${FEATURED.price}
-                </span>
-                <span
-                  aria-hidden
-                  className="w-11 h-11 rounded-lg bg-surface2 border border-white/10 flex items-center justify-center text-white"
-                >
-                  <i className="ph-bold ph-arrow-up-right" />
-                </span>
-              </div>
-            </div>
+            [ Весь_каталог ]
+            <i className="ph-bold ph-arrow-right" />
           </Link>
-
-          <div className="-mx-4 px-4 overflow-x-auto snap-x snap-mandatory custom-scrollbar">
-            <div className="flex gap-3 pb-3">
-              {HOME_PRODUCTS.slice(1).map((p) => (
-                <MobileProductCard key={p.slug} product={p} />
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Desktop grid */}
@@ -211,47 +152,27 @@ function MobileProductCard({ product: p }: { product: Product }) {
   return (
     <Link
       href={`/catalog/${p.slug}`}
-      className="snap-start shrink-0 w-[72%] rounded-2xl overflow-hidden bg-surface border border-white/10 block"
+      className="rounded-2xl overflow-hidden bg-surface border border-white/10 flex flex-col"
     >
-      <div className="relative h-32 overflow-hidden">
-        <ProductThumb
-          product={p}
-          className="absolute inset-0"
-          iconClassName="text-5xl"
-        />
-        <div className="absolute top-2 left-2">
+      <ProductThumb
+        product={p}
+        className="aspect-[4/3] border-b border-white/5"
+        iconClassName="text-4xl"
+      />
+      <div className="p-3 flex-grow flex flex-col justify-between">
+        <div>
           <span
-            className={`bg-black/80 backdrop-blur text-[9px] font-mono px-1.5 py-0.5 rounded border ${ACCENT_TEXT[p.accent]} ${ACCENT_BORDER[p.accent]}`}
+            className={`inline-block text-[9px] font-mono px-1.5 py-0.5 rounded border bg-black/40 mb-1.5 ${ACCENT_TEXT[p.accent]} ${ACCENT_BORDER[p.accent]}`}
           >
             {p.badge}
           </span>
+          <h3 className="text-sm font-display font-bold text-white leading-tight line-clamp-2 mb-1">
+            {p.title}
+          </h3>
         </div>
-      </div>
-      <div className="p-3">
-        <h3 className="text-sm font-display font-bold text-white leading-tight line-clamp-2 mb-2 min-h-[2.6rem]">
-          {p.title}
-        </h3>
-        <div className="flex flex-wrap gap-1 mb-2">
-          {p.stack.slice(0, 2).map((s) => (
-            <span
-              key={s}
-              className="text-[9px] font-mono px-1.5 py-0.5 bg-surface2 border border-white/10 rounded text-gray-500"
-            >
-              {s}
-            </span>
-          ))}
-        </div>
-        <div className="flex items-center justify-between text-[10px] font-mono text-gray-400 mb-2">
-          <span className="flex items-center gap-1 text-yellow-500">
+        <div className="flex items-center justify-between pt-2 mt-1 border-t border-white/5">
+          <span className="flex items-center gap-1 text-[10px] font-mono text-yellow-500">
             <i className="ph-fill ph-star" /> {p.rating}
-          </span>
-          <span className="flex items-center gap-1">
-            <i className="ph ph-package" /> {p.sold}
-          </span>
-        </div>
-        <div className="flex items-center justify-between pt-2 border-t border-white/5">
-          <span className="text-[10px] font-mono text-neon-green flex items-center gap-1">
-            <i className="ph-fill ph-shield-check" /> Гарантія
           </span>
           <span className="text-sm font-display font-bold text-white">
             ${p.price}

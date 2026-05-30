@@ -95,16 +95,18 @@ export default function CustomForm() {
                 key={t.id}
                 type="button"
                 onClick={() => setCustomType(t.id)}
-                className={`flex items-center gap-2 px-4 py-3 rounded-xl border transition-all text-left ${
+                className={`flex items-center gap-2 px-3 md:px-4 py-2.5 md:py-3 rounded-xl border transition-all text-left min-w-0 ${
                   active
                     ? "bg-neon-blue/10 border-neon-blue/50 text-white"
                     : "bg-surface2 border-white/10 text-gray-400 hover:border-white/20"
                 }`}
               >
                 <i
-                  className={`ph ${t.icon} text-xl shrink-0 ${active ? "text-neon-blue" : ""}`}
+                  className={`ph ${t.icon} text-lg md:text-xl shrink-0 ${active ? "text-neon-blue" : ""}`}
                 />
-                <span className="text-sm font-medium">{t.label}</span>
+                <span className="text-xs md:text-sm font-medium truncate">
+                  {t.label}
+                </span>
               </button>
             );
           })}
