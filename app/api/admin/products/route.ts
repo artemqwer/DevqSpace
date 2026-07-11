@@ -3,7 +3,14 @@ import { saveProduct, deleteProduct, slugExists } from "@/lib/store";
 import type { Accent, CategoryId, Product } from "@/lib/products";
 
 const ACCENTS: Accent[] = ["blue", "purple", "pink", "green"];
-const CATEGORIES: CategoryId[] = ["telegram-bots", "web", "mobile"];
+const CATEGORIES: CategoryId[] = [
+  "telegram-bots",
+  "web",
+  "mobile",
+  "automation",
+  "web3",
+  "templates",
+];
 
 function toLines(v: unknown): string[] {
   if (Array.isArray(v)) return v.map((x) => String(x).trim()).filter(Boolean);

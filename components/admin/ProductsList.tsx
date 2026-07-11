@@ -10,6 +10,9 @@ const CAT_LABEL: Record<string, string> = {
   "telegram-bots": "Telegram",
   web: "Web / SaaS",
   mobile: "Mobile",
+  automation: "Автоматизація",
+  web3: "Web3",
+  templates: "Шаблони",
 };
 
 export default function ProductsList({ products }: { products: Product[] }) {

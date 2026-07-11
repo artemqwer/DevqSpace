@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getAllProducts } from "@/lib/store";
 import ProductsList from "@/components/admin/ProductsList";
+import ReseedButton from "@/components/admin/ReseedButton";
 
 export const dynamic = "force-dynamic";
 
@@ -24,12 +25,15 @@ export default async function AdminProductsPage() {
             <span className="text-gray-500 text-lg">({products.length})</span>
           </h1>
         </div>
-        <Link
-          href="/admin/products/new"
-          className="shrink-0 flex items-center gap-2 bg-neon-blue text-black text-xs md:text-sm font-display font-bold px-4 py-2.5 rounded-lg active:scale-[0.98] transition-transform"
-        >
-          <i className="ph-bold ph-plus" /> Додати
-        </Link>
+        <div className="shrink-0 flex items-center gap-2">
+          <ReseedButton />
+          <Link
+            href="/admin/products/new"
+            className="flex items-center gap-2 bg-neon-blue text-black text-xs md:text-sm font-display font-bold px-4 py-2.5 rounded-lg active:scale-[0.98] transition-transform"
+          >
+            <i className="ph-bold ph-plus" /> Додати
+          </Link>
+        </div>
       </div>
 
       <ProductsList products={sorted} />

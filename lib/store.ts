@@ -149,6 +149,32 @@ export async function deleteProduct(slug: string): Promise<void> {
   await pipe.exec();
 }
 
+// Повне перезаповнення каталогу з lib/products.ts (SEED_PRODUCTS).
+// УВАГА: видаляє всі поточні товари (в т.ч. додані вручну) і ставить стандартні.
+export async function reseedProducts(): Promise<number> {
+  const redis = getRedis();
+  if (!redis) {
+    const m = mem();
+    m.products.clear();
+    for (const p of SEED_PRODUCTS) m.products.set(p.slug, { ...p });
+    m.seeded = true;
+    return SEED_PRODUCTS.length;
+  }
+  const slugs = await redis.smembers(K.productSlugs);
+  const wipe = redis.pipeline();
+  for (const s of slugs) wipe.del(K.product(s));
+  wipe.del(K.productSlugs);
+  await wipe.exec();
+
+  const seed = redis.pipeline();
+  for (const p of SEED_PRODUCTS) {
+    seed.set(K.product(p.slug), p);
+    seed.sadd(K.productSlugs, p.slug);
+  }
+  await seed.exec();
+  return SEED_PRODUCTS.length;
+}
+
 export async function slugExists(slug: string): Promise<boolean> {
   const redis = getRedis();
   if (!redis) return mem().products.has(slug);

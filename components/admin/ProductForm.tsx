@@ -8,6 +8,9 @@ const CATEGORIES = [
   { id: "telegram-bots", label: "Telegram боти" },
   { id: "web", label: "Web / SaaS" },
   { id: "mobile", label: "Мобільні додатки" },
+  { id: "automation", label: "Скрипти / Автоматизація" },
+  { id: "web3", label: "Смарт-контракти / Web3" },
+  { id: "templates", label: "Шаблони / UI-кіти" },
 ];
 
 const ACCENTS = [
