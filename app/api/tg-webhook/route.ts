@@ -4,6 +4,8 @@ import {
   tgEditMessageText,
   tgAnswerCallback,
   tgEditReplyMarkup,
+  tgSetChatMenuButton,
+  tgSetMyCommands,
   ORDER_STATUS_LABEL,
 } from "@/lib/telegram";
 import {
@@ -62,6 +64,24 @@ const VALID_STATUS: OrderStatus[] = [
   "in_progress",
   "done",
   "rejected",
+];
+
+// Базовий https-URL поточного деплою (з заголовків Vercel) — щоб зібрати
+// посилання на Mini App без хардкоду домену.
+function originFromReq(req: Request): string {
+  const proto = req.headers.get("x-forwarded-proto") ?? "https";
+  const host =
+    req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
+  return `${proto}://${host}`;
+}
+
+const BOT_COMMANDS = [
+  { command: "app", description: "📊 Відкрити дашборд (Mini App)" },
+  { command: "stats", description: "Загальна аналітика" },
+  { command: "products", description: "Каталог + керування" },
+  { command: "views", description: "Топ за переглядами" },
+  { command: "add", description: "Додати товар" },
+  { command: "help", description: "Список команд" },
 ];
 
 export async function POST(req: Request) {
@@ -123,12 +143,39 @@ export async function POST(req: Request) {
   }
 
   if (cmd === "/start") {
-    await tgSendMessage(chatId, startText());
+    // Разово підхоплюємо меню-кнопку Mini App і список команд.
+    const base = originFromReq(req);
+    await Promise.all([
+      tgSetChatMenuButton(chatId, "📊 Дашборд", `${base}/tg`),
+      tgSetMyCommands(BOT_COMMANDS),
+    ]);
+    await tgSendMessage(chatId, startText(), "HTML", {
+      inline_keyboard: [
+        [{ text: "📊 Відкрити дашборд", web_app: { url: `${base}/tg` } }],
+      ],
+    });
     return Response.json({ ok: true });
   }
 
   if (cmd === "/help") {
     await tgSendMessage(chatId, helpText());
+    return Response.json({ ok: true });
+  }
+
+  if (cmd === "/app" || cmd === "/dashboard" || cmd === "/menu") {
+    const base = originFromReq(req);
+    await tgSetChatMenuButton(chatId, "📊 Дашборд", `${base}/tg`);
+    await tgSendMessage(
+      chatId,
+      "📊 <b>NEXUS Dashboard</b>\n\nАналітика переглядів, замовлень і виторгу — " +
+        "прямо в Telegram. Кнопка «Дашборд» також з'явилась біля поля вводу.",
+      "HTML",
+      {
+        inline_keyboard: [
+          [{ text: "📊 Відкрити дашборд", web_app: { url: `${base}/tg` } }],
+        ],
+      },
+    );
     return Response.json({ ok: true });
   }
 

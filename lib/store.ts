@@ -472,6 +472,101 @@ export async function getProductAnalytics(
   return { product, views, orderStats, conversion };
 }
 
+// Агрегат для міні-аппки: тотали + список товарів з переглядами й продажами.
+// Дешево по Redis: 1 запит на список товарів, 1 на рейтинг переглядів,
+// 1 на замовлення — далі мерджимо в пам'яті.
+export type MiniAppProduct = {
+  slug: string;
+  title: string;
+  price: number;
+  category: string;
+  accent: string;
+  image?: string;
+  views: number;
+  orders: number;
+  paid: number;
+  revenue: number;
+};
+
+export type MiniAppOverview = {
+  totals: {
+    views: number;
+    products: number;
+    orders: number;
+    ordersLast7: number;
+    paidRevenue: number;
+    doneRevenue: number;
+    newOrders: number;
+  };
+  products: MiniAppProduct[];
+};
+
+export async function getMiniAppOverview(): Promise<MiniAppOverview> {
+  const [products, ranking, orders, totalViews] = await Promise.all([
+    getAllProducts(),
+    getViewsRanking(10000),
+    getAllOrders(),
+    getTotalViews(),
+  ]);
+
+  const viewsBySlug = new Map(ranking.map((r) => [r.slug, r.views]));
+
+  type Agg = { orders: number; paid: number; revenue: number };
+  const orderAgg = new Map<string, Agg>();
+  const weekAgo = Date.now() - 7 * 86400000;
+  let ordersLast7 = 0;
+  let paidRevenue = 0;
+  let doneRevenue = 0;
+  let newOrders = 0;
+
+  for (const o of orders) {
+    if (o.createdAt >= weekAgo) ordersLast7++;
+    if (o.status === "new") newOrders++;
+    if (o.paid && o.productPrice) paidRevenue += o.productPrice;
+    if (o.status === "done" && o.type === "product" && o.productPrice)
+      doneRevenue += o.productPrice;
+
+    if (o.type !== "product" || !o.productSlug) continue;
+    const a = orderAgg.get(o.productSlug) ?? { orders: 0, paid: 0, revenue: 0 };
+    a.orders++;
+    if (o.paid) {
+      a.paid++;
+      if (o.productPrice) a.revenue += o.productPrice;
+    }
+    orderAgg.set(o.productSlug, a);
+  }
+
+  const list: MiniAppProduct[] = products.map((p) => {
+    const a = orderAgg.get(p.slug) ?? { orders: 0, paid: 0, revenue: 0 };
+    return {
+      slug: p.slug,
+      title: p.title,
+      price: p.price,
+      category: p.category,
+      accent: p.accent,
+      image: p.image,
+      views: viewsBySlug.get(p.slug) ?? 0,
+      orders: a.orders,
+      paid: a.paid,
+      revenue: a.revenue,
+    };
+  });
+  list.sort((a, b) => b.views - a.views);
+
+  return {
+    totals: {
+      views: totalViews,
+      products: products.length,
+      orders: orders.length,
+      ordersLast7,
+      paidRevenue,
+      doneRevenue,
+      newOrders,
+    },
+    products: list,
+  };
+}
+
 // =====================================================================
 // Stats
 // =====================================================================

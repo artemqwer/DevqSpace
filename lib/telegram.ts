@@ -114,6 +114,57 @@ export async function tgGetWebhookInfo(): Promise<unknown> {
   return await res.json();
 }
 
+// Встановлює кнопку "Меню" біля поля вводу як вхід у Mini App.
+export async function tgSetChatMenuButton(
+  chatId: string | number,
+  text: string,
+  url: string,
+): Promise<boolean> {
+  if (!BOT_TOKEN) return false;
+  try {
+    const res = await fetch(
+      `https://api.telegram.org/bot${BOT_TOKEN}/setChatMenuButton`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          menu_button: { type: "web_app", text, web_app: { url } },
+        }),
+        cache: "no-store",
+      },
+    );
+    const data = (await res.json()) as { ok: boolean };
+    return data.ok;
+  } catch (e) {
+    console.error("[telegram] setChatMenuButton error:", e);
+    return false;
+  }
+}
+
+// Заповнює список команд бота (меню "/" у клієнті Telegram).
+export async function tgSetMyCommands(
+  commands: { command: string; description: string }[],
+): Promise<boolean> {
+  if (!BOT_TOKEN) return false;
+  try {
+    const res = await fetch(
+      `https://api.telegram.org/bot${BOT_TOKEN}/setMyCommands`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ commands }),
+        cache: "no-store",
+      },
+    );
+    const data = (await res.json()) as { ok: boolean };
+    return data.ok;
+  } catch (e) {
+    console.error("[telegram] setMyCommands error:", e);
+    return false;
+  }
+}
+
 export async function tgDeleteWebhook(): Promise<unknown> {
   if (!BOT_TOKEN) return { ok: false, description: "BOT_TOKEN not set" };
   const res = await fetch(
@@ -207,7 +258,11 @@ export const ORDER_STATUS_LABEL: Record<string, string> = {
   rejected: "❌ Відхилено",
 };
 
-type InlineButton = { text: string; callback_data: string };
+type InlineButton = { text: string } & (
+  | { callback_data: string }
+  | { url: string }
+  | { web_app: { url: string } }
+);
 
 export function buildOrderKeyboard(
   orderId: string,
