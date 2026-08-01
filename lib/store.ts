@@ -56,13 +56,21 @@ type MemDB = {
   products: Map<string, Product>;
   orders: Map<string, StoredOrder>;
   seeded: boolean;
+  viewsTotal: Map<string, number>;
+  viewsDaily: Map<string, Record<string, number>>; // slug -> { date: count }
 };
 
 const g = globalThis as unknown as { __nexusMem?: MemDB };
 
 function mem(): MemDB {
   if (!g.__nexusMem) {
-    g.__nexusMem = { products: new Map(), orders: new Map(), seeded: false };
+    g.__nexusMem = {
+      products: new Map(),
+      orders: new Map(),
+      seeded: false,
+      viewsTotal: new Map(),
+      viewsDaily: new Map(),
+    };
   }
   return g.__nexusMem;
 }
@@ -74,6 +82,9 @@ const K = {
   productSlugs: "products:slugs",
   order: (id: string) => `order:${id}`,
   orderIndex: "orders:index", // sorted set by createdAt
+  viewsIndex: "views:index", // sorted set: slug -> total views (для рейтингу)
+  viewsDaily: (slug: string) => `views:daily:${slug}`, // hash: YYYY-MM-DD -> count
+  viewsTotalAll: "views:total", // глобальний лічильник усіх переглядів
 };
 
 // ---- Seeding --------------------------------------------------------
@@ -140,12 +151,17 @@ export async function saveProduct(product: Product): Promise<void> {
 export async function deleteProduct(slug: string): Promise<void> {
   const redis = getRedis();
   if (!redis) {
-    mem().products.delete(slug);
+    const m = mem();
+    m.products.delete(slug);
+    m.viewsTotal.delete(slug);
+    m.viewsDaily.delete(slug);
     return;
   }
   const pipe = redis.pipeline();
   pipe.del(K.product(slug));
   pipe.srem(K.productSlugs, slug);
+  pipe.zrem(K.viewsIndex, slug);
+  pipe.del(K.viewsDaily(slug));
   await pipe.exec();
 }
 
@@ -291,6 +307,169 @@ export async function deleteOrder(id: string): Promise<void> {
   pipe.del(K.order(id));
   pipe.zrem(K.orderIndex, id);
   await pipe.exec();
+}
+
+// =====================================================================
+// Product views / analytics
+// =====================================================================
+
+function today(): string {
+  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
+}
+
+function lastNDates(n: number): string[] {
+  const out: string[] = [];
+  const d = new Date();
+  for (let i = 0; i < n; i++) {
+    out.push(new Date(d.getTime() - i * 86400000).toISOString().slice(0, 10));
+  }
+  return out;
+}
+
+// Реєструє один перегляд товару. Викликається зі сторінки товару через
+// after() — не блокує рендер. Веде і сумарний лічильник (для рейтингу),
+// і розбивку по днях (для трендів).
+export async function trackProductView(slug: string): Promise<void> {
+  const day = today();
+  const redis = getRedis();
+  if (!redis) {
+    const m = mem();
+    m.viewsTotal.set(slug, (m.viewsTotal.get(slug) ?? 0) + 1);
+    const daily = m.viewsDaily.get(slug) ?? {};
+    daily[day] = (daily[day] ?? 0) + 1;
+    m.viewsDaily.set(slug, daily);
+    return;
+  }
+  const pipe = redis.pipeline();
+  pipe.zincrby(K.viewsIndex, 1, slug);
+  pipe.hincrby(K.viewsDaily(slug), day, 1);
+  pipe.incr(K.viewsTotalAll);
+  await pipe.exec();
+}
+
+// Загальна к-сть переглядів по всьому каталогу (O(1) лічильник).
+export async function getTotalViews(): Promise<number> {
+  const redis = getRedis();
+  if (!redis) {
+    let sum = 0;
+    for (const v of mem().viewsTotal.values()) sum += v;
+    return sum;
+  }
+  return Number((await redis.get<number>(K.viewsTotalAll)) ?? 0);
+}
+
+export type ProductViews = {
+  total: number;
+  last7: number;
+  last30: number;
+  today: number;
+  daily: Record<string, number>;
+};
+
+function summarizeViews(
+  total: number,
+  daily: Record<string, number>,
+): ProductViews {
+  const d7 = new Set(lastNDates(7));
+  const d30 = new Set(lastNDates(30));
+  let last7 = 0;
+  let last30 = 0;
+  for (const [date, count] of Object.entries(daily)) {
+    if (d7.has(date)) last7 += count;
+    if (d30.has(date)) last30 += count;
+  }
+  return { total, last7, last30, today: daily[today()] ?? 0, daily };
+}
+
+export async function getProductViews(slug: string): Promise<ProductViews> {
+  const redis = getRedis();
+  if (!redis) {
+    const m = mem();
+    return summarizeViews(
+      m.viewsTotal.get(slug) ?? 0,
+      m.viewsDaily.get(slug) ?? {},
+    );
+  }
+  const [total, daily] = await Promise.all([
+    redis.zscore(K.viewsIndex, slug),
+    redis.hgetall<Record<string, number>>(K.viewsDaily(slug)),
+  ]);
+  return summarizeViews(Number(total ?? 0), daily ?? {});
+}
+
+// Рейтинг товарів за сумарними переглядами (спадання).
+export async function getViewsRanking(
+  limit = 20,
+): Promise<{ slug: string; views: number }[]> {
+  const redis = getRedis();
+  if (!redis) {
+    return [...mem().viewsTotal.entries()]
+      .map(([slug, views]) => ({ slug, views }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, limit);
+  }
+  const rows = await redis.zrange<(string | number)[]>(
+    K.viewsIndex,
+    0,
+    limit - 1,
+    { rev: true, withScores: true },
+  );
+  const out: { slug: string; views: number }[] = [];
+  for (let i = 0; i < rows.length; i += 2) {
+    out.push({ slug: String(rows[i]), views: Number(rows[i + 1]) });
+  }
+  return out;
+}
+
+// Метрики товару, пораховані із замовлень (кількість, оплати, виторг).
+export type ProductOrderStats = {
+  orders: number;
+  paid: number;
+  paidRevenue: number;
+  doneRevenue: number;
+};
+
+// Повна аналітика по одному товару: сам товар + перегляди + продажі.
+export type ProductAnalytics = {
+  product: Product;
+  views: ProductViews;
+  orderStats: ProductOrderStats;
+  conversion: number; // % переглядів, що стали замовленнями
+};
+
+export async function getProductAnalytics(
+  slug: string,
+): Promise<ProductAnalytics | null> {
+  const product = await getProductBySlug(slug);
+  if (!product) return null;
+
+  const [views, orders] = await Promise.all([
+    getProductViews(slug),
+    getAllOrders(),
+  ]);
+
+  const orderStats: ProductOrderStats = {
+    orders: 0,
+    paid: 0,
+    paidRevenue: 0,
+    doneRevenue: 0,
+  };
+  for (const o of orders) {
+    if (o.type !== "product" || o.productSlug !== slug) continue;
+    orderStats.orders++;
+    if (o.paid) {
+      orderStats.paid++;
+      if (o.productPrice) orderStats.paidRevenue += o.productPrice;
+    }
+    if (o.status === "done" && o.productPrice) {
+      orderStats.doneRevenue += o.productPrice;
+    }
+  }
+
+  const conversion =
+    views.total > 0 ? (orderStats.orders / views.total) * 100 : 0;
+
+  return { product, views, orderStats, conversion };
 }
 
 // =====================================================================

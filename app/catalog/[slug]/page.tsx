@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { after } from "next/server";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
@@ -11,7 +12,11 @@ import {
   ACCENT_BG,
   ACCENT_BUTTON,
 } from "@/lib/products";
-import { getProductBySlug, getAllProducts } from "@/lib/store";
+import {
+  getProductBySlug,
+  getAllProducts,
+  trackProductView,
+} from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +36,9 @@ export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   if (!product) notFound();
+
+  // Рахуємо перегляд після віддачі сторінки — не блокує рендер.
+  after(() => trackProductView(product.slug));
 
   const category = CATEGORIES.find((c) => c.id === product.category);
   const all = await getAllProducts();
