@@ -1,6 +1,7 @@
 import {
   TG_CONFIG,
   tgSendMessage,
+  tgEditMessageText,
   tgAnswerCallback,
   tgEditReplyMarkup,
   ORDER_STATUS_LABEL,
@@ -11,6 +12,21 @@ import {
   getOrder,
   type OrderStatus,
 } from "@/lib/store";
+import {
+  startText,
+  helpText,
+  statsReply,
+  viewsRankingReply,
+  productsListReply,
+  productDetailReply,
+  findReply,
+  addProductReply,
+  setPriceReply,
+  deletePromptReply,
+  doDeleteReply,
+  pricePromptReply,
+  type BotReply,
+} from "@/lib/botAdmin";
 
 // Telegram webhook endpoint. Викликається тільки Telegram-ом — кожне
 // повідомлення вашому боту приходить сюди як POST з JSON update.
@@ -81,6 +97,13 @@ export async function POST(req: Request) {
   const text = msg.text.trim();
   const [rawCmd] = text.split(/\s+/);
   const cmd = rawCmd.split("@")[0].toLowerCase();
+  // Аргументи команди: усе після першого токена.
+  const rest = text.slice(rawCmd.length).trim();
+  const args = rest.length ? rest.split(/\s+/) : [];
+
+  const chatId = msg.chat.id;
+  const reply = (r: BotReply) =>
+    tgSendMessage(chatId, r.text, "HTML", r.keyboard);
 
   // 4. Команди
   if (cmd === "/where") {
@@ -100,32 +123,69 @@ export async function POST(req: Request) {
   }
 
   if (cmd === "/start") {
-    await tgSendMessage(
-      msg.chat.id,
-      "👋 <b>NEXUS Admin Bot online</b>\n\n" +
-        "Замовлення з сайту приходитимуть сюди автоматично.\n\n" +
-        "Доступні команди:\n" +
-        "/help — список команд\n" +
-        "/ping — перевірити що сервер живий\n" +
-        "/where — повертає ваш chat_id",
-    );
+    await tgSendMessage(chatId, startText());
     return Response.json({ ok: true });
   }
 
   if (cmd === "/help") {
-    await tgSendMessage(
-      msg.chat.id,
-      "🛠 <b>Команди</b>\n\n" +
-        "/start — привітання\n" +
-        "/ping — перевірити доступність\n" +
-        "/where — дізнатися chat_id\n\n" +
-        "<i>Замовлення приходять окремими повідомленнями — без команд.</i>",
-    );
+    await tgSendMessage(chatId, helpText());
     return Response.json({ ok: true });
   }
 
   if (cmd === "/ping") {
-    await tgSendMessage(msg.chat.id, "🟢 pong");
+    await tgSendMessage(chatId, "🟢 pong");
+    return Response.json({ ok: true });
+  }
+
+  // ---- Аналітика ----
+  if (cmd === "/stats") {
+    await reply(await statsReply());
+    return Response.json({ ok: true });
+  }
+
+  if (cmd === "/views") {
+    await reply(await viewsRankingReply());
+    return Response.json({ ok: true });
+  }
+
+  if (cmd === "/product") {
+    if (!args[0]) {
+      await tgSendMessage(chatId, "Вкажіть slug: /product <code>назва-товару</code>");
+    } else {
+      await reply(await productDetailReply(args[0]));
+    }
+    return Response.json({ ok: true });
+  }
+
+  // ---- Каталог ----
+  if (cmd === "/products" || cmd === "/catalog") {
+    const page = Number(args[0]) || 0;
+    await reply(await productsListReply(page));
+    return Response.json({ ok: true });
+  }
+
+  if (cmd === "/find" || cmd === "/search") {
+    await reply(await findReply(rest));
+    return Response.json({ ok: true });
+  }
+
+  if (cmd === "/add") {
+    // Тіло — усе після "/add" (поля key: value на нових рядках).
+    await reply(await addProductReply(text.slice(rawCmd.length)));
+    return Response.json({ ok: true });
+  }
+
+  if (cmd === "/setprice") {
+    await reply(await setPriceReply(args));
+    return Response.json({ ok: true });
+  }
+
+  if (cmd === "/del" || cmd === "/delete") {
+    if (!args[0]) {
+      await tgSendMessage(chatId, "Вкажіть slug: /del <code>назва-товару</code>");
+    } else {
+      await reply(await deletePromptReply(args[0]));
+    }
     return Response.json({ ok: true });
   }
 
@@ -144,6 +204,38 @@ async function handleCallback(cb: TgCallbackQuery): Promise<void> {
   }
 
   const data = cb.data ?? "";
+
+  // ---- Навігація адмін-меню (каталог / аналітика) --------------------
+  // Кнопки редагують те саме повідомлення замість спаму новими.
+  const menuPrefix = data.split(":")[0];
+  const menuArg = data.slice(menuPrefix.length + 1);
+  const MENU = new Set(["vr", "pl", "pv", "pd", "pdy", "pp"]);
+  if (MENU.has(menuPrefix)) {
+    let r: BotReply;
+    switch (menuPrefix) {
+      case "vr":
+        r = await viewsRankingReply();
+        break;
+      case "pl":
+        r = await productsListReply(Number(menuArg) || 0);
+        break;
+      case "pv":
+        r = await productDetailReply(menuArg);
+        break;
+      case "pd":
+        r = await deletePromptReply(menuArg);
+        break;
+      case "pdy":
+        r = await doDeleteReply(menuArg);
+        break;
+      default: // "pp"
+        r = await pricePromptReply(menuArg);
+        break;
+    }
+    await editOrSend(cb, r);
+    await tgAnswerCallback(cb.id, "");
+    return;
+  }
 
   // Ручне підтвердження оплати: "paid:<orderId>"
   if (data.startsWith("paid:")) {
@@ -198,6 +290,24 @@ async function handleCallback(cb: TgCallbackQuery): Promise<void> {
       orderId,
       status,
     );
+  }
+}
+
+// Редагує повідомлення під кнопкою новим контентом; якщо повідомлення
+// недоступне — надсилає нове.
+async function editOrSend(
+  cb: TgCallbackQuery,
+  r: BotReply,
+): Promise<void> {
+  if (cb.message) {
+    await tgEditMessageText(
+      cb.message.chat.id,
+      cb.message.message_id,
+      r.text,
+      r.keyboard,
+    );
+  } else {
+    await tgSendMessage(cb.from.id, r.text, "HTML", r.keyboard);
   }
 }
 

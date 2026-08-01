@@ -9,10 +9,13 @@ export const TG_CONFIG = {
   adminChatId: ADMIN_CHAT_ID,
 };
 
+export type InlineKeyboard = { inline_keyboard: InlineButton[][] };
+
 export async function tgSendMessage(
   chatId: string | number,
   text: string,
   parseMode: "HTML" | "Markdown" | "" = "HTML",
+  keyboard?: InlineKeyboard,
 ): Promise<boolean> {
   if (!BOT_TOKEN) {
     console.warn("[telegram] BOT_TOKEN not set, skipping sendMessage");
@@ -29,6 +32,7 @@ export async function tgSendMessage(
           text,
           parse_mode: parseMode || undefined,
           disable_web_page_preview: true,
+          reply_markup: keyboard,
         }),
         cache: "no-store",
       },
@@ -38,6 +42,41 @@ export async function tgSendMessage(
     return data.ok;
   } catch (e) {
     console.error("[telegram] sendMessage error:", e);
+    return false;
+  }
+}
+
+// Редагує текст (і клавіатуру) вже надісланого повідомлення — для навігації
+// по інлайн-меню бота без спаму новими повідомленнями.
+export async function tgEditMessageText(
+  chatId: string | number,
+  messageId: number,
+  text: string,
+  keyboard?: InlineKeyboard,
+): Promise<boolean> {
+  if (!BOT_TOKEN) return false;
+  try {
+    const res = await fetch(
+      `https://api.telegram.org/bot${BOT_TOKEN}/editMessageText`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          message_id: messageId,
+          text,
+          parse_mode: "HTML",
+          disable_web_page_preview: true,
+          reply_markup: keyboard,
+        }),
+        cache: "no-store",
+      },
+    );
+    const data = (await res.json()) as { ok: boolean; description?: string };
+    if (!data.ok) console.error("[telegram] editMessageText failed:", data);
+    return data.ok;
+  } catch (e) {
+    console.error("[telegram] editMessageText error:", e);
     return false;
   }
 }
