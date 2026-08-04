@@ -6,7 +6,7 @@ import { List, X, MagnifyingGlass, Lightning } from "@phosphor-icons/react";
 
 const navLinks = [
   { label: "Каталог", href: "/catalog" },
-  { label: "Категорії", href: "/#categories" },
+  { label: "Категорії", href: "/categories" },
   { label: "Кейси", href: "/cases" },
   { label: "Про нас", href: "/about" },
 ];

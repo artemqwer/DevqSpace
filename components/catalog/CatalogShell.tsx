@@ -8,8 +8,14 @@ import { ProductCard } from "@/components/site/ProductCard";
 
 type Filter = "all" | CategoryId;
 
-export default function CatalogShell({ products }: { products: Product[] }) {
-  const [filter, setFilter] = useState<Filter>("all");
+export default function CatalogShell({
+  products,
+  initialFilter = "all",
+}: {
+  products: Product[];
+  initialFilter?: Filter;
+}) {
+  const [filter, setFilter] = useState<Filter>(initialFilter);
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {

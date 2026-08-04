@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { House, Storefront, Wrench, ChatCircleText } from "@phosphor-icons/react";
+import { House, Storefront, SquaresFour, Wrench } from "@phosphor-icons/react";
 
 const items = [
   { label: "Головна", href: "/", icon: House },
   { label: "Каталог", href: "/catalog", icon: Storefront },
+  { label: "Категорії", href: "/categories", icon: SquaresFour },
   { label: "Кастом", href: "/custom", icon: Wrench },
-  { label: "Контакт", href: "/about", icon: ChatCircleText },
 ];
 
 export function MobileNav() {

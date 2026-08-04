@@ -43,7 +43,7 @@ export function Categories() {
             return (
               <Link
                 key={cat.id}
-                href="/catalog"
+                href={`/catalog?cat=${cat.id}`}
                 className="grad-border group relative flex flex-col gap-4 rounded-2xl border border-border bg-surface/40 p-6 transition-colors hover:bg-surface-2/60"
               >
                 <div className="flex items-center justify-between">

@@ -18,7 +18,7 @@ const columns: { title: string; links: { label: string; href: string }[] }[] = [
       { label: "Про нас", href: "/about" },
       { label: "Кейси", href: "/cases" },
       { label: "Розробка під ключ", href: "/custom" },
-      { label: "Гарантія", href: "/#about" },
+      { label: "Гарантія", href: "/about" },
     ],
   },
   {
