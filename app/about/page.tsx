@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
-import BottomNav from "@/components/BottomNav";
+import { Navbar } from "@/components/site/Navbar";
+import { MobileNav } from "@/components/site/MobileNav";
 
 export const metadata: Metadata = {
   title: "Про нас | NEXUS",
@@ -40,38 +40,23 @@ const VALUES = [
 ];
 
 const STACK = [
-  "Python",
-  "Aiogram",
-  "Next.js",
-  "React",
-  "React Native",
-  "TypeScript",
-  "Node.js",
-  "PostgreSQL",
-  "Supabase",
-  "OpenAI",
-  "Solidity",
-  "Tailwind",
+  "Python", "Aiogram", "Next.js", "React", "React Native", "TypeScript",
+  "Node.js", "PostgreSQL", "Supabase", "OpenAI", "Solidity", "Tailwind",
 ];
 
 export default function AboutPage() {
   return (
-    <>
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="glow-orb bg-neon-blue w-96 h-96 top-0 left-0 -translate-x-1/3 -translate-y-1/4 animate-pulse-slow" />
-        <div className="glow-orb bg-neon-purple w-96 h-96 bottom-0 right-0 translate-x-1/3 animate-pulse-slow" />
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="grid-bg grid-fade pointer-events-none fixed inset-0 z-0" aria-hidden />
       <Navbar />
-      <main className="pt-20 md:pt-32 pb-28 md:pb-24 px-4 md:px-8 max-w-5xl mx-auto">
+      <main className="relative mx-auto max-w-5xl px-4 pb-28 pt-24 md:px-8 md:pb-24 md:pt-32">
         {/* Hero */}
-        <div className="mb-10 md:mb-16">
-          <div className="text-[10px] md:text-xs font-mono text-neon-blue tracking-widest uppercase mb-2">
-            // ABOUT
-          </div>
-          <h1 className="text-3xl md:text-6xl font-display font-bold text-white tracking-tight leading-[1.05] mb-4">
+        <div className="mb-10 flex flex-col gap-4 md:mb-16">
+          <span className="mono-label text-neon-blue">{"// про нас"}</span>
+          <h1 className="text-balance font-display text-3xl font-bold leading-[1.05] tracking-tight text-foreground md:text-6xl">
             Студія цифрових <span className="text-gradient">продуктів</span>
           </h1>
-          <p className="text-sm md:text-lg text-gray-400 font-light max-w-2xl leading-relaxed">
+          <p className="max-w-2xl text-pretty leading-relaxed text-muted-foreground md:text-lg">
             NEXUS — невелика команда розробників, яка створює готові рішення для
             бізнесу і бере кастомні проєкти під ключ. Ми робимо те, що
             запускається і приносить результат, а не лежить у шухляді.
@@ -79,58 +64,50 @@ export default function AboutPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-10 md:mb-16">
+        <div className="mb-10 grid grid-cols-2 gap-3 md:mb-16 md:grid-cols-4 md:gap-4">
           {STATS.map((s) => (
             <div
               key={s.label}
-              className="rounded-2xl border border-white/10 bg-surface/50 p-4 md:p-5 text-center"
+              className="rounded-2xl border border-border bg-surface/50 p-4 text-center md:p-5"
             >
-              <div
-                className={`text-2xl md:text-4xl font-display font-bold ${s.accent} leading-none`}
-              >
+              <div className={`font-display text-2xl font-bold leading-none md:text-4xl ${s.accent}`}>
                 {s.value}
               </div>
-              <div className="text-[10px] md:text-xs font-mono text-gray-500 mt-2 uppercase tracking-wider">
-                {s.label}
-              </div>
+              <div className="mono-label mt-2 text-muted-foreground">{s.label}</div>
             </div>
           ))}
         </div>
 
         {/* Values */}
-        <h2 className="text-xl md:text-2xl font-display font-bold text-white mb-5">
+        <h2 className="mb-5 font-display text-xl font-bold text-foreground md:text-2xl">
           Наші принципи
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-10 md:mb-16">
+        <div className="mb-10 grid grid-cols-1 gap-3 md:mb-16 md:grid-cols-2 md:gap-4">
           {VALUES.map((v) => (
             <div
               key={v.title}
-              className="rounded-2xl border border-white/10 bg-surface/50 p-5 flex gap-4"
+              className="grad-border flex gap-4 rounded-2xl border border-border bg-surface/50 p-5"
             >
-              <span className="shrink-0 w-11 h-11 rounded-xl bg-neon-blue/10 border border-neon-blue/30 flex items-center justify-center">
-                <i className={`ph-bold ${v.icon} text-neon-blue text-xl`} />
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-neon-blue/30 bg-neon-blue/10">
+                <i className={`ph-bold ${v.icon} text-xl text-neon-blue`} />
               </span>
               <div>
-                <h3 className="font-display font-bold text-white mb-1">
-                  {v.title}
-                </h3>
-                <p className="text-sm text-gray-400 font-light leading-relaxed">
-                  {v.text}
-                </p>
+                <h3 className="mb-1 font-display font-bold text-foreground">{v.title}</h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">{v.text}</p>
               </div>
             </div>
           ))}
         </div>
 
         {/* Stack */}
-        <h2 className="text-xl md:text-2xl font-display font-bold text-white mb-5">
+        <h2 className="mb-5 font-display text-xl font-bold text-foreground md:text-2xl">
           Технології
         </h2>
-        <div className="flex flex-wrap gap-2 mb-10 md:mb-16">
+        <div className="mb-10 flex flex-wrap gap-2 md:mb-16">
           {STACK.map((s) => (
             <span
               key={s}
-              className="text-xs md:text-sm font-mono px-3 py-1.5 bg-surface2 border border-white/10 rounded-lg text-gray-300"
+              className="mono-label rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-foreground/80"
             >
               {s}
             </span>
@@ -138,25 +115,25 @@ export default function AboutPage() {
         </div>
 
         {/* CTA */}
-        <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-surface via-surface2 to-surface p-6 md:p-10 text-center relative overflow-hidden">
-          <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full bg-neon-purple/15 blur-3xl" />
+        <div className="glass grad-border relative overflow-hidden rounded-3xl p-6 text-center md:p-10">
+          <div className="orb bottom-[-30%] left-1/2 h-72 w-72 -translate-x-1/2 bg-neon-purple opacity-20" aria-hidden />
           <div className="relative">
-            <h2 className="text-xl md:text-3xl font-display font-bold text-white mb-3">
+            <h2 className="mb-3 font-display text-xl font-bold text-foreground md:text-3xl">
               Готові почати?
             </h2>
-            <p className="text-sm text-gray-400 font-light mb-6 max-w-lg mx-auto">
+            <p className="mx-auto mb-6 max-w-lg text-sm leading-relaxed text-muted-foreground">
               Напишіть нам у Telegram — відповімо протягом 2 годин у робочий час.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <div className="flex flex-col justify-center gap-3 sm:flex-row">
               <a
                 href="https://t.me/"
-                className="inline-flex items-center justify-center gap-2 bg-neon-blue text-black font-display font-bold px-6 py-3 rounded-xl active:scale-[0.98] transition-transform"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-neon-blue to-neon-purple px-6 py-3 font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5"
               >
                 <i className="ph-fill ph-telegram-logo" /> Написати в Telegram
               </a>
               <Link
                 href="/cases"
-                className="inline-flex items-center justify-center gap-2 bg-surface2 border border-white/10 text-white font-display font-medium px-6 py-3 rounded-xl hover:border-neon-blue/50 transition-colors"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-surface-2/40 px-6 py-3 font-medium text-foreground transition-colors hover:border-neon-blue/50"
               >
                 <i className="ph-bold ph-folder-open" /> Наші кейси
               </Link>
@@ -164,7 +141,7 @@ export default function AboutPage() {
           </div>
         </div>
       </main>
-      <BottomNav />
-    </>
+      <MobileNav />
+    </div>
   );
 }

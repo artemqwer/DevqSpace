@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
-import BottomNav from "@/components/BottomNav";
+import { Navbar } from "@/components/site/Navbar";
+import { MobileNav } from "@/components/site/MobileNav";
 
 export const metadata: Metadata = {
   title: "Кейси | NEXUS",
@@ -71,57 +71,47 @@ const ACCENT: Record<Case["accent"], string> = {
 
 export default function CasesPage() {
   return (
-    <>
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="glow-orb bg-neon-purple w-96 h-96 top-0 right-0 translate-x-1/3 -translate-y-1/4 animate-pulse-slow" />
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="grid-bg grid-fade pointer-events-none fixed inset-0 z-0" aria-hidden />
       <Navbar />
-      <main className="pt-20 md:pt-32 pb-28 md:pb-24 px-4 md:px-8 max-w-6xl mx-auto">
-        <div className="mb-8 md:mb-12">
-          <div className="text-[10px] md:text-xs font-mono text-neon-purple tracking-widest uppercase mb-2">
-            // CASES
-          </div>
-          <h1 className="text-3xl md:text-6xl font-display font-bold text-white tracking-tight leading-[1.05] mb-4">
+      <main className="relative mx-auto max-w-6xl px-4 pb-28 pt-24 md:px-8 md:pb-24 md:pt-32">
+        <div className="mb-8 flex flex-col gap-4 md:mb-12">
+          <span className="mono-label text-neon-purple">{"// кейси"}</span>
+          <h1 className="text-balance font-display text-3xl font-bold leading-[1.05] tracking-tight text-foreground md:text-6xl">
             Що ми вже <span className="text-gradient">зробили</span>
           </h1>
-          <p className="text-sm md:text-lg text-gray-400 font-light max-w-2xl">
+          <p className="max-w-2xl text-pretty leading-relaxed text-muted-foreground md:text-lg">
             Кілька прикладів проєктів. Назви клієнтів узагальнені — деталі
             обговорюємо приватно.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
           {CASES.map((c) => (
             <div
               key={c.title}
-              className="rounded-2xl border border-white/10 bg-surface/50 p-5 md:p-6 hover:border-white/20 transition-colors"
+              className="grad-border rounded-2xl border border-border bg-surface/50 p-5 transition-colors hover:bg-surface-2/50 md:p-6"
             >
-              <div className="flex items-center justify-between mb-4">
-                <span
-                  className={`text-[10px] font-mono px-2 py-1 rounded border ${ACCENT[c.accent]}`}
-                >
+              <div className="mb-4 flex items-center justify-between">
+                <span className={`mono-label rounded border px-2 py-1 ${ACCENT[c.accent]}`}>
                   {c.tag}
                 </span>
-                <span
-                  className={`text-xs font-mono font-bold ${ACCENT[c.accent].split(" ")[0]}`}
-                >
+                <span className={`font-mono text-xs font-bold ${ACCENT[c.accent].split(" ")[0]}`}>
                   {c.result}
                 </span>
               </div>
-              <h2 className="text-lg md:text-xl font-display font-bold text-white mb-1">
+              <h2 className="mb-1 font-display text-lg font-bold text-foreground md:text-xl">
                 {c.title}
               </h2>
-              <p className="text-[11px] font-mono text-gray-500 mb-3">
-                {c.client}
-              </p>
-              <p className="text-sm text-gray-400 font-light mb-4 leading-relaxed">
+              <p className="mono-label mb-3 text-muted-foreground">{c.client}</p>
+              <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
                 {c.description}
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {c.stack.map((s) => (
                   <span
                     key={s}
-                    className="text-[10px] font-mono px-2 py-0.5 bg-surface2 border border-white/10 rounded text-gray-400"
+                    className="mono-label rounded border border-border bg-surface-2 px-2 py-0.5 text-muted-foreground"
                   >
                     {s}
                   </span>
@@ -132,26 +122,26 @@ export default function CasesPage() {
         </div>
 
         {/* CTA */}
-        <div className="mt-10 md:mt-14 rounded-2xl border border-white/10 bg-gradient-to-br from-surface via-surface2 to-surface p-6 md:p-10 text-center relative overflow-hidden">
-          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full bg-neon-blue/15 blur-3xl" />
+        <div className="glass grad-border relative mt-10 overflow-hidden rounded-3xl p-6 text-center md:mt-14 md:p-10">
+          <div className="orb -top-24 left-1/2 h-72 w-72 -translate-x-1/2 bg-neon-blue opacity-20" aria-hidden />
           <div className="relative">
-            <h2 className="text-xl md:text-3xl font-display font-bold text-white mb-3">
+            <h2 className="mb-3 font-display text-xl font-bold text-foreground md:text-3xl">
               Хочете схожий результат?
             </h2>
-            <p className="text-sm text-gray-400 font-light mb-6 max-w-lg mx-auto">
+            <p className="mx-auto mb-6 max-w-lg text-sm leading-relaxed text-muted-foreground">
               Оберіть готовий продукт у каталозі або замовте розробку під вашу
               задачу.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <div className="flex flex-col justify-center gap-3 sm:flex-row">
               <Link
                 href="/catalog"
-                className="inline-flex items-center justify-center gap-2 bg-neon-blue text-black font-display font-bold px-6 py-3 rounded-xl active:scale-[0.98] transition-transform"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-neon-blue to-neon-purple px-6 py-3 font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5"
               >
                 <i className="ph-bold ph-storefront" /> Каталог
               </Link>
               <Link
                 href="/custom"
-                className="inline-flex items-center justify-center gap-2 bg-surface2 border border-white/10 text-white font-display font-medium px-6 py-3 rounded-xl hover:border-neon-blue/50 transition-colors"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-surface-2/40 px-6 py-3 font-medium text-foreground transition-colors hover:border-neon-blue/50"
               >
                 <i className="ph-bold ph-paper-plane-tilt" /> Замовити кастом
               </Link>
@@ -159,7 +149,7 @@ export default function CasesPage() {
           </div>
         </div>
       </main>
-      <BottomNav />
-    </>
+      <MobileNav />
+    </div>
   );
 }

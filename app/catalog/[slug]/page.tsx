@@ -2,16 +2,23 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
-import BottomNav from "@/components/BottomNav";
-import ProductThumb from "@/components/ProductThumb";
 import {
-  CATEGORIES,
-  ACCENT_TEXT,
-  ACCENT_BORDER,
-  ACCENT_BG,
-  ACCENT_BUTTON,
-} from "@/lib/products";
+  SealCheck,
+  Star,
+  Package,
+  Truck,
+  ShieldCheck,
+  ArrowsClockwise,
+  Code,
+  ShoppingCartSimple,
+  TelegramLogo,
+  Check,
+} from "@phosphor-icons/react/dist/ssr";
+import { Navbar } from "@/components/site/Navbar";
+import { MobileNav } from "@/components/site/MobileNav";
+import { ProductCard } from "@/components/site/ProductCard";
+import ProductThumb from "@/components/ProductThumb";
+import { CATEGORIES } from "@/lib/products";
 import {
   getProductBySlug,
   getAllProducts,
@@ -37,7 +44,6 @@ export default async function ProductPage({ params }: Props) {
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  // Рахуємо перегляд після віддачі сторінки — не блокує рендер.
   after(() => trackProductView(product.slug));
 
   const category = CATEGORIES.find((c) => c.id === product.category);
@@ -47,252 +53,195 @@ export default async function ProductPage({ params }: Props) {
     .slice(0, 3);
 
   return (
-    <>
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="glow-orb bg-neon-blue w-96 h-96 top-0 left-0 -translate-x-1/2 -translate-y-1/2 animate-pulse-slow" />
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="grid-bg grid-fade pointer-events-none fixed inset-0 z-0" aria-hidden />
       <Navbar />
-      <main className="pt-20 md:pt-32 pb-40 md:pb-24 px-4 md:px-8 max-w-7xl mx-auto">
+
+      <main className="relative mx-auto max-w-7xl px-4 pb-40 pt-24 md:px-8 md:pb-24 md:pt-32">
         {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-[11px] md:text-xs font-mono text-gray-500 mb-4 md:mb-6 overflow-x-auto">
-          <Link href="/" className="hover:text-white transition-colors shrink-0">
+        <nav className="mono-label mb-5 flex items-center gap-2 overflow-x-auto text-muted-foreground">
+          <Link href="/" className="shrink-0 transition-colors hover:text-foreground">
             home
           </Link>
           <span className="shrink-0">/</span>
-          <Link
-            href="/catalog"
-            className="hover:text-white transition-colors shrink-0"
-          >
+          <Link href="/catalog" className="shrink-0 transition-colors hover:text-foreground">
             catalog
           </Link>
           <span className="shrink-0">/</span>
-          <span className="text-gray-300 truncate">{product.slug}</span>
+          <span className="truncate text-foreground/70">{product.slug}</span>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6 md:gap-10">
+        <div className="grid grid-cols-1 gap-6 md:gap-10 lg:grid-cols-[1.2fr_1fr]">
           {/* Left — visual + description */}
           <div>
-            {/* Hero thumb */}
             <ProductThumb
               product={product}
-              rounded="rounded-2xl border border-white/10"
+              rounded="rounded-2xl border border-border"
               className="aspect-[4/3] md:aspect-[16/10]"
               iconClassName="text-7xl md:text-9xl"
             />
 
-            {/* Badges row */}
-            <div className="flex flex-wrap gap-2 mt-3">
-              <span
-                className={`bg-black/60 backdrop-blur text-[10px] md:text-[11px] font-mono px-2.5 py-1 rounded border ${ACCENT_TEXT[product.accent]} ${ACCENT_BORDER[product.accent]}`}
-              >
+            {/* Badges */}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="rounded-full border border-neon-blue/40 bg-background/70 px-2.5 py-1 text-[0.7rem] font-semibold text-neon-blue backdrop-blur">
                 {product.badge}
               </span>
               {category && (
                 <Link
                   href="/catalog"
-                  className="bg-surface2 text-gray-300 hover:text-white text-[10px] md:text-[11px] font-mono px-2.5 py-1 rounded border border-white/10 transition-colors flex items-center gap-1"
+                  className="flex items-center gap-1 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[0.7rem] text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <i className={`ph ${category.icon}`} />
                   {category.label}
                 </Link>
               )}
-              <span className="bg-neon-green/10 text-neon-green text-[10px] md:text-[11px] font-mono px-2.5 py-1 rounded border border-neon-green/30 flex items-center gap-1">
-                <i className="ph-fill ph-shield-check" />
-                Гарантія
+              <span className="flex items-center gap-1 rounded-full border border-neon-green/30 bg-neon-green/10 px-2.5 py-1 text-[0.7rem] font-semibold text-neon-green">
+                <SealCheck weight="fill" className="h-3.5 w-3.5" />
+                Верифіковано
               </span>
             </div>
 
             {/* Mobile title */}
-            <div className="lg:hidden mt-5">
-              <h1 className="text-2xl font-display font-bold text-white leading-tight mb-1.5">
+            <div className="mt-5 lg:hidden">
+              <h1 className="mb-1.5 font-display text-2xl font-bold leading-tight text-foreground">
                 {product.title}
               </h1>
-              <p className="text-sm text-gray-400">{product.tagline}</p>
-              <div className="flex items-center gap-4 mt-3 text-[11px] font-mono">
-                <span className="flex items-center gap-1 text-yellow-500">
-                  <i className="ph-fill ph-star" />
-                  {product.rating}{" "}
-                  <span className="text-gray-600">
-                    ({product.ratingCount})
-                  </span>
+              <p className="text-sm text-muted-foreground">{product.tagline}</p>
+              <div className="mono-label mt-3 flex items-center gap-4">
+                <span className="flex items-center gap-1 text-neon-blue">
+                  <Star weight="fill" className="h-3.5 w-3.5" /> {product.rating}{" "}
+                  <span className="text-muted-foreground">({product.ratingCount})</span>
                 </span>
-                <span className="flex items-center gap-1 text-gray-400">
-                  <i className="ph ph-package" /> {product.sold} продано
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Package className="h-3.5 w-3.5" /> {product.sold} продано
                 </span>
               </div>
             </div>
 
             {/* Description */}
-            <div className="mt-6 md:mt-10">
-              <h2 className="text-base md:text-xl font-display font-bold text-white mb-2 md:mb-3">
-                Опис
-              </h2>
-              <p className="text-sm md:text-base text-gray-400 font-light leading-relaxed">
+            <Section title="Опис">
+              <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
                 {product.description}
               </p>
-            </div>
+            </Section>
 
             {/* Features */}
-            <div className="mt-6 md:mt-10">
-              <h2 className="text-base md:text-xl font-display font-bold text-white mb-3 md:mb-4">
-                Що вміє
-              </h2>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
+            <Section title="Що вміє">
+              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:gap-3">
                 {product.features.map((f) => (
-                  <li
-                    key={f}
-                    className="flex items-start gap-2.5 text-sm text-gray-300"
-                  >
-                    <span
-                      className={`shrink-0 w-5 h-5 md:w-6 md:h-6 rounded-md ${ACCENT_BG[product.accent]} border ${ACCENT_BORDER[product.accent]} flex items-center justify-center mt-0.5`}
-                    >
-                      <i
-                        className={`ph-bold ph-check ${ACCENT_TEXT[product.accent]} text-[10px] md:text-xs`}
-                      />
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-foreground/90">
+                    <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border border-neon-blue/30 bg-neon-blue/10 md:h-6 md:w-6">
+                      <Check weight="bold" className="h-3 w-3 text-neon-blue" />
                     </span>
                     <span>{f}</span>
                   </li>
                 ))}
               </ul>
-            </div>
+            </Section>
 
             {/* Stack */}
-            <div className="mt-6 md:mt-10">
-              <h2 className="text-base md:text-xl font-display font-bold text-white mb-3 md:mb-4">
-                Стек
-              </h2>
+            <Section title="Стек">
               <div className="flex flex-wrap gap-1.5 md:gap-2">
                 {product.stack.map((s) => (
                   <span
                     key={s}
-                    className="text-[11px] md:text-xs font-mono px-2.5 md:px-3 py-1 md:py-1.5 bg-surface2 border border-white/10 rounded text-gray-300"
+                    className="mono-label rounded-md border border-border bg-surface-2 px-2.5 py-1.5 text-muted-foreground"
                   >
                     {s}
                   </span>
                 ))}
               </div>
-            </div>
+            </Section>
 
             {/* What's included */}
-            <div className="mt-6 md:mt-10">
-              <h2 className="text-base md:text-xl font-display font-bold text-white mb-3 md:mb-4">
-                Що ви отримаєте
-              </h2>
+            <Section title="Що ви отримаєте">
               <ul className="space-y-2">
                 {product.whatsIncluded.map((w) => (
-                  <li
-                    key={w}
-                    className="flex items-center gap-3 text-sm text-gray-300"
-                  >
-                    <i className="ph-fill ph-package text-neon-blue" />
+                  <li key={w} className="flex items-center gap-3 text-sm text-foreground/90">
+                    <Package weight="fill" className="h-4 w-4 shrink-0 text-neon-blue" />
                     {w}
                   </li>
                 ))}
               </ul>
-            </div>
+            </Section>
           </div>
 
           {/* Right — desktop sticky purchase panel */}
-          <aside className="hidden lg:block lg:sticky lg:top-28 lg:self-start">
-            <div className="rounded-2xl border border-white/10 bg-surface/50 backdrop-blur p-5 md:p-6">
-              <h1 className="text-2xl md:text-3xl font-display font-bold text-white leading-tight mb-2">
+          <aside className="hidden lg:sticky lg:top-24 lg:block lg:self-start">
+            <div className="grad-border rounded-2xl border border-border bg-surface/50 p-6 backdrop-blur">
+              <h1 className="mb-2 font-display text-2xl font-bold leading-tight text-foreground md:text-3xl">
                 {product.title}
               </h1>
-              <p className="text-sm text-gray-400 mb-5">{product.tagline}</p>
+              <p className="mb-5 text-sm text-muted-foreground">{product.tagline}</p>
 
-              <div className="flex items-center gap-4 mb-5 text-xs font-mono">
-                <span className="flex items-center gap-1 text-yellow-500">
-                  <i className="ph-fill ph-star" />
-                  {product.rating}{" "}
-                  <span className="text-gray-600">
-                    ({product.ratingCount})
-                  </span>
+              <div className="mono-label mb-5 flex items-center gap-4">
+                <span className="flex items-center gap-1 text-neon-blue">
+                  <Star weight="fill" className="h-3.5 w-3.5" /> {product.rating}{" "}
+                  <span className="text-muted-foreground">({product.ratingCount})</span>
                 </span>
-                <span className="flex items-center gap-1 text-gray-400">
-                  <i className="ph ph-package" /> {product.sold} продано
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Package className="h-3.5 w-3.5" /> {product.sold} продано
                 </span>
               </div>
 
-              <div className="flex items-baseline gap-3 mb-6">
-                <div className="text-4xl md:text-5xl font-display font-bold text-white">
+              <div className="mb-6 flex items-baseline gap-3">
+                <div className="font-display text-4xl font-bold text-foreground md:text-5xl">
                   ${product.price}
                 </div>
-                <div className="text-xs font-mono text-gray-500">
-                  одноразово
-                </div>
+                <div className="mono-label text-muted-foreground">одноразово</div>
               </div>
 
               <Link
                 href={`/order/${product.slug}`}
-                className={`w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 active:scale-[0.98] transition-transform mb-3 ${ACCENT_BUTTON[product.accent]}`}
+                className="glow-strong mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-neon-blue to-neon-purple px-6 py-4 font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5"
               >
-                <i className="ph-bold ph-shopping-cart-simple" />
+                <ShoppingCartSimple weight="bold" className="h-5 w-5" />
                 Замовити
               </Link>
 
               <a
                 href="https://t.me/"
-                className="w-full flex items-center justify-center gap-2 bg-surface2 border border-white/10 text-white font-display font-medium rounded-xl px-6 py-3 hover:border-neon-blue/50 transition-colors mb-6"
+                className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface-2/40 px-6 py-3 font-medium text-foreground transition-colors hover:border-neon-blue/50"
               >
-                <i className="ph-fill ph-telegram-logo" />
+                <TelegramLogo weight="fill" className="h-5 w-5" />
                 Запитати в Telegram
               </a>
 
-              <div className="space-y-3 pt-5 border-t border-white/5 text-sm">
+              <div className="space-y-3 border-t border-border pt-5 text-sm">
+                <InfoRow icon={<Truck />} label="Доставка" value={product.delivery} />
                 <InfoRow
-                  icon="ph-truck"
-                  label="Доставка"
-                  value={product.delivery}
-                />
-                <InfoRow
-                  icon="ph-shield-check"
+                  icon={<ShieldCheck />}
                   label="Гарантія"
                   value={product.warranty}
-                  accent={product.accent}
+                  accent
                 />
-                <InfoRow
-                  icon="ph-arrows-clockwise"
-                  label="Апдейти"
-                  value="Безкоштовно"
-                />
-                <InfoRow
-                  icon="ph-code"
-                  label="Сорс-код"
-                  value="Повний доступ"
-                />
+                <InfoRow icon={<ArrowsClockwise />} label="Апдейти" value="Безкоштовно" />
+                <InfoRow icon={<Code />} label="Сорс-код" value="Повний доступ" />
               </div>
             </div>
 
-            <div className="mt-4 flex items-start gap-3 p-4 rounded-xl bg-neon-green/5 border border-neon-green/20">
-              <i className="ph-fill ph-shield-check text-neon-green text-2xl shrink-0" />
-              <div className="text-xs text-gray-300 leading-relaxed">
-                <strong className="text-white">Безпечно.</strong> Спочатку
-                обговорюємо, виставляємо рахунок, потім оплата і миттєва
-                доставка коду.
+            <div className="mt-4 flex items-start gap-3 rounded-xl border border-neon-green/20 bg-neon-green/5 p-4">
+              <ShieldCheck weight="fill" className="h-6 w-6 shrink-0 text-neon-green" />
+              <div className="text-xs leading-relaxed text-muted-foreground">
+                <strong className="text-foreground">Безпечно.</strong> Спочатку
+                обговорюємо, виставляємо рахунок, потім оплата і миттєва доставка
+                коду.
               </div>
             </div>
           </aside>
 
           {/* Mobile details list */}
           <aside className="lg:hidden">
-            <div className="rounded-xl border border-white/10 bg-surface/50 backdrop-blur p-4 mt-6 space-y-2.5 text-sm">
+            <div className="mt-6 space-y-2.5 rounded-xl border border-border bg-surface/50 p-4 text-sm backdrop-blur">
+              <InfoRow icon={<Truck />} label="Доставка" value={product.delivery} />
               <InfoRow
-                icon="ph-truck"
-                label="Доставка"
-                value={product.delivery}
-              />
-              <InfoRow
-                icon="ph-shield-check"
+                icon={<ShieldCheck />}
                 label="Гарантія"
                 value={product.warranty}
-                accent={product.accent}
+                accent
               />
-              <InfoRow
-                icon="ph-arrows-clockwise"
-                label="Апдейти"
-                value="Безкоштовно"
-              />
-              <InfoRow icon="ph-code" label="Сорс-код" value="Повний доступ" />
+              <InfoRow icon={<ArrowsClockwise />} label="Апдейти" value="Безкоштовно" />
+              <InfoRow icon={<Code />} label="Сорс-код" value="Повний доступ" />
             </div>
           </aside>
         </div>
@@ -300,37 +249,12 @@ export default async function ProductPage({ params }: Props) {
         {/* Related */}
         {related.length > 0 && (
           <div className="mt-12 md:mt-24">
-            <h2 className="text-lg md:text-2xl font-display font-bold text-white mb-4 md:mb-5">
+            <h2 className="mb-4 font-display text-lg font-bold text-foreground md:mb-5 md:text-2xl">
               Схожі продукти
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((p) => (
-                <Link
-                  key={p.slug}
-                  href={`/catalog/${p.slug}`}
-                  className="neon-card rounded-xl overflow-hidden flex bg-surface group"
-                >
-                  <ProductThumb
-                    product={p}
-                    className="w-24 sm:w-32 shrink-0"
-                    iconClassName="text-3xl"
-                  />
-                  <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
-                    <div>
-                      <h3 className="text-sm font-display font-bold text-white leading-tight line-clamp-2 mb-1">
-                        {p.title}
-                      </h3>
-                      <p className="text-[11px] text-gray-500 font-mono line-clamp-1">
-                        {p.tagline}
-                      </p>
-                    </div>
-                    <div
-                      className={`text-sm font-display font-bold ${ACCENT_TEXT[p.accent]} mt-2`}
-                    >
-                      ${p.price}
-                    </div>
-                  </div>
-                </Link>
+                <ProductCard key={p.slug} product={p} />
               ))}
             </div>
           </div>
@@ -339,28 +263,39 @@ export default async function ProductPage({ params }: Props) {
 
       {/* Mobile sticky CTA bar */}
       <div
-        className="lg:hidden fixed bottom-16 inset-x-0 z-40 px-3 pb-2"
+        className="fixed inset-x-0 bottom-16 z-40 px-3 pb-2 lg:hidden"
         style={{ paddingBottom: "max(env(safe-area-inset-bottom), 8px)" }}
       >
-        <div className="glass border border-white/10 rounded-2xl p-2 flex items-center gap-2 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)]">
+        <div className="glass flex items-center gap-2 rounded-2xl border border-border p-2 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)]">
           <div className="flex-1 pl-2">
-            <div className="text-[10px] font-mono text-gray-500">Ціна</div>
-            <div className="text-xl font-display font-bold text-white leading-none">
+            <div className="mono-label text-muted-foreground">Ціна</div>
+            <div className="font-display text-xl font-bold leading-none text-foreground">
               ${product.price}
             </div>
           </div>
           <Link
             href={`/order/${product.slug}`}
-            className={`flex items-center justify-center gap-1.5 font-display font-bold rounded-xl px-5 py-3 active:scale-[0.98] transition-transform text-sm ${ACCENT_BUTTON[product.accent]}`}
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-neon-blue to-neon-purple px-5 py-3 text-sm font-semibold text-primary-foreground"
           >
-            <i className="ph-bold ph-shopping-cart-simple" />
+            <ShoppingCartSimple weight="bold" className="h-4 w-4" />
             Замовити
           </Link>
         </div>
       </div>
 
-      <BottomNav />
-    </>
+      <MobileNav />
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-6 md:mt-10">
+      <h2 className="mb-3 font-display text-base font-bold text-foreground md:mb-4 md:text-xl">
+        {title}
+      </h2>
+      {children}
+    </div>
   );
 }
 
@@ -370,19 +305,17 @@ function InfoRow({
   value,
   accent,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   value: string;
-  accent?: "blue" | "purple" | "pink" | "green";
+  accent?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="flex items-center gap-2 text-gray-500 font-mono text-xs">
-        <i className={`ph ${icon}`} /> {label}
+      <span className="mono-label flex items-center gap-2 text-muted-foreground [&>svg]:h-4 [&>svg]:w-4">
+        {icon} {label}
       </span>
-      <span
-        className={`font-medium text-sm ${accent ? ACCENT_TEXT[accent] : "text-white"}`}
-      >
+      <span className={`text-sm font-medium ${accent ? "text-neon-green" : "text-foreground"}`}>
         {value}
       </span>
     </div>

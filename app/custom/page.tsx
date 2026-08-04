@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Navbar from "@/components/Navbar";
-import BottomNav from "@/components/BottomNav";
+import { Navbar } from "@/components/site/Navbar";
+import { MobileNav } from "@/components/site/MobileNav";
 import CustomForm from "@/components/custom/CustomForm";
 
 export const metadata: Metadata = {
@@ -19,41 +19,33 @@ const BULLETS = [
 
 export default function CustomPage() {
   return (
-    <>
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="glow-orb bg-neon-blue w-96 h-96 top-0 left-0 -translate-x-1/2 -translate-y-1/2 animate-pulse-slow" />
-        <div
-          className="glow-orb bg-neon-purple w-[28rem] h-[28rem] top-1/2 right-0 translate-x-1/3 animate-pulse-slow"
-          style={{ animationDelay: "2s" }}
-        />
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="grid-bg grid-fade pointer-events-none fixed inset-0 z-0" aria-hidden />
       <Navbar />
-      <main className="pt-20 md:pt-32 pb-28 md:pb-24 px-4 md:px-8 max-w-6xl mx-auto">
+      <main className="relative mx-auto max-w-6xl px-4 pb-28 pt-24 md:px-8 md:pb-24 md:pt-32">
         {/* Hero */}
-        <div className="mb-10 md:mb-14">
-          <div className="text-[10px] md:text-xs font-mono text-neon-pink tracking-widest uppercase mb-2">
-            // CUSTOM_DEV
-          </div>
-          <h1 className="text-3xl md:text-6xl font-display font-bold text-white tracking-tight leading-[1.05] mb-4">
+        <div className="mb-10 flex flex-col gap-4 md:mb-14">
+          <span className="mono-label text-neon-pink">{"// розробка під ключ"}</span>
+          <h1 className="text-balance font-display text-3xl font-bold leading-[1.05] tracking-tight text-foreground md:text-6xl">
             Зробимо <span className="text-gradient">під ваш кейс</span>
           </h1>
-          <p className="text-sm md:text-lg text-gray-400 font-light max-w-2xl">
+          <p className="max-w-2xl text-pretty leading-relaxed text-muted-foreground md:text-lg">
             Telegram-боти, веб-додатки, мобільні застосунки, AI-рішення. Від
             ідеї до запуску за 2–4 тижні з гарантією та підтримкою.
           </p>
         </div>
 
         {/* Bullets */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3 mb-10 md:mb-14">
+        <div className="mb-10 grid grid-cols-2 gap-2 md:mb-14 md:grid-cols-5 md:gap-3">
           {BULLETS.map((b) => (
             <div
               key={b.text}
-              className="flex md:flex-col items-center md:items-start gap-2 md:gap-3 p-3 md:p-4 rounded-xl bg-surface2/50 border border-white/5"
+              className="flex items-center gap-2 rounded-xl border border-border bg-surface-2/50 p-3 md:flex-col md:items-start md:gap-3 md:p-4"
             >
-              <span className="shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-lg bg-neon-blue/10 border border-neon-blue/30 flex items-center justify-center">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-neon-blue/30 bg-neon-blue/10 md:h-10 md:w-10">
                 <i className={`ph-bold ${b.icon} text-neon-blue`} />
               </span>
-              <span className="text-xs md:text-sm text-gray-300 font-medium">
+              <span className="text-xs font-medium text-foreground/90 md:text-sm">
                 {b.text}
               </span>
             </div>
@@ -61,11 +53,11 @@ export default function CustomPage() {
         </div>
 
         {/* Form */}
-        <div className="rounded-2xl border border-white/10 bg-surface/30 backdrop-blur p-5 md:p-10">
+        <div className="grad-border rounded-3xl border border-border bg-surface/30 p-5 backdrop-blur md:p-10">
           <CustomForm />
         </div>
       </main>
-      <BottomNav />
-    </>
+      <MobileNav />
+    </div>
   );
 }

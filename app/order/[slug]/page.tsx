@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
-import BottomNav from "@/components/BottomNav";
+import { Navbar } from "@/components/site/Navbar";
+import { MobileNav } from "@/components/site/MobileNav";
 import OrderForm from "@/components/order/OrderForm";
 import { getProductBySlug } from "@/lib/store";
 import { nowPaymentsEnabled } from "@/lib/nowpayments";
@@ -29,40 +29,36 @@ export default async function OrderPage({ params }: Props) {
   const jarAmountUah = jarOn ? await usdToUah(product.price) : 0;
 
   return (
-    <>
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="glow-orb bg-neon-blue w-96 h-96 top-0 left-0 -translate-x-1/2 -translate-y-1/2 animate-pulse-slow" />
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="grid-bg grid-fade pointer-events-none fixed inset-0 z-0" aria-hidden />
       <Navbar />
-      <main className="pt-20 md:pt-32 pb-28 md:pb-24 px-4 md:px-8 max-w-6xl mx-auto">
-        <nav className="flex items-center gap-2 text-xs font-mono text-gray-500 mb-6">
-          <Link href="/" className="hover:text-white transition-colors">
+      <main className="relative mx-auto max-w-6xl px-4 pb-28 pt-24 md:px-8 md:pb-24 md:pt-32">
+        <nav className="mono-label mb-6 flex items-center gap-2 text-muted-foreground">
+          <Link href="/" className="transition-colors hover:text-foreground">
             home
           </Link>
           <span>/</span>
-          <Link href="/catalog" className="hover:text-white transition-colors">
+          <Link href="/catalog" className="transition-colors hover:text-foreground">
             catalog
           </Link>
           <span>/</span>
           <Link
             href={`/catalog/${product.slug}`}
-            className="hover:text-white transition-colors truncate"
+            className="truncate transition-colors hover:text-foreground"
           >
             {product.slug}
           </Link>
           <span>/</span>
-          <span className="text-gray-300">order</span>
+          <span className="text-foreground/70">order</span>
         </nav>
 
-        <div className="mb-6 md:mb-10">
-          <div className="text-[10px] md:text-xs font-mono text-neon-blue tracking-widest uppercase mb-2">
-            // ORDER
-          </div>
-          <h1 className="text-2xl md:text-5xl font-display font-bold text-white">
+        <div className="mb-6 flex flex-col gap-2 md:mb-10">
+          <span className="mono-label text-neon-blue">{"// замовлення"}</span>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground md:text-5xl">
             Залиште <span className="text-gradient">заявку</span>
           </h1>
-          <p className="text-xs md:text-base text-gray-400 font-light mt-2">
-            Зв'яжемося протягом 2 годин, виставимо рахунок, відправимо товар
+          <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
+            Зв’яжемося протягом 2 годин, виставимо рахунок, відправимо товар
             одразу після оплати.
           </p>
         </div>
@@ -74,7 +70,7 @@ export default async function OrderPage({ params }: Props) {
           jarAmountUah={jarAmountUah}
         />
       </main>
-      <BottomNav />
-    </>
+      <MobileNav />
+    </div>
   );
 }
