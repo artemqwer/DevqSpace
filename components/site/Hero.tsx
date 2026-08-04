@@ -15,7 +15,7 @@ const marquee = [
 
 export function Hero() {
   return (
-    <section id="top" className="relative flex min-h-screen flex-col overflow-hidden pt-24">
+    <section id="top" className="relative flex min-h-screen flex-col overflow-hidden pt-20 md:pt-24">
       {/* backdrop layers */}
       <div className="grid-bg grid-fade absolute inset-0" aria-hidden />
       <div className="orb left-[-8%] top-[18%] h-80 w-80 bg-neon-purple" aria-hidden />
@@ -73,7 +73,7 @@ export function Hero() {
       {/* main content */}
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 md:px-6">
         {/* status row */}
-        <div className="reveal flex items-center justify-between pt-6">
+        <div className="reveal flex items-center justify-between pt-3 md:pt-6">
           <span className="mono-label inline-flex items-center gap-2 text-muted-foreground">
             <span className="pulse-dot h-2 w-2 rounded-full bg-neon-green" />
             <span className="text-neon-green">SYS.ONLINE</span>{" // МАРКЕТПЛЕЙС ГОТОВИЙ"}
@@ -84,7 +84,7 @@ export function Hero() {
         </div>
 
         {/* giant headline */}
-        <div className="flex flex-1 flex-col justify-center py-8 sm:py-14">
+        <div className="flex flex-1 flex-col justify-start py-5 sm:justify-center sm:py-14">
           <span
             className="reveal mono-label mb-6 flex items-center gap-3 text-muted-foreground"
             style={{ animationDelay: "0.05s" }}
