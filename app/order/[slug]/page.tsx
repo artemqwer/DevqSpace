@@ -5,6 +5,7 @@ import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
 import OrderForm from "@/components/order/OrderForm";
 import { getProductBySlug } from "@/lib/store";
+import { tgGetBotUsername } from "@/lib/telegram";
 import { nowPaymentsEnabled } from "@/lib/nowpayments";
 import { jarEnabled, usdToUah } from "@/lib/monojar";
 
@@ -26,7 +27,10 @@ export default async function OrderPage({ params }: Props) {
   if (!product) notFound();
 
   const jarOn = jarEnabled();
-  const jarAmountUah = jarOn ? await usdToUah(product.price) : 0;
+  const [jarAmountUah, botUsername] = await Promise.all([
+    jarOn ? usdToUah(product.price) : Promise.resolve(0),
+    tgGetBotUsername(),
+  ]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -68,6 +72,7 @@ export default async function OrderPage({ params }: Props) {
           cryptoEnabled={nowPaymentsEnabled()}
           jarEnabled={jarOn}
           jarAmountUah={jarAmountUah}
+          botUsername={botUsername}
         />
       </main>
       <MobileNav />

@@ -81,6 +81,58 @@ export async function tgEditMessageText(
   }
 }
 
+// Надсилає файл (документ) у чат. document — публічний URL, Telegram сам його
+// підтягне. Використовується для видачі ZIP-архіву клієнту.
+export async function tgSendDocument(
+  chatId: string | number,
+  documentUrl: string,
+  caption?: string,
+): Promise<boolean> {
+  if (!BOT_TOKEN) return false;
+  try {
+    const res = await fetch(
+      `https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          document: documentUrl,
+          caption,
+          parse_mode: caption ? "HTML" : undefined,
+        }),
+        cache: "no-store",
+      },
+    );
+    const data = (await res.json()) as { ok: boolean; description?: string };
+    if (!data.ok) console.error("[telegram] sendDocument failed:", data);
+    return data.ok;
+  } catch (e) {
+    console.error("[telegram] sendDocument error:", e);
+    return false;
+  }
+}
+
+// Username бота (для deep-link t.me/<bot>?start=...). Кешується на час процесу.
+let cachedBotUsername: string | null | undefined;
+export async function tgGetBotUsername(): Promise<string | null> {
+  if (cachedBotUsername !== undefined) return cachedBotUsername;
+  if (!BOT_TOKEN) return (cachedBotUsername = null);
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`, {
+      cache: "no-store",
+    });
+    const data = (await res.json()) as {
+      ok: boolean;
+      result?: { username?: string };
+    };
+    cachedBotUsername = data.ok ? (data.result?.username ?? null) : null;
+  } catch {
+    cachedBotUsername = null;
+  }
+  return cachedBotUsername;
+}
+
 export async function tgSetWebhook(
   url: string,
   secretToken: string,

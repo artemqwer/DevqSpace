@@ -11,11 +11,13 @@ export default function OrderForm({
   cryptoEnabled = false,
   jarEnabled = false,
   jarAmountUah = 0,
+  botUsername,
 }: {
   product: Product;
   cryptoEnabled?: boolean;
   jarEnabled?: boolean;
   jarAmountUah?: number;
+  botUsername?: string | null;
 }) {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -140,13 +142,18 @@ export default function OrderForm({
           company,
         }),
       });
-      const data = (await res.json()) as { ok: boolean; error?: string };
+      const data = (await res.json()) as {
+        ok: boolean;
+        orderId?: string;
+        error?: string;
+      };
       if (!data.ok) {
         setError(data.error || "Не вдалося відправити");
         setSubmitting(false);
         return;
       }
-      router.push(`/order/success?p=${product.slug}`);
+      const o = data.orderId ? `&o=${data.orderId}` : "";
+      router.push(`/order/success?p=${product.slug}${o}`);
     } catch {
       setError("Помилка мережі");
       setSubmitting(false);
@@ -207,6 +214,18 @@ export default function OrderForm({
               <b className="text-white">{contact}</b>
             </p>
           </div>
+
+          {contactMethod === "telegram" && botUsername && (
+            <a
+              href={`https://t.me/${botUsername}?start=ord_${jarInfo.orderId}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-neon-blue to-neon-purple text-black font-display font-bold rounded-xl px-6 py-3.5 active:scale-[0.98] transition-transform"
+            >
+              <i className="ph-fill ph-telegram-logo text-lg" />
+              Підключити Telegram для отримання файлу
+            </a>
+          )}
 
           <p className="text-[11px] font-mono text-gray-600 mt-4">
             Підтверджуємо оплату вручну — зазвичай протягом 1–2 годин.
@@ -389,7 +408,7 @@ export default function OrderForm({
       <aside className="hidden lg:block lg:sticky lg:top-28 lg:self-start">
         <div className="rounded-2xl border border-white/10 bg-surface/50 backdrop-blur p-5 md:p-6">
           <div className="text-[10px] font-mono text-neon-blue tracking-widest uppercase mb-3">
-            // ВАШЕ ЗАМОВЛЕННЯ
+            {"// ВАШЕ ЗАМОВЛЕННЯ"}
           </div>
 
           <div className="flex gap-3 mb-5">

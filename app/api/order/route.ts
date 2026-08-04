@@ -126,5 +126,5 @@ export async function POST(req: Request) {
   // 2. Сповіщення в Telegram з inline-кнопками статусу (best-effort)
   await sendOrderToTelegram(payload, orderId);
 
-  return Response.json({ ok: true });
+  return Response.json({ ok: true, orderId });
 }

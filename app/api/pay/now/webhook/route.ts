@@ -5,6 +5,7 @@ import {
 } from "@/lib/nowpayments";
 import { markOrderPaid, getOrder } from "@/lib/store";
 import { tgSendMessage, TG_CONFIG } from "@/lib/telegram";
+import { deliverOrder } from "@/lib/delivery";
 
 // IPN callback від NOWPayments. URL вказується при створенні інвойсу
 // (ipn_callback_url) і має збігатися з тим, що в налаштуваннях акаунта.
@@ -39,6 +40,13 @@ export async function POST(req: Request) {
     amount: ipn.pay_amount ? String(ipn.pay_amount) : undefined,
     asset: ipn.pay_currency?.toUpperCase(),
   });
+
+  // Автоматична видача товару
+  const proto = req.headers.get("x-forwarded-proto") ?? "https";
+  const host =
+    req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
+  const fresh = await getOrder(orderId);
+  if (fresh) await deliverOrder(fresh, `${proto}://${host}`);
 
   if (TG_CONFIG.adminChatId) {
     const lines = [

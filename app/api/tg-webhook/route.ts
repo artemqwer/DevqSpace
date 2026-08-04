@@ -12,8 +12,10 @@ import {
   updateOrderStatus,
   markOrderPaid,
   getOrder,
+  setOrderTgChat,
   type OrderStatus,
 } from "@/lib/store";
+import { deliverOrder } from "@/lib/delivery";
 import {
   startText,
   helpText,
@@ -101,7 +103,7 @@ export async function POST(req: Request) {
 
   // 2a. Callback від inline-кнопок (зміна статусу замовлення)
   if (update.callback_query) {
-    await handleCallback(update.callback_query);
+    await handleCallback(update.callback_query, originFromReq(req));
     return Response.json({ ok: true });
   }
 
@@ -137,8 +139,22 @@ export async function POST(req: Request) {
     return Response.json({ ok: true });
   }
 
+  // Deep-link прив'язки замовлення: клієнт відкриває t.me/<bot>?start=ord_<id>
+  // і тисне Start. Прив'язуємо його chat_id до замовлення для видачі файлу.
+  if (cmd === "/start" && args[0]?.startsWith("ord_")) {
+    const orderId = args[0].slice(4);
+    const ok = await setOrderTgChat(orderId, msg.chat.id);
+    await tgSendMessage(
+      msg.chat.id,
+      ok
+        ? "✅ <b>Готово!</b>\nВаше замовлення прив'язано. Щойно ми підтвердимо оплату — надішлемо архів прямо сюди 🚀"
+        : "Не знайшли замовлення. Оформіть його на сайті й натисніть «Підключити Telegram».",
+    );
+    return Response.json({ ok: true });
+  }
+
   if (!isAdmin) {
-    // Не адмін — мовчимо, нічого не відповідаємо (крім /where)
+    // Не адмін — мовчимо, нічого не відповідаємо (крім /where і deep-link)
     return Response.json({ ok: true });
   }
 
@@ -240,7 +256,10 @@ export async function POST(req: Request) {
   return Response.json({ ok: true });
 }
 
-async function handleCallback(cb: TgCallbackQuery): Promise<void> {
+async function handleCallback(
+  cb: TgCallbackQuery,
+  baseUrl: string,
+): Promise<void> {
   const adminId = TG_CONFIG.adminChatId;
   const fromId = cb.message?.chat.id ?? cb.from.id;
   const isAdmin = adminId ? String(fromId) === String(adminId) : false;
@@ -297,7 +316,10 @@ async function handleCallback(cb: TgCallbackQuery): Promise<void> {
       return;
     }
     await markOrderPaid(orderId, {});
-    await tgAnswerCallback(cb.id, "💰 Позначено оплаченим");
+    await tgAnswerCallback(cb.id, "💰 Оплачено — видаю товар...");
+    // Автоматична видача товару клієнту (Telegram-файл / email-лінк)
+    const fresh = await getOrder(orderId);
+    if (fresh) await deliverOrder(fresh, baseUrl);
     if (cb.message) {
       await tgEditReplyMarkup(
         cb.message.chat.id,

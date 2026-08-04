@@ -34,10 +34,13 @@ export default function ProductForm({
   const [saving, setSaving] = useState(false);
 
   const [uploading, setUploading] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [f, setF] = useState({
     title: product?.title ?? "",
     slug: product?.slug ?? "",
     image: product?.image ?? "",
+    fileUrl: product?.fileUrl ?? "",
+    fileName: product?.fileName ?? "",
     category: product?.category ?? "telegram-bots",
     accent: product?.accent ?? "blue",
     badge: product?.badge ?? "NEW",
@@ -80,6 +83,35 @@ export default function ProductForm({
       setError("Помилка завантаження");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const onUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingFile(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("kind", "file");
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const data = (await res.json()) as {
+        ok: boolean;
+        url?: string;
+        name?: string;
+        error?: string;
+      };
+      if (data.ok && data.url) {
+        set("fileUrl", data.url);
+        set("fileName", data.name || file.name);
+      } else {
+        setError(data.error || "Не вдалося завантажити файл");
+      }
+    } catch {
+      setError("Помилка завантаження файлу");
+    } finally {
+      setUploadingFile(false);
     }
   };
 
@@ -159,6 +191,57 @@ export default function ProductForm({
                 <button
                   type="button"
                   onClick={() => set("image", "")}
+                  className="text-xs font-mono text-gray-500 hover:text-neon-pink transition-colors"
+                >
+                  прибрати
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </Field>
+
+      {/* Deliverable file (ZIP) */}
+      <Field label="Файл товару (ZIP)" hint="видається клієнту після оплати">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 shrink-0 rounded-lg border border-white/10 bg-surface2 flex items-center justify-center">
+            <i
+              className={`ph text-2xl ${f.fileUrl ? "ph-file-zip text-neon-green" : "ph-file-dashed text-gray-600"}`}
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            {f.fileUrl ? (
+              <div className="text-xs font-mono text-gray-300 truncate">
+                {f.fileName || "файл завантажено"}
+              </div>
+            ) : (
+              <div className="text-xs font-mono text-gray-600">
+                Немає файлу — видача буде вручну
+              </div>
+            )}
+            <div className="flex items-center gap-2 mt-1.5">
+              <label className="cursor-pointer inline-flex items-center gap-2 text-xs font-mono px-3 py-2 rounded-lg bg-surface2 border border-white/10 text-gray-300 hover:border-neon-blue/40 transition-colors">
+                {uploadingFile ? (
+                  <i className="ph-bold ph-circle-notch animate-spin" />
+                ) : (
+                  <i className="ph-bold ph-upload-simple" />
+                )}
+                {f.fileUrl ? "Замінити" : "Завантажити ZIP"}
+                <input
+                  type="file"
+                  accept=".zip,application/zip,application/x-zip-compressed,application/octet-stream"
+                  onChange={onUploadFile}
+                  disabled={uploadingFile}
+                  className="hidden"
+                />
+              </label>
+              {f.fileUrl && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    set("fileUrl", "");
+                    set("fileName", "");
+                  }}
                   className="text-xs font-mono text-gray-500 hover:text-neon-pink transition-colors"
                 >
                   прибрати

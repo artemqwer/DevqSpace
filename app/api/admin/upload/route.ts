@@ -19,16 +19,20 @@ export async function POST(req: Request) {
 
   const form = await req.formData().catch(() => null);
   const file = form?.get("file");
+  const kind = String(form?.get("kind") ?? "image"); // "image" | "file"
   if (!(file instanceof File)) {
     return Response.json({ ok: false, error: "Немає файлу" }, { status: 400 });
   }
-  if (file.size > 5 * 1024 * 1024) {
+
+  const isFile = kind === "file";
+  const maxBytes = isFile ? 200 * 1024 * 1024 : 5 * 1024 * 1024;
+  if (file.size > maxBytes) {
     return Response.json(
-      { ok: false, error: "Макс. розмір 5 МБ" },
+      { ok: false, error: `Макс. розмір ${isFile ? "200 МБ" : "5 МБ"}` },
       { status: 400 },
     );
   }
-  if (!file.type.startsWith("image/")) {
+  if (!isFile && !file.type.startsWith("image/")) {
     return Response.json(
       { ok: false, error: "Тільки зображення" },
       { status: 400 },
@@ -36,12 +40,17 @@ export async function POST(req: Request) {
   }
 
   try {
-    const ext = file.name.split(".").pop() || "png";
-    const blob = await put(`products/${Date.now()}.${ext}`, file, {
+    const ext = file.name.split(".").pop()?.toLowerCase() || (isFile ? "zip" : "png");
+    // Непередбачуваний шлях (додатковий захист файлу-товару).
+    const rnd = Math.random().toString(36).slice(2, 10);
+    const path = isFile
+      ? `files/${Date.now()}-${rnd}.${ext}`
+      : `products/${Date.now()}.${ext}`;
+    const blob = await put(path, file, {
       access: "public",
-      contentType: file.type,
+      contentType: file.type || "application/octet-stream",
     });
-    return Response.json({ ok: true, url: blob.url });
+    return Response.json({ ok: true, url: blob.url, name: file.name });
   } catch (e) {
     console.error("[upload] blob error:", e);
     return Response.json(

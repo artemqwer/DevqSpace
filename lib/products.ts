@@ -26,6 +26,8 @@ export type Product = {
   thumbColor: string;
   thumbText: string;
   image?: string; // URL реального зображення; якщо є — показується замість градієнта
+  fileUrl?: string; // URL ZIP-архіву товару (Vercel Blob) — видається після оплати
+  fileName?: string; // оригінальна назва файлу для видачі
   price: number;
   currency: "USD";
   delivery: string;

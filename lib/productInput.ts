@@ -78,6 +78,8 @@ export function buildProduct(body: Record<string, unknown>): Product | null {
     thumbColor: String(body.thumbColor ?? "").trim() || "00F0FF",
     thumbText: String(body.thumbText ?? "").trim() || slug,
     image: String(body.image ?? "").trim() || undefined,
+    fileUrl: String(body.fileUrl ?? "").trim() || undefined,
+    fileName: String(body.fileName ?? "").trim() || undefined,
     price,
     currency: "USD",
     delivery: String(body.delivery ?? "").trim() || "1 день",

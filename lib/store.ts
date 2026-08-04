@@ -30,6 +30,13 @@ export type StoredOrder = {
   invoiceId?: number;
   payAmount?: string;
   payAsset?: string;
+  // Видача товару
+  tgChatId?: number; // chat_id клієнта (прив'язується deep-link'ом бота)
+  delivered?: boolean;
+  deliveredAt?: number;
+  deliveryChannel?: "telegram" | "email" | "manual";
+  deliveryNote?: string; // напр. "клієнт ще не підключив Telegram"
+  downloadToken?: string; // токен для захищеного посилання на завантаження
 };
 
 // ---- Redis client (lazy) --------------------------------------------
@@ -82,6 +89,7 @@ const K = {
   productSlugs: "products:slugs",
   order: (id: string) => `order:${id}`,
   orderIndex: "orders:index", // sorted set by createdAt
+  dlToken: (t: string) => `dl:${t}`, // токен завантаження -> orderId
   viewsIndex: "views:index", // sorted set: slug -> total views (для рейтингу)
   viewsDaily: (slug: string) => `views:daily:${slug}`, // hash: YYYY-MM-DD -> count
   viewsTotalAll: "views:total", // глобальний лічильник усіх переглядів
@@ -295,6 +303,68 @@ export async function setOrderInvoice(
     return;
   }
   await redis.set(K.order(id), order);
+}
+
+// Прив'язує chat_id клієнта до замовлення (deep-link бота).
+export async function setOrderTgChat(
+  id: string,
+  chatId: number,
+): Promise<boolean> {
+  const order = await getOrder(id);
+  if (!order) return false;
+  order.tgChatId = chatId;
+  const redis = getRedis();
+  if (!redis) mem().orders.set(id, order);
+  else await redis.set(K.order(id), order);
+  return true;
+}
+
+// Токен захищеного завантаження: order.downloadToken + індекс dl:token->id.
+const memTokens = new Map<string, string>();
+
+export async function setOrderDownloadToken(
+  id: string,
+  token: string,
+  ttlSec = 60 * 60 * 24 * 60,
+): Promise<void> {
+  const order = await getOrder(id);
+  if (!order) return;
+  order.downloadToken = token;
+  const redis = getRedis();
+  if (!redis) {
+    mem().orders.set(id, order);
+    memTokens.set(token, id);
+    return;
+  }
+  await redis.set(K.order(id), order);
+  await redis.set(K.dlToken(token), id, { ex: ttlSec });
+}
+
+export async function getOrderByToken(
+  token: string,
+): Promise<StoredOrder | null> {
+  const redis = getRedis();
+  const id = redis
+    ? await redis.get<string>(K.dlToken(token))
+    : memTokens.get(token);
+  if (!id) return null;
+  return getOrder(id);
+}
+
+export async function markOrderDelivered(
+  id: string,
+  channel: NonNullable<StoredOrder["deliveryChannel"]>,
+  note?: string,
+): Promise<void> {
+  const order = await getOrder(id);
+  if (!order) return;
+  order.delivered = channel !== "manual";
+  order.deliveredAt = Date.now();
+  order.deliveryChannel = channel;
+  if (note) order.deliveryNote = note;
+  const redis = getRedis();
+  if (!redis) mem().orders.set(id, order);
+  else await redis.set(K.order(id), order);
 }
 
 export async function deleteOrder(id: string): Promise<void> {

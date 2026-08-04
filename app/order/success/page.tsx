@@ -2,12 +2,26 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
+import { getOrder } from "@/lib/store";
+import { tgGetBotUsername } from "@/lib/telegram";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Заявку прийнято | NEXUS",
 };
 
-export default function OrderSuccessPage() {
+export default async function OrderSuccessPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ p?: string; o?: string }>;
+}) {
+  const sp = await searchParams;
+  const order = sp.o ? await getOrder(sp.o) : null;
+  const showTgConnect =
+    order?.contactMethod === "telegram" && !order.tgChatId;
+  const botUsername = showTgConnect ? await tgGetBotUsername() : null;
+
   return (
     <div className="min-h-screen bg-background">
       <div className="pointer-events-none fixed inset-0 z-0">
@@ -27,6 +41,27 @@ export default function OrderSuccessPage() {
           Ми отримали ваше замовлення. Зв’яжемося з вами у Telegram протягом 2
           годин у робочий час (10:00 – 22:00 за Києвом).
         </p>
+
+        {showTgConnect && botUsername && sp.o && (
+          <div className="mb-8 rounded-2xl border border-neon-blue/30 bg-neon-blue/5 p-5 text-left md:p-6">
+            <div className="flex items-center gap-2 font-display text-sm font-bold text-foreground">
+              <i className="ph-fill ph-telegram-logo text-neon-blue" />
+              Отримати файл у Telegram
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Щоб ми надіслали архів прямо в Telegram після оплати — підключіть
+              бота (натисніть «Start»). Це прив’яже ваше замовлення.
+            </p>
+            <a
+              href={`https://t.me/${botUsername}?start=ord_${sp.o}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-neon-blue to-neon-purple px-6 py-3 text-sm font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5"
+            >
+              <i className="ph-fill ph-telegram-logo" /> Підключити Telegram
+            </a>
+          </div>
+        )}
 
         <div className="mb-8 rounded-2xl border border-border bg-surface/50 p-5 text-left backdrop-blur md:mb-10 md:p-6">
           <h2 className="mb-4 flex items-center gap-2 font-display text-sm font-bold text-foreground">
