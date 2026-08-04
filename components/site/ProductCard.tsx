@@ -16,7 +16,7 @@ export function ProductCard({ product }: { product: Product }) {
       >
         <ProductCover
           product={product}
-          className="absolute inset-0 transition-transform duration-500 group-hover:scale-[1.04]"
+          className="h-full w-full transition-transform duration-500 group-hover:scale-[1.04]"
         />
         {product.badge && (
           <span className="absolute left-3 top-3 z-10 rounded-full border border-white/15 bg-black/40 px-2.5 py-1 text-[0.7rem] font-semibold text-white backdrop-blur">
