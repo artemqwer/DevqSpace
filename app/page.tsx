@@ -1,33 +1,37 @@
-import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
-import Categories from "@/components/Categories";
-import Products from "@/components/Products";
-import Features from "@/components/Features";
-import CustomCTA from "@/components/CustomCTA";
-import Footer from "@/components/Footer";
-import BottomNav from "@/components/BottomNav";
+import { Navbar } from "@/components/site/Navbar";
+import { Hero } from "@/components/site/Hero";
+import { TrustBar } from "@/components/site/TrustBar";
+import { Categories } from "@/components/site/Categories";
+import { TopProducts } from "@/components/site/TopProducts";
+import { Process } from "@/components/site/Process";
+import { Cases } from "@/components/site/Cases";
+import { Guarantee } from "@/components/site/Guarantee";
+import { FinalCta } from "@/components/site/FinalCta";
+import { Footer } from "@/components/site/Footer";
+import { MobileNav } from "@/components/site/MobileNav";
+import { getAllProducts } from "@/lib/store";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const all = await getAllProducts();
+  const top = [...all].sort((a, b) => b.sold - a.sold).slice(0, 8);
+
   return (
-    <>
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="glow-orb bg-neon-blue w-96 h-96 top-0 left-0 -translate-x-1/2 -translate-y-1/2 animate-pulse-slow" />
-        <div
-          className="glow-orb bg-neon-purple w-[30rem] h-[30rem] top-40 right-0 translate-x-1/3 animate-pulse-slow"
-          style={{ animationDelay: "2s" }}
-        />
-      </div>
-
+    <div className="min-h-screen bg-background">
       <Navbar />
       <main>
         <Hero />
+        <TrustBar />
         <Categories />
-        <Products />
-        <Features />
-        <CustomCTA />
+        <TopProducts products={top} />
+        <Process />
+        <Cases />
+        <Guarantee />
+        <FinalCta />
       </main>
       <Footer />
-      <BottomNav />
-    </>
+      <MobileNav />
+    </div>
   );
 }
