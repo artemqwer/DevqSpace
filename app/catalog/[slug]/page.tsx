@@ -17,7 +17,7 @@ import {
 import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
 import { ProductCard } from "@/components/site/ProductCard";
-import ProductThumb from "@/components/ProductThumb";
+import { ProductCover } from "@/components/site/ProductCover";
 import { CATEGORIES } from "@/lib/products";
 import {
   getProductBySlug,
@@ -74,11 +74,10 @@ export default async function ProductPage({ params }: Props) {
         <div className="grid grid-cols-1 gap-6 md:gap-10 lg:grid-cols-[1.2fr_1fr]">
           {/* Left — visual + description */}
           <div>
-            <ProductThumb
+            <ProductCover
               product={product}
-              rounded="rounded-2xl border border-border"
-              className="aspect-[4/3] md:aspect-[16/10]"
-              iconClassName="text-7xl md:text-9xl"
+              size="hero"
+              className="aspect-[4/3] rounded-2xl border border-border md:aspect-[16/10]"
             />
 
             {/* Badges */}

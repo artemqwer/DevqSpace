@@ -1,47 +1,25 @@
 import Link from "next/link";
-import { Star, SealCheck, Cube } from "@phosphor-icons/react/dist/ssr";
-import { CATEGORIES, type Product, type Accent } from "@/lib/products";
-
-const ACCENT_GRADIENT: Record<Accent, string> = {
-  blue: "linear-gradient(135deg, #00f0ff33, #8a2be233)",
-  purple: "linear-gradient(135deg, #8a2be233, #00f0ff26)",
-  pink: "linear-gradient(135deg, #ff007f26, #8a2be233)",
-  green: "linear-gradient(135deg, #00ff6626, #00f0ff33)",
-};
+import { Star, SealCheck } from "@phosphor-icons/react/dist/ssr";
+import { CATEGORIES, type Product } from "@/lib/products";
+import { ProductCover } from "./ProductCover";
 
 function categoryLabel(id: string): string {
   return CATEGORIES.find((c) => c.id === id)?.label ?? id;
 }
 
 export function ProductCard({ product }: { product: Product }) {
-  const bg = product.image
-    ? undefined
-    : ACCENT_GRADIENT[product.accent] ?? ACCENT_GRADIENT.blue;
-
   return (
     <article className="grad-border group flex flex-col overflow-hidden rounded-2xl border border-border bg-surface/40 transition-colors hover:bg-surface-2/50">
       <Link
         href={`/catalog/${product.slug}`}
-        className="relative block h-36 overflow-hidden"
-        style={{ background: bg }}
+        className="relative block h-40 overflow-hidden"
       >
-        {product.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={product.image}
-            alt={product.title}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="absolute inset-0 grid place-items-center">
-            <Cube
-              weight="duotone"
-              className="h-12 w-12 text-foreground/70 transition-transform duration-500 group-hover:scale-110"
-            />
-          </div>
-        )}
+        <ProductCover
+          product={product}
+          className="absolute inset-0 transition-transform duration-500 group-hover:scale-[1.04]"
+        />
         {product.badge && (
-          <span className="absolute left-3 top-3 rounded-full border border-neon-blue/40 bg-background/70 px-2.5 py-1 text-[0.7rem] font-semibold text-neon-blue backdrop-blur">
+          <span className="absolute left-3 top-3 z-10 rounded-full border border-white/15 bg-black/40 px-2.5 py-1 text-[0.7rem] font-semibold text-white backdrop-blur">
             {product.badge}
           </span>
         )}
@@ -56,7 +34,7 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
 
         <h3 className="mt-2 font-display text-base font-bold leading-snug text-foreground">
-          <Link href={`/catalog/${product.slug}`} className="hover:text-neon-blue transition-colors">
+          <Link href={`/catalog/${product.slug}`} className="transition-colors hover:text-neon-blue">
             {product.title}
           </Link>
         </h3>
