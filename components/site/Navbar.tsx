@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { List, X, MagnifyingGlass, Lightning } from "@phosphor-icons/react";
+import { Wordmark } from "./Wordmark";
 
 const navLinks = [
   { label: "Каталог", href: "/catalog" },
@@ -38,9 +39,7 @@ export function Navbar() {
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-neon-blue to-neon-purple">
             <Lightning weight="fill" className="h-4 w-4 text-primary-foreground" />
           </span>
-          <span className="font-display text-lg font-bold tracking-tight text-foreground">
-            DevqSpace
-          </span>
+          <Wordmark className="text-lg" />
         </Link>
 
         <ul className="hidden items-center gap-8 md:flex">
