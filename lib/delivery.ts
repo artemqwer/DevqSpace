@@ -98,6 +98,7 @@ export async function deliverOrder(
 
   // ---- Email ----
   if (order.contactMethod === "email") {
+    let reason = "RESEND_API_KEY не задано";
     if (emailEnabled()) {
       const r = await sendDeliveryEmail(order.contact, product.title, dlUrl);
       if (r.ok) {
@@ -109,12 +110,13 @@ export async function deliverOrder(
           );
         return { ok: true, channel: "email" };
       }
+      reason = r.error ?? "помилка Resend";
     }
     await markOrderDelivered(order.id, "manual", "email не надіслано");
     if (admin)
       await tgSendMessage(
         admin,
-        `⚠️ Email не надіслано (${emailEnabled() ? "помилка Resend" : "RESEND_API_KEY не задано"}).\n` +
+        `⚠️ Email не надіслано.\n<b>Причина:</b> ${esc(reason)}\n` +
           `Клієнт: ${esc(order.contact)}\nПосилання для ручної відправки:\n${dlUrl}`,
       );
     return { ok: false, channel: "email", note: "email fail" };

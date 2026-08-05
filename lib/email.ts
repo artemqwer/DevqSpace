@@ -30,7 +30,7 @@ export async function sendEmail(
     if (!res.ok) {
       const t = await res.text();
       console.error("[email] resend error:", res.status, t);
-      return { ok: false, error: `Resend ${res.status}` };
+      return { ok: false, error: `${res.status}: ${t.slice(0, 300)}` };
     }
     return { ok: true };
   } catch (e) {
