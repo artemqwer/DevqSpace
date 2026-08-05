@@ -67,10 +67,6 @@ export const metadata: Metadata = {
     description:
       "Telegram-боти, веб-додатки, Web3 і шаблони з сорс-кодом. Гарантія 1 рік.",
   },
-  icons: {
-    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/apple-icon.png" }],
-  },
   category: "technology",
 };
 
