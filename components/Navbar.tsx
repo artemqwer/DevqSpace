@@ -14,7 +14,7 @@ export default function Navbar() {
               style={{ animationDuration: "3s" }}
             />
             <span className="font-display font-bold text-xl md:text-2xl tracking-tighter text-white">
-              NEXUS<span className="text-neon-blue">.</span>
+              DevqSpace<span className="text-neon-blue">.</span>
             </span>
           </Link>
 

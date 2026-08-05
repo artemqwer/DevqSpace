@@ -8,7 +8,7 @@ import { CATEGORIES, type CategoryId } from "@/lib/products";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Каталог продуктів | NEXUS",
+  title: "Каталог продуктів | DevqSpace",
   description:
     "Готові Telegram-боти, веб-додатки та мобільні застосунки. Купуй з миттєвою доставкою і саппортом.",
 };

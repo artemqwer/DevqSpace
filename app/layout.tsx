@@ -21,7 +21,7 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NEXUS | Digital Goods Marketplace",
+  title: "DevqSpace | Digital Goods Marketplace",
   description:
     "Елітний маркетплейс цифрових артефактів. Купуй та продавай Telegram-боти, смарт-контракти, скрипти та UI-кіти нового покоління.",
 };

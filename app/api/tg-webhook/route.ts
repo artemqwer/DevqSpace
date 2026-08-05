@@ -183,7 +183,7 @@ export async function POST(req: Request) {
     await tgSetChatMenuButton(chatId, "📊 Дашборд", `${base}/tg`);
     await tgSendMessage(
       chatId,
-      "📊 <b>NEXUS Dashboard</b>\n\nАналітика переглядів, замовлень і виторгу — " +
+      "📊 <b>DevqSpace Dashboard</b>\n\nАналітика переглядів, замовлень і виторгу — " +
         "прямо в Telegram. Кнопка «Дашборд» також з'явилась біля поля вводу.",
       "HTML",
       {
@@ -383,7 +383,7 @@ async function editOrSend(
 export async function GET() {
   // Якщо хтось зайде в браузер — невелика підказка.
   return new Response(
-    "NEXUS Telegram webhook. POST only. Налаштуйте через /api/tg-webhook/setup",
+    "DevqSpace Telegram webhook. POST only. Налаштуйте через /api/tg-webhook/setup",
     { status: 405, headers: { Allow: "POST" } },
   );
 }

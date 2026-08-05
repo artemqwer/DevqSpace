@@ -19,7 +19,7 @@ import { getAllProducts } from "@/lib/store";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Категорії | NEXUS",
+  title: "Категорії | DevqSpace",
   description:
     "Готові цифрові продукти за напрямами: Telegram-боти, Web/SaaS, мобільні, автоматизація, Web3, шаблони.",
 };

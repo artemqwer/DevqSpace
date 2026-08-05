@@ -48,7 +48,7 @@ export function Footer() {
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-neon-blue to-neon-purple">
                 <Lightning weight="fill" className="h-4 w-4 text-primary-foreground" />
               </span>
-              <span className="font-display text-lg font-bold tracking-tight text-foreground">NEXUS</span>
+              <span className="font-display text-lg font-bold tracking-tight text-foreground">DevqSpace</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
               Цифрова студія: готові продукти та розробка під ключ з повним

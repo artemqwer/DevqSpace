@@ -21,7 +21,7 @@ export default function Footer() {
           <div className="flex items-center mb-3 cursor-pointer group">
             <i className="ph-fill ph-code text-neon-blue text-2xl mr-2" />
             <span className="font-display font-bold text-xl tracking-tighter text-white">
-              NEXUS<span className="text-neon-blue">.</span>
+              DevqSpace<span className="text-neon-blue">.</span>
             </span>
           </div>
           <p className="text-gray-500 text-xs font-mono leading-relaxed">
@@ -108,7 +108,7 @@ export default function Footer() {
             <div className="flex items-center mb-4 cursor-pointer group">
               <i className="ph-fill ph-code text-neon-blue text-3xl mr-2" />
               <span className="font-display font-bold text-2xl tracking-tighter text-white">
-                NEXUS<span className="text-neon-blue">.</span>
+                DevqSpace<span className="text-neon-blue">.</span>
               </span>
             </div>
             <p className="text-gray-500 text-xs font-mono mb-6 leading-relaxed">
@@ -183,7 +183,7 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-3 text-[10px] md:text-xs font-mono text-gray-600 text-center md:text-left">
-          <p>&copy; 2026 NEXUS_PROTOCOL. ALL SYSTEMS NOMINAL.</p>
+          <p>&copy; 2026 DevqSpace_PROTOCOL. ALL SYSTEMS NOMINAL.</p>
           <div className="flex space-x-4">
             <span className="flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-neon-green animate-pulse" />{" "}

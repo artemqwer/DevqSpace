@@ -1,4 +1,4 @@
-# NEXUS Admin Bot
+# DevqSpace Admin Bot
 
 Простий Telegram-бот для адміна студії. Доповнює основний flow: замовлення з сайту приходять напряму через Bot API, цей скрипт додає інтерактивні команди.
 
@@ -38,7 +38,7 @@ python admin_bot.py
 ```bash
 # 1. systemd unit (/etc/systemd/system/nexus-bot.service)
 [Unit]
-Description=NEXUS Admin Bot
+Description=DevqSpace Admin Bot
 After=network.target
 
 [Service]

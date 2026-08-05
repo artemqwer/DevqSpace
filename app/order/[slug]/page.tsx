@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   return {
-    title: product ? `Замовлення · ${product.title} | NEXUS` : "Замовлення",
+    title: product ? `Замовлення · ${product.title} | DevqSpace` : "Замовлення",
   };
 }
 

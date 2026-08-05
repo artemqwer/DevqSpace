@@ -95,7 +95,7 @@ export async function POST(req: Request) {
 
   const inv = await createInvoice({
     amount: product.price,
-    description: `${product.title} — NEXUS`,
+    description: `${product.title} — DevqSpace`,
     orderId: order.id,
     successUrl: `${origin}/order/success?p=${product.slug}`,
     cancelUrl: `${origin}/catalog/${product.slug}`,

@@ -39,7 +39,7 @@ export function Navbar() {
             <Lightning weight="fill" className="h-4 w-4 text-primary-foreground" />
           </span>
           <span className="font-display text-lg font-bold tracking-tight text-foreground">
-            NEXUS
+            DevqSpace
           </span>
         </Link>
 

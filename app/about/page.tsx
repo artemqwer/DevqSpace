@@ -4,9 +4,9 @@ import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
 
 export const metadata: Metadata = {
-  title: "Про нас | NEXUS",
+  title: "Про нас | DevqSpace",
   description:
-    "NEXUS — студія цифрових продуктів. Розробляємо та продаємо готові Telegram-боти, веб-додатки та мобільні застосунки.",
+    "DevqSpace — студія цифрових продуктів. Розробляємо та продаємо готові Telegram-боти, веб-додатки та мобільні застосунки.",
 };
 
 const STATS = [
@@ -57,7 +57,7 @@ export default function AboutPage() {
             Студія цифрових <span className="text-gradient">продуктів</span>
           </h1>
           <p className="max-w-2xl text-pretty leading-relaxed text-muted-foreground md:text-lg">
-            NEXUS — невелика команда розробників, яка створює готові рішення для
+            DevqSpace — невелика команда розробників, яка створює готові рішення для
             бізнесу і бере кастомні проєкти під ключ. Ми робимо те, що
             запускається і приносить результат, а не лежить у шухляді.
           </p>

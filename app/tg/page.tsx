@@ -197,7 +197,7 @@ export default function MiniApp() {
       <Centered>
         <div className="text-center">
           <div className="text-2xl mb-2">📊</div>
-          <p className="text-gray-300 font-medium mb-1">NEXUS Dashboard</p>
+          <p className="text-gray-300 font-medium mb-1">DevqSpace Dashboard</p>
           <p className="text-sm text-gray-500">
             Відкрийте цю сторінку через кнопку в Telegram-боті.
           </p>
@@ -226,7 +226,7 @@ export default function MiniApp() {
       <header className="mb-5">
         <div className="flex items-center gap-2">
           <span className="text-neon-blue font-display font-bold text-lg">
-            NEXUS
+            DevqSpace
           </span>
           <span className="text-gray-600 text-xs font-mono">/ dashboard</span>
         </div>

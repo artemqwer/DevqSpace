@@ -4,9 +4,9 @@ import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
 
 export const metadata: Metadata = {
-  title: "Кейси | NEXUS",
+  title: "Кейси | DevqSpace",
   description:
-    "Реальні проєкти студії NEXUS — Telegram-боти, веб-додатки та мобільні застосунки для бізнесу.",
+    "Реальні проєкти студії DevqSpace — Telegram-боти, веб-додатки та мобільні застосунки для бізнесу.",
 };
 
 type Case = {

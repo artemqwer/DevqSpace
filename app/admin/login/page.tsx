@@ -44,7 +44,7 @@ export default function AdminLoginPage() {
         <div className="flex items-center justify-center gap-2 mb-8">
           <i className="ph-fill ph-code text-neon-blue text-3xl" />
           <span className="font-display font-bold text-2xl tracking-tighter text-white">
-            NEXUS<span className="text-neon-blue">.</span>
+            DevqSpace<span className="text-neon-blue">.</span>
           </span>
           <span className="text-xs font-mono text-gray-500 self-end mb-1">
             admin

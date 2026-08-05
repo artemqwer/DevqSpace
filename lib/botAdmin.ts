@@ -45,7 +45,7 @@ function categoryLabel(id: string): string {
 
 export function startText(): string {
   return (
-    "👋 <b>NEXUS Admin Bot online</b>\n\n" +
+    "👋 <b>DevqSpace Admin Bot online</b>\n\n" +
     "Замовлення з сайту приходять сюди автоматично. А ще я вмію показувати " +
     "аналітику й керувати каталогом:\n\n" +
     "📊 /app — дашборд (Mini App) з графіками\n" +

@@ -5,7 +5,7 @@ import "server-only";
 // домену; для тесту можна лишити onboarding@resend.dev.
 
 const API_KEY = process.env.RESEND_API_KEY;
-const FROM = process.env.RESEND_FROM || "NEXUS <onboarding@resend.dev>";
+const FROM = process.env.RESEND_FROM || "DevqSpace <onboarding@resend.dev>";
 
 export function emailEnabled(): boolean {
   return Boolean(API_KEY);
@@ -50,7 +50,7 @@ export async function sendDeliveryEmail(
   const html = `
   <div style="font-family:Inter,Arial,sans-serif;max-width:520px;margin:0 auto;background:#0a0a0a;color:#e5e7eb;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08)">
     <div style="padding:28px 28px 8px">
-      <div style="font-weight:700;font-size:20px;color:#00f0ff;letter-spacing:-.5px">NEXUS</div>
+      <div style="font-weight:700;font-size:20px;color:#00f0ff;letter-spacing:-.5px">DevqSpace</div>
     </div>
     <div style="padding:8px 28px 28px">
       <h1 style="font-size:22px;margin:12px 0 8px;color:#fff">Дякуємо за покупку! 🎉</h1>
@@ -66,7 +66,7 @@ export async function sendDeliveryEmail(
       </p>
     </div>
     <div style="padding:16px 28px;border-top:1px solid rgba(255,255,255,.06);color:#5b6472;font-size:12px">
-      NEXUS — цифрова студія. Гарантія 1 рік і повний сорс-код.
+      DevqSpace — цифрова студія. Гарантія 1 рік і повний сорс-код.
     </div>
   </div>`;
   return sendEmail(to, `Ваш товар: ${productTitle}`, html);

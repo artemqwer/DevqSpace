@@ -33,7 +33,7 @@ export default function AdminNav({
         <Link href="/admin" className="flex items-center gap-2 px-5 h-16 border-b border-white/10">
           <i className="ph-fill ph-code text-neon-blue text-2xl" />
           <span className="font-display font-bold text-lg text-white">
-            NEXUS<span className="text-neon-blue">.</span>
+            DevqSpace<span className="text-neon-blue">.</span>
           </span>
           <span className="text-[10px] font-mono text-gray-500 self-end mb-2">
             admin
@@ -86,7 +86,7 @@ export default function AdminNav({
         <Link href="/admin" className="flex items-center gap-2">
           <i className="ph-fill ph-code text-neon-blue text-xl" />
           <span className="font-display font-bold text-white">
-            NEXUS<span className="text-neon-blue">.</span>
+            DevqSpace<span className="text-neon-blue">.</span>
           </span>
           <span className="text-[9px] font-mono text-gray-500 self-end mb-1.5">
             admin

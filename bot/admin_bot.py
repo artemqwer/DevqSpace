@@ -1,5 +1,5 @@
 """
-NEXUS Admin Bot.
+DevqSpace Admin Bot.
 
 Простий бот для адміна студії. Реагує на команди в особистому чаті
 адміна. Замовлення з сайту приходять напряму через Bot API від
@@ -69,7 +69,7 @@ async def cmd_start(message: Message) -> None:
     if not is_admin(message):
         return
     await message.answer(
-        "👋 <b>NEXUS Admin Bot активний</b>\n\n"
+        "👋 <b>DevqSpace Admin Bot активний</b>\n\n"
         "Замовлення з сайту приходитимуть сюди автоматично.\n\n"
         "Доступні команди:\n"
         "/help — список команд\n"
@@ -141,7 +141,7 @@ async def fallback(message: Message) -> None:
 
 
 async def main() -> None:
-    log.info("NEXUS admin bot starting…")
+    log.info("DevqSpace admin bot starting…")
     try:
         await bot.send_message(
             ADMIN_CHAT_ID_INT,
