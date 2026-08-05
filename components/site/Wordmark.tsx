@@ -8,7 +8,10 @@ export function Wordmark({ className = "" }: { className?: string }) {
       >
         Devq
       </span>
-      <span className="text-neon-purple">Space</span>
+      {/* Світліший фіолетовий — проходить контраст WCAG на темному фоні */}
+      <span style={{ color: "#b98cff", textShadow: "0 0 10px rgba(138,43,226,0.45)" }}>
+        Space
+      </span>
     </span>
   );
 }
