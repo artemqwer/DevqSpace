@@ -144,12 +144,23 @@ export async function POST(req: Request) {
   if (cmd === "/start" && args[0]?.startsWith("ord_")) {
     const orderId = args[0].slice(4);
     const ok = await setOrderTgChat(orderId, msg.chat.id);
-    await tgSendMessage(
-      msg.chat.id,
-      ok
-        ? "✅ <b>Готово!</b>\nВаше замовлення прив'язано. Щойно ми підтвердимо оплату — надішлемо архів прямо сюди 🚀"
-        : "Не знайшли замовлення. Оформіть його на сайті й натисніть «Підключити Telegram».",
-    );
+    if (!ok) {
+      await tgSendMessage(
+        msg.chat.id,
+        "Не знайшли замовлення. Оформіть його на сайті й натисніть «Підключити Telegram».",
+      );
+      return Response.json({ ok: true });
+    }
+    const order = await getOrder(orderId);
+    if (order?.paid && !order.delivered) {
+      // Оплата вже підтверджена раніше — видаємо файл одразу.
+      await deliverOrder(order, originFromReq(req));
+    } else {
+      await tgSendMessage(
+        msg.chat.id,
+        "✅ <b>Готово!</b>\nВаше замовлення прив'язано. Щойно ми підтвердимо оплату — надішлемо архів прямо сюди 🚀",
+      );
+    }
     return Response.json({ ok: true });
   }
 
