@@ -89,7 +89,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-border pt-6 sm:flex-row">
-          <p className="mono-label text-muted-foreground">© 2026 nexus studio</p>
+          <p className="mono-label text-muted-foreground">© 2026 DevqSpace · devq.space</p>
           <p className="mono-label text-muted-foreground">зроблено з увагою до деталей</p>
         </div>
       </div>

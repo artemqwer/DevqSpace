@@ -52,6 +52,7 @@ export async function deliverOrder(
   // ---- Telegram ----
   if (order.contactMethod === "telegram") {
     if (order.tgChatId) {
+      // Спроба 1: надіслати сам файл документом.
       const ok = await tgSendDocument(
         order.tgChatId,
         product.fileUrl,
@@ -63,6 +64,20 @@ export async function deliverOrder(
           await tgSendMessage(
             admin,
             `📤 Видано в Telegram: ${esc(order.name)} · ${esc(order.contact)} — ${esc(product.title)}`,
+          );
+        return { ok: true, channel: "telegram" };
+      }
+      // Спроба 2: файл не пішов (напр. >20 МБ для URL) — шлемо посилання в чат.
+      const linkOk = await tgSendMessage(
+        order.tgChatId,
+        `✅ <b>${esc(product.title)}</b>\nДякуємо за покупку! Завантажте архів за посиланням:\n${dlUrl}`,
+      );
+      if (linkOk) {
+        await markOrderDelivered(order.id, "telegram", "надіслано посиланням");
+        if (admin)
+          await tgSendMessage(
+            admin,
+            `📤 Видано в Telegram (посиланням, файл великий): ${esc(order.name)} — ${esc(product.title)}`,
           );
         return { ok: true, channel: "telegram" };
       }
