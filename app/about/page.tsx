@@ -4,7 +4,7 @@ import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
 
 export const metadata: Metadata = {
-  title: "Про нас | DevqSpace",
+  title: "Про нас",
   description:
     "DevqSpace — студія цифрових продуктів. Розробляємо та продаємо готові Telegram-боти, веб-додатки та мобільні застосунки.",
 };

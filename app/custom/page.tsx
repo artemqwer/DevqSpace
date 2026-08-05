@@ -4,7 +4,7 @@ import { MobileNav } from "@/components/site/MobileNav";
 import CustomForm from "@/components/custom/CustomForm";
 
 export const metadata: Metadata = {
-  title: "Кастомна розробка | DevqSpace",
+  title: "Кастомна розробка",
   description:
     "Замовте кастомний Telegram-бот, веб-додаток або мобільний застосунок під вашу задачу.",
 };

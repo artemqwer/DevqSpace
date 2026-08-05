@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product = await getProductBySlug(slug);
   if (!product) return { title: "Продукт не знайдено" };
   return {
-    title: `${product.title} | DevqSpace`,
+    title: `${product.title}`,
     description: product.tagline,
   };
 }

@@ -8,7 +8,7 @@ import { tgGetBotUsername } from "@/lib/telegram";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Заявку прийнято | DevqSpace",
+  title: "Заявку прийнято",
 };
 
 export default async function OrderSuccessPage({
