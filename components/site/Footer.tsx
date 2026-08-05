@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Lightning, TelegramLogo, XLogo, GithubLogo, EnvelopeSimple } from "@phosphor-icons/react/dist/ssr";
+import { TelegramLogo, XLogo, GithubLogo, EnvelopeSimple } from "@phosphor-icons/react/dist/ssr";
 import { Wordmark } from "./Wordmark";
 
 const columns: { title: string; links: { label: string; href: string }[] }[] = [
@@ -46,9 +46,8 @@ export function Footer() {
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
             <Link href="/" className="flex items-center gap-2">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-neon-blue to-neon-purple">
-                <Lightning weight="fill" className="h-4 w-4 text-primary-foreground" />
-              </span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="DevqSpace" className="h-9 w-auto" />
               <Wordmark className="text-lg" />
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">

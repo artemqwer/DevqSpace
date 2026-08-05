@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { List, X, MagnifyingGlass, Lightning } from "@phosphor-icons/react";
+import { List, X, MagnifyingGlass } from "@phosphor-icons/react";
 import { Wordmark } from "./Wordmark";
 
 const navLinks = [
@@ -36,9 +36,8 @@ export function Navbar() {
         aria-label="Головна навігація"
       >
         <Link href="/" className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-neon-blue to-neon-purple">
-            <Lightning weight="fill" className="h-4 w-4 text-primary-foreground" />
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="DevqSpace" className="h-9 w-auto" />
           <Wordmark className="text-lg" />
         </Link>
 
