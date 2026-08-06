@@ -15,6 +15,25 @@ export type Category = {
   description: string;
 };
 
+// Поле .env, яке клієнт заповнює при замовленні. З них будується форма на
+// сторінці замовлення і згенерований .env усередині персонального архіву.
+export type EnvFieldType =
+  | "text"
+  | "telegram_token" // перевіряється наживо через getMe
+  | "number"
+  | "secret" // ховається під ••• в інпуті
+  | "url";
+
+export type EnvField = {
+  key: string; // BOT_TOKEN — /^[A-Z_][A-Z0-9_]*$/
+  label: string;
+  type: EnvFieldType;
+  required: boolean;
+  placeholder?: string;
+  hint?: string;
+  defaultValue?: string;
+};
+
 export type Product = {
   slug: string;
   category: CategoryId;
@@ -28,6 +47,12 @@ export type Product = {
   image?: string; // URL реального зображення; якщо є — показується замість градієнта
   fileUrl?: string; // URL ZIP-архіву товару (Vercel Blob) — видається після оплати
   fileName?: string; // оригінальна назва файлу для видачі
+  // Динамічна упаковка. Вмикається лише коли задані ОБИДВА поля: тоді після
+  // оплати збирається персональний архів з .env клієнта. Інакше працює
+  // звичайна статична видача fileUrl.
+  envFields?: EnvField[];
+  sourceTemplatePath?: string; // URL чистого ZIP-шаблону у сховищі
+  templateName?: string; // оригінальна назва шаблону (для адмінки)
   price: number;
   currency: "USD";
   delivery: string;

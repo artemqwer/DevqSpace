@@ -1,14 +1,25 @@
 import { createHmac } from "crypto";
+import { DEV_STUBS } from "./devStubs";
 
 // NOWPayments — крипто-оплата без Telegram. Hosted checkout (адреса + QR).
 // Док: https://documenter.getpostman.com/view/7907941/S1a32n38
 
 const API_KEY = process.env.NOWPAYMENTS_API_KEY;
-const IPN_SECRET = process.env.NOWPAYMENTS_IPN_SECRET;
 const BASE = "https://api.nowpayments.io/v1";
 
+// Локально без ключа інвойс веде на /dev/pay/now — сторінку-імітацію checkout.
+// Секрет IPN підставляється дефолтний, щоб dev-«оплата» надсилала у бойовий
+// вебхук по-справжньому підписане повідомлення і перевірка HMAC реально
+// відпрацьовувала, а не обходилась.
+const DEV_NOW = DEV_STUBS && !API_KEY;
+export const DEV_IPN_SECRET = "dev-ipn-secret";
+// Саме ||, а не ?? — у .env.local змінні лежать порожніми рядками, і ?? їх
+// не перебиває.
+const IPN_SECRET =
+  process.env.NOWPAYMENTS_IPN_SECRET || (DEV_STUBS ? DEV_IPN_SECRET : undefined);
+
 export function nowPaymentsEnabled(): boolean {
-  return Boolean(API_KEY);
+  return Boolean(API_KEY) || DEV_NOW;
 }
 
 export async function createInvoice(opts: {
@@ -21,6 +32,20 @@ export async function createInvoice(opts: {
 }): Promise<
   { ok: true; url: string; invoiceId: string } | { ok: false; error: string }
 > {
+  if (DEV_NOW) {
+    const qs = new URLSearchParams({
+      o: opts.orderId,
+      amount: String(opts.amount),
+      success: opts.successUrl,
+      cancel: opts.cancelUrl,
+    });
+    return {
+      ok: true,
+      url: `/dev/pay/now?${qs.toString()}`,
+      invoiceId: `dev-${Date.now()}`,
+    };
+  }
+
   if (!API_KEY) return { ok: false, error: "NOWPAYMENTS_API_KEY не задано" };
 
   try {
@@ -76,6 +101,16 @@ function sortObject(obj: Record<string, unknown>): Record<string, unknown> {
           : v;
       return acc;
     }, {});
+}
+
+// Підписує IPN тим самим алгоритмом, яким його перевіряє вебхук.
+// Використовується лише dev-заглушкою checkout — у проді підпис ставить
+// NOWPayments на своєму боці.
+export function signIpn(payload: Record<string, unknown>): string | null {
+  if (!IPN_SECRET) return null;
+  return createHmac("sha512", IPN_SECRET)
+    .update(JSON.stringify(sortObject(payload)))
+    .digest("hex");
 }
 
 export function verifyIpnSignature(

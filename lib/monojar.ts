@@ -1,5 +1,6 @@
 import "server-only";
 import { getCache, setCache } from "./store";
+import { DEV_STUBS } from "./devStubs";
 
 // Monobank "банка" — оплата карткою без ФОП. Без API/вебхука:
 // клієнт переказує на банку, адмін підтверджує вручну (1 тап).
@@ -7,11 +8,20 @@ import { getCache, setCache } from "./store";
 const JAR_URL = process.env.MONOBANK_JAR_URL;
 const FALLBACK_RATE = Number(process.env.USD_UAH_RATE) || 42;
 
+// Локально без банки посилання веде на /dev/pay/jar — сторінку з тією ж
+// ручною логікою підтвердження, що й у проді.
+const DEV_JAR = DEV_STUBS && !JAR_URL;
+
 export function jarEnabled(): boolean {
-  return Boolean(JAR_URL);
+  return Boolean(JAR_URL) || DEV_JAR;
 }
 
-export function getJarUrl(): string | null {
+export function getJarUrl(orderId?: string): string | null {
+  if (DEV_JAR) {
+    return orderId
+      ? `/dev/pay/jar?o=${encodeURIComponent(orderId)}`
+      : "/dev/pay/jar";
+  }
   return JAR_URL ?? null;
 }
 

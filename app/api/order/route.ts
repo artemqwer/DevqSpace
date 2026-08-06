@@ -1,7 +1,11 @@
 import { sendOrderToTelegram, type OrderPayload } from "@/lib/telegram";
 import { getProductBySlug, addOrder, rateLimit } from "@/lib/store";
+import { prepareEnvData } from "@/lib/orderEnv";
 
-type OrderBody = Partial<OrderPayload> & { company?: string };
+type OrderBody = Partial<OrderPayload> & {
+  company?: string;
+  envData?: Record<string, string>;
+};
 
 export async function POST(req: Request) {
   let body: OrderBody;
@@ -78,6 +82,10 @@ export async function POST(req: Request) {
       contact,
       message,
     };
+    const env = await prepareEnvData(product, body.envData);
+    if (!env.ok) {
+      return Response.json({ ok: false, error: env.error }, { status: 400 });
+    }
     orderData = {
       type: "product",
       productSlug: product.slug,
@@ -87,6 +95,9 @@ export async function POST(req: Request) {
       contactMethod,
       contact,
       message,
+      envData: env.envData,
+      envDataAt: env.envData ? Date.now() : undefined,
+      deliveryStatus: "PENDING",
     };
   } else {
     const customType = (body.customType ?? "").trim() || "—";

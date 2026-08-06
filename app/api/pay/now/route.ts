@@ -6,6 +6,7 @@ import {
   rateLimit,
 } from "@/lib/store";
 import { sendOrderToTelegram, type OrderPayload } from "@/lib/telegram";
+import { prepareEnvData } from "@/lib/orderEnv";
 
 type Body = {
   productSlug?: string;
@@ -14,6 +15,7 @@ type Body = {
   contact?: string;
   message?: string;
   company?: string; // honeypot
+  envData?: Record<string, string>;
 };
 
 export async function POST(req: Request) {
@@ -76,6 +78,13 @@ export async function POST(req: Request) {
 
   const message = (body.message ?? "").trim();
 
+  // Поля .env перевіряються заново на сервері (включно з getMe для токенів) —
+  // те, що форма їх уже показала зеленими, нічого не гарантує.
+  const env = await prepareEnvData(product, body.envData);
+  if (!env.ok) {
+    return Response.json({ ok: false, error: env.error }, { status: 400 });
+  }
+
   const order = await addOrder({
     type: "product",
     productSlug: product.slug,
@@ -85,6 +94,9 @@ export async function POST(req: Request) {
     contactMethod,
     contact,
     message,
+    envData: env.envData,
+    envDataAt: env.envData ? Date.now() : undefined,
+    deliveryStatus: "PENDING",
   });
 
   const proto =

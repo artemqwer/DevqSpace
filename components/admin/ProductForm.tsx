@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { Product } from "@/lib/products";
+import type { EnvField, Product } from "@/lib/products";
+import EnvFieldsEditor from "./EnvFieldsEditor";
 
 const CATEGORIES = [
   { id: "telegram-bots", label: "Telegram боти" },
@@ -35,12 +36,18 @@ export default function ProductForm({
 
   const [uploading, setUploading] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadingTemplate, setUploadingTemplate] = useState(false);
+  const [envFields, setEnvFields] = useState<EnvField[]>(
+    product?.envFields ?? [],
+  );
   const [f, setF] = useState({
     title: product?.title ?? "",
     slug: product?.slug ?? "",
     image: product?.image ?? "",
     fileUrl: product?.fileUrl ?? "",
     fileName: product?.fileName ?? "",
+    sourceTemplatePath: product?.sourceTemplatePath ?? "",
+    templateName: product?.templateName ?? "",
     category: product?.category ?? "telegram-bots",
     accent: product?.accent ?? "blue",
     badge: product?.badge ?? "NEW",
@@ -115,6 +122,37 @@ export default function ProductForm({
     }
   };
 
+  // Чистий шаблон проєкту: з нього після оплати збирається персональний архів
+  // з .env клієнта.
+  const onUploadTemplate = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingTemplate(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("kind", "template");
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const data = (await res.json()) as {
+        ok: boolean;
+        url?: string;
+        name?: string;
+        error?: string;
+      };
+      if (data.ok && data.url) {
+        set("sourceTemplatePath", data.url);
+        set("templateName", data.name || file.name);
+      } else {
+        setError(data.error || "Не вдалося завантажити шаблон");
+      }
+    } catch {
+      setError("Помилка завантаження шаблону");
+    } finally {
+      setUploadingTemplate(false);
+    }
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -126,7 +164,7 @@ export default function ProductForm({
     const res = await fetch("/api/admin/products", {
       method: mode === "create" ? "POST" : "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...f, price: Number(f.price) }),
+      body: JSON.stringify({ ...f, price: Number(f.price), envFields }),
     });
     const data = (await res.json()) as { ok: boolean; error?: string };
     if (!data.ok) {
@@ -250,6 +288,68 @@ export default function ProductForm({
             </div>
           </div>
         </div>
+      </Field>
+
+      {/* Clean project template (dynamic packaging) */}
+      <Field
+        label="Шаблон проєкту (ZIP)"
+        hint="чистий код без node_modules — з нього збирається персональний архів"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 shrink-0 rounded-lg border border-white/10 bg-surface2 flex items-center justify-center">
+            <i
+              className={`ph text-2xl ${f.sourceTemplatePath ? "ph-package text-neon-purple" : "ph-file-dashed text-gray-600"}`}
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            {f.sourceTemplatePath ? (
+              <div className="text-xs font-mono text-gray-300 truncate">
+                {f.templateName || "шаблон завантажено"}
+              </div>
+            ) : (
+              <div className="text-xs font-mono text-gray-600">
+                Немає шаблону — видається звичайний файл товару
+              </div>
+            )}
+            <div className="flex items-center gap-2 mt-1.5">
+              <label className="cursor-pointer inline-flex items-center gap-2 text-xs font-mono px-3 py-2 rounded-lg bg-surface2 border border-white/10 text-gray-300 hover:border-neon-blue/40 transition-colors">
+                {uploadingTemplate ? (
+                  <i className="ph-bold ph-circle-notch animate-spin" />
+                ) : (
+                  <i className="ph-bold ph-upload-simple" />
+                )}
+                {f.sourceTemplatePath ? "Замінити" : "Завантажити шаблон"}
+                <input
+                  type="file"
+                  accept=".zip,application/zip,application/x-zip-compressed,application/octet-stream"
+                  onChange={onUploadTemplate}
+                  disabled={uploadingTemplate}
+                  className="hidden"
+                />
+              </label>
+              {f.sourceTemplatePath && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    set("sourceTemplatePath", "");
+                    set("templateName", "");
+                  }}
+                  className="text-xs font-mono text-gray-500 hover:text-neon-pink transition-colors"
+                >
+                  прибрати
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </Field>
+
+      {/* .env fields the customer fills in at checkout */}
+      <Field
+        label="Поля .env для клієнта"
+        hint="працює разом із шаблоном вище"
+      >
+        <EnvFieldsEditor fields={envFields} onChange={setEnvFields} />
       </Field>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

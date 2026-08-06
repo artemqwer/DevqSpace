@@ -4,10 +4,12 @@ import {
   getProductBySlug,
   setOrderDownloadToken,
   markOrderDelivered,
+  updateOrder,
   type StoredOrder,
 } from "./store";
 import { tgSendDocument, tgSendMessage, TG_CONFIG } from "./telegram";
 import { sendDeliveryEmail, emailEnabled } from "./email";
+import { packageOrder } from "./packager";
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -34,13 +36,70 @@ export async function deliverOrder(
   const admin = TG_CONFIG.adminChatId;
   const product = await getProductBySlug(order.productSlug);
 
-  if (!product?.fileUrl) {
+  if (!product) {
+    await updateOrder(order.id, {
+      deliveryStatus: "FAILED",
+      errorMessage: `Товар ${order.productSlug} не знайдено`,
+    });
+    return { ok: false, channel: "-", note: "товар не знайдено" };
+  }
+
+  // ---- Динамічна упаковка ----
+  // Вмикається лише коли товар має і поля .env, і шаблон, а клієнт лишив
+  // значення. Інакше нижче йде звичайна статична видача product.fileUrl.
+  const dynamicMode = Boolean(
+    product.envFields?.length && product.sourceTemplatePath && order.envData,
+  );
+
+  let fileUrl = product.fileUrl;
+
+  if (dynamicMode) {
+    await updateOrder(order.id, {
+      deliveryStatus: "GENERATING",
+      errorMessage: undefined,
+    });
+    let pkg;
+    try {
+      pkg = await packageOrder(order, product);
+    } catch (e) {
+      console.error("[delivery] packaging crashed:", e);
+      pkg = { ok: false as const, error: "Збірка архіву впала з помилкою" };
+    }
+
+    if (!pkg.ok) {
+      await updateOrder(order.id, {
+        deliveryStatus: "FAILED",
+        errorMessage: pkg.error,
+      });
+      if (admin)
+        await tgSendMessage(
+          admin,
+          `❌ Не вдалося зібрати архів для <b>${esc(order.productTitle ?? order.productSlug)}</b>.\n` +
+            `<b>Причина:</b> ${esc(pkg.error)}\n` +
+            `Клієнт: ${esc(order.name)} · ${esc(order.contact)}\n` +
+            `Полагодьте і натисніть «Перегенерувати» в адмінці.`,
+        );
+      return { ok: false, channel: "-", note: pkg.error };
+    }
+
+    fileUrl = pkg.url;
+    await updateOrder(order.id, {
+      packageUrl: pkg.url,
+      packageName: pkg.name,
+    });
+  }
+
+  if (!fileUrl) {
     if (admin)
       await tgSendMessage(
         admin,
         `⚠️ Немає файлу для товару <b>${esc(order.productTitle ?? order.productSlug)}</b>.\n` +
           `Завантажте ZIP в адмінці (товар → Файл), потім видайте вручну.`,
       );
+    await updateOrder(order.id, {
+      deliveryStatus: "FAILED",
+      errorMessage: "Немає файлу товару",
+    });
     return { ok: false, channel: "-", note: "немає файлу" };
   }
 
@@ -55,11 +114,12 @@ export async function deliverOrder(
       // Спроба 1: надіслати сам файл документом.
       const ok = await tgSendDocument(
         order.tgChatId,
-        product.fileUrl,
+        fileUrl,
         `✅ <b>${esc(product.title)}</b>\nДякуємо за покупку! Ваш архів у вкладенні. Гарантія 1 рік 🚀`,
       );
       if (ok) {
         await markOrderDelivered(order.id, "telegram");
+        await updateOrder(order.id, { deliveryStatus: "SENT" });
         if (admin)
           await tgSendMessage(
             admin,
@@ -74,6 +134,7 @@ export async function deliverOrder(
       );
       if (linkOk) {
         await markOrderDelivered(order.id, "telegram", "надіслано посиланням");
+        await updateOrder(order.id, { deliveryStatus: "SENT" });
         if (admin)
           await tgSendMessage(
             admin,
@@ -86,6 +147,10 @@ export async function deliverOrder(
       ? "помилка надсилання"
       : "клієнт не підключив Telegram";
     await markOrderDelivered(order.id, "manual", note);
+    await updateOrder(order.id, {
+      deliveryStatus: "FAILED",
+      errorMessage: `Telegram: ${note}`,
+    });
     if (admin)
       await tgSendMessage(
         admin,
@@ -103,6 +168,7 @@ export async function deliverOrder(
       const r = await sendDeliveryEmail(order.contact, product.title, dlUrl);
       if (r.ok) {
         await markOrderDelivered(order.id, "email");
+        await updateOrder(order.id, { deliveryStatus: "SENT" });
         if (admin)
           await tgSendMessage(
             admin,
@@ -113,6 +179,10 @@ export async function deliverOrder(
       reason = r.error ?? "помилка Resend";
     }
     await markOrderDelivered(order.id, "manual", "email не надіслано");
+    await updateOrder(order.id, {
+      deliveryStatus: "FAILED",
+      errorMessage: `Email: ${reason}`,
+    });
     if (admin)
       await tgSendMessage(
         admin,

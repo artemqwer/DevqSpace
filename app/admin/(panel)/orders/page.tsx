@@ -1,10 +1,29 @@
-import { getAllOrders } from "@/lib/store";
+import { getAllOrders, purgeStaleEnvData, type StoredOrder } from "@/lib/store";
+import { decryptJson, maskSecret } from "@/lib/crypto";
+import type { EnvValues } from "@/lib/envFields";
 import OrdersBoard from "@/components/admin/OrdersBoard";
 
 export const dynamic = "force-dynamic";
 
 export default async function OrdersPage() {
   const orders = await getAllOrders();
+
+  // Крона немає — чистимо протерміновані дані клієнтів звідси, сторінка й так
+  // рендериться на кожен запит.
+  await purgeStaleEnvData(orders);
+
+  // Значення .env клієнта в адмінку йдуть лише замаскованими: адмінові треба
+  // бачити, що саме введено, а не самі токени.
+  const maskedEnv: Record<string, [string, string][]> = {};
+  for (const order of orders) {
+    const values = decryptJson<EnvValues>(order.envData);
+    if (!values) continue;
+    maskedEnv[order.id] = Object.entries(values).map(([k, v]) => [
+      k,
+      maskSecret(v),
+    ]);
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-3">
@@ -24,7 +43,13 @@ export default async function OrdersPage() {
         </a>
       </div>
 
-      <OrdersBoard initialOrders={orders} />
+      <OrdersBoard initialOrders={stripSecrets(orders)} maskedEnv={maskedEnv} />
     </div>
   );
+}
+
+// Зашифроване поле клієнтському бандлу ні до чого — прибираємо перед
+// серіалізацією в Client Component.
+function stripSecrets(orders: StoredOrder[]): StoredOrder[] {
+  return orders.map((o) => ({ ...o, envData: undefined }));
 }

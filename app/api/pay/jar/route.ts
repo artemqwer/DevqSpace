@@ -1,6 +1,7 @@
 import { jarEnabled, getJarUrl, usdToUah } from "@/lib/monojar";
 import { getProductBySlug, addOrder, rateLimit } from "@/lib/store";
 import { sendOrderToTelegram, type OrderPayload } from "@/lib/telegram";
+import { prepareEnvData } from "@/lib/orderEnv";
 
 type Body = {
   productSlug?: string;
@@ -9,6 +10,7 @@ type Body = {
   contact?: string;
   message?: string;
   company?: string; // honeypot
+  envData?: Record<string, string>;
 };
 
 export async function POST(req: Request) {
@@ -72,6 +74,12 @@ export async function POST(req: Request) {
   const message = (body.message ?? "").trim();
   const amountUah = await usdToUah(product.price);
 
+  // Ті самі перевірки .env, що й у крипто-оплаті.
+  const env = await prepareEnvData(product, body.envData);
+  if (!env.ok) {
+    return Response.json({ ok: false, error: env.error }, { status: 400 });
+  }
+
   const order = await addOrder({
     type: "product",
     productSlug: product.slug,
@@ -82,6 +90,9 @@ export async function POST(req: Request) {
     contact,
     message,
     payMethod: "jar",
+    envData: env.envData,
+    envDataAt: env.envData ? Date.now() : undefined,
+    deliveryStatus: "PENDING",
   });
 
   // Telegram: очікує оплати на банку (з кнопками статусу + 💰 Оплачено)
@@ -102,7 +113,7 @@ export async function POST(req: Request) {
   return Response.json({
     ok: true,
     orderId: order.id,
-    jarUrl: getJarUrl(),
+    jarUrl: getJarUrl(order.id),
     amountUah,
     priceUsd: product.price,
   });

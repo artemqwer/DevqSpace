@@ -21,6 +21,12 @@ export async function GET(req: Request) {
     return new Response("Файл недоступний", { status: 404 });
   }
 
+  // Персональний архів (зібраний під .env клієнта) має пріоритет над
+  // статичним файлом товару.
+  if (order.packageUrl) {
+    return Response.redirect(order.packageUrl, 302);
+  }
+
   const product = await getProductBySlug(order.productSlug);
   if (!product?.fileUrl) {
     return new Response("Файл недоступний", { status: 404 });

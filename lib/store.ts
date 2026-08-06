@@ -1,6 +1,8 @@
 import "server-only";
 import { Redis } from "@upstash/redis";
 import { PRODUCTS as SEED_PRODUCTS, type Product } from "./products";
+import { DEV_STUBS } from "./devStubs";
+import { devReadState, devWriteState } from "./devStorage";
 
 // =====================================================================
 // Data store — Upstash Redis with in-memory fallback (local dev / no env)
@@ -37,7 +39,24 @@ export type StoredOrder = {
   deliveryChannel?: "telegram" | "email" | "manual";
   deliveryNote?: string; // напр. "клієнт ще не підключив Telegram"
   downloadToken?: string; // токен для захищеного посилання на завантаження
+  // Динамічна упаковка
+  envData?: string; // значення .env клієнта, зашифровані AES-256-GCM
+  envDataAt?: number; // коли збережено — для чистки через 30 днів
+  deliveryStatus?: DeliveryStatus;
+  errorMessage?: string; // причина FAILED, для адмінки
+  packageUrl?: string; // згенерований персональний архів
+  packageName?: string;
 };
+
+// Статус збірки й видачі персонального архіву. Доповнює старі delivered /
+// deliveryChannel, на які зав'язані бот і адмінка, — вони лишаються як були.
+export type DeliveryStatus = "PENDING" | "GENERATING" | "SENT" | "FAILED";
+
+// Для замовлень, створених до появи поля.
+export function effectiveDeliveryStatus(order: StoredOrder): DeliveryStatus {
+  if (order.deliveryStatus) return order.deliveryStatus;
+  return order.delivered ? "SENT" : "PENDING";
+}
 
 // ---- Redis client (lazy) --------------------------------------------
 
@@ -58,6 +77,10 @@ export function storageMode(): "redis" | "memory" {
 }
 
 // ---- In-memory fallback (survives HMR via globalThis) ---------------
+//
+// Локально, без Upstash, це і є база. Щоб замовлення й товари не зникали при
+// кожному перезапуску dev-сервера (у проді Redis їх зберігає), стан
+// дзеркалиться у .devq-storage/db.json. У проді персист не вмикається.
 
 type MemDB = {
   products: Map<string, Product>;
@@ -65,21 +88,92 @@ type MemDB = {
   seeded: boolean;
   viewsTotal: Map<string, number>;
   viewsDaily: Map<string, Record<string, number>>; // slug -> { date: count }
+  tokens: Map<string, string>; // downloadToken -> orderId
+  admins: Set<number>; // додаткові адміни бота
+  invites: Map<string, number>; // token -> expireAt
 };
 
-const g = globalThis as unknown as { __nexusMem?: MemDB };
+const g = globalThis as unknown as {
+  __nexusMem?: MemDB;
+  __nexusMemTimer?: ReturnType<typeof setTimeout>;
+};
+
+const DB_FILE = "db.json";
+
+type MemSnapshot = {
+  products: [string, Product][];
+  orders: [string, StoredOrder][];
+  seeded: boolean;
+  viewsTotal: [string, number][];
+  viewsDaily: [string, Record<string, number>][];
+  tokens: [string, string][];
+  admins: number[];
+  invites: [string, number][];
+};
+
+function emptyMem(): MemDB {
+  return {
+    products: new Map(),
+    orders: new Map(),
+    seeded: false,
+    viewsTotal: new Map(),
+    viewsDaily: new Map(),
+    tokens: new Map(),
+    admins: new Set(),
+    invites: new Map(),
+  };
+}
+
+function hydrate(): MemDB {
+  const db = emptyMem();
+  if (!DEV_STUBS) return db;
+  const raw = devReadState(DB_FILE) as MemSnapshot | null;
+  if (!raw) return db;
+  try {
+    db.products = new Map(raw.products ?? []);
+    db.orders = new Map(raw.orders ?? []);
+    db.seeded = Boolean(raw.seeded);
+    db.viewsTotal = new Map(raw.viewsTotal ?? []);
+    db.viewsDaily = new Map(raw.viewsDaily ?? []);
+    db.tokens = new Map(raw.tokens ?? []);
+    db.admins = new Set(raw.admins ?? []);
+    db.invites = new Map(raw.invites ?? []);
+  } catch {
+    return emptyMem();
+  }
+  return db;
+}
 
 function mem(): MemDB {
-  if (!g.__nexusMem) {
-    g.__nexusMem = {
-      products: new Map(),
-      orders: new Map(),
-      seeded: false,
-      viewsTotal: new Map(),
-      viewsDaily: new Map(),
-    };
-  }
+  if (!g.__nexusMem) g.__nexusMem = hydrate();
   return g.__nexusMem;
+}
+
+// Позначає стан зміненим. Запис на диск дебаунситься, щоб пачка мутацій
+// (напр. pipeline при reseed) не породжувала десятки записів підряд.
+function touch(): void {
+  if (!DEV_STUBS) return;
+  if (g.__nexusMemTimer) clearTimeout(g.__nexusMemTimer);
+  g.__nexusMemTimer = setTimeout(() => {
+    const m = mem();
+    const snapshot: MemSnapshot = {
+      products: [...m.products.entries()],
+      orders: [...m.orders.entries()],
+      seeded: m.seeded,
+      viewsTotal: [...m.viewsTotal.entries()],
+      viewsDaily: [...m.viewsDaily.entries()],
+      tokens: [...m.tokens.entries()],
+      admins: [...m.admins],
+      invites: [...m.invites.entries()],
+    };
+    try {
+      devWriteState(DB_FILE, snapshot);
+    } catch (e) {
+      console.error("[store] dev persist failed:", e);
+    }
+  }, 300);
+  // Не тримає процес живим заради запису.
+  g.__nexusMemTimer.unref?.();
 }
 
 // ---- Keys -----------------------------------------------------------
@@ -106,6 +200,7 @@ async function ensureSeeded(): Promise<void> {
     if (!m.seeded) {
       for (const p of SEED_PRODUCTS) m.products.set(p.slug, { ...p });
       m.seeded = true;
+      touch();
     }
     return;
   }
@@ -150,6 +245,7 @@ export async function saveProduct(product: Product): Promise<void> {
   const redis = getRedis();
   if (!redis) {
     mem().products.set(product.slug, { ...product });
+    touch();
     return;
   }
   const pipe = redis.pipeline();
@@ -165,6 +261,7 @@ export async function deleteProduct(slug: string): Promise<void> {
     m.products.delete(slug);
     m.viewsTotal.delete(slug);
     m.viewsDaily.delete(slug);
+    touch();
     return;
   }
   const pipe = redis.pipeline();
@@ -184,6 +281,7 @@ export async function reseedProducts(): Promise<number> {
     m.products.clear();
     for (const p of SEED_PRODUCTS) m.products.set(p.slug, { ...p });
     m.seeded = true;
+    touch();
     return SEED_PRODUCTS.length;
   }
   const slugs = await redis.smembers(K.productSlugs);
@@ -223,6 +321,7 @@ export async function addOrder(
   const redis = getRedis();
   if (!redis) {
     mem().orders.set(order.id, order);
+    touch();
     return order;
   }
   const pipe = redis.pipeline();
@@ -254,6 +353,26 @@ export async function getOrder(id: string): Promise<StoredOrder | null> {
   return (await redis.get<StoredOrder>(K.order(id))) ?? null;
 }
 
+// Часткове оновлення замовлення. Використовується для полів, які з'явилися
+// разом з динамічною упаковкою (deliveryStatus, envData, packageUrl…), щоб не
+// заводити окремий сеттер на кожне.
+export async function updateOrder(
+  id: string,
+  patch: Partial<StoredOrder>,
+): Promise<StoredOrder | null> {
+  const order = await getOrder(id);
+  if (!order) return null;
+  const next = { ...order, ...patch, id: order.id };
+  const redis = getRedis();
+  if (!redis) {
+    mem().orders.set(id, next);
+    touch();
+    return next;
+  }
+  await redis.set(K.order(id), next);
+  return next;
+}
+
 export async function updateOrderStatus(
   id: string,
   status: OrderStatus,
@@ -264,6 +383,7 @@ export async function updateOrderStatus(
   const redis = getRedis();
   if (!redis) {
     mem().orders.set(id, order);
+    touch();
     return true;
   }
   await redis.set(K.order(id), order);
@@ -286,6 +406,7 @@ export async function markOrderPaid(
   const redis = getRedis();
   if (!redis) {
     mem().orders.set(id, order);
+    touch();
     return true;
   }
   await redis.set(K.order(id), order);
@@ -302,6 +423,7 @@ export async function setOrderInvoice(
   const redis = getRedis();
   if (!redis) {
     mem().orders.set(id, order);
+    touch();
     return;
   }
   await redis.set(K.order(id), order);
@@ -316,13 +438,14 @@ export async function setOrderTgChat(
   if (!order) return false;
   order.tgChatId = chatId;
   const redis = getRedis();
-  if (!redis) mem().orders.set(id, order);
-  else await redis.set(K.order(id), order);
+  if (!redis) {
+    mem().orders.set(id, order);
+    touch();
+  } else await redis.set(K.order(id), order);
   return true;
 }
 
 // Токен захищеного завантаження: order.downloadToken + індекс dl:token->id.
-const memTokens = new Map<string, string>();
 
 export async function setOrderDownloadToken(
   id: string,
@@ -334,8 +457,10 @@ export async function setOrderDownloadToken(
   order.downloadToken = token;
   const redis = getRedis();
   if (!redis) {
-    mem().orders.set(id, order);
-    memTokens.set(token, id);
+    const m = mem();
+    m.orders.set(id, order);
+    m.tokens.set(token, id);
+    touch();
     return;
   }
   await redis.set(K.order(id), order);
@@ -348,7 +473,7 @@ export async function getOrderByToken(
   const redis = getRedis();
   const id = redis
     ? await redis.get<string>(K.dlToken(token))
-    : memTokens.get(token);
+    : mem().tokens.get(token);
   if (!id) return null;
   return getOrder(id);
 }
@@ -365,14 +490,38 @@ export async function markOrderDelivered(
   order.deliveryChannel = channel;
   if (note) order.deliveryNote = note;
   const redis = getRedis();
-  if (!redis) mem().orders.set(id, order);
-  else await redis.set(K.order(id), order);
+  if (!redis) {
+    mem().orders.set(id, order);
+    touch();
+  } else await redis.set(K.order(id), order);
+}
+
+// Введені клієнтом .env-значення (там його бойовий токен) не мають лежати
+// вічно. Крона немає, тож чистимо ліниво — зі сторінки замовлень адмінки, яка
+// й так рендериться на кожен запит. Після чистки перегенерація архіву стає
+// неможливою, тому вікно широке.
+export const ENV_DATA_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+export async function purgeStaleEnvData(orders: StoredOrder[]): Promise<number> {
+  const cutoff = Date.now() - ENV_DATA_TTL_MS;
+  let purged = 0;
+  for (const o of orders) {
+    if (!o.envData) continue;
+    const stamp = o.envDataAt ?? o.createdAt;
+    if (stamp >= cutoff) continue;
+    await updateOrder(o.id, { envData: undefined, envDataAt: undefined });
+    o.envData = undefined;
+    o.envDataAt = undefined;
+    purged++;
+  }
+  return purged;
 }
 
 export async function deleteOrder(id: string): Promise<void> {
   const redis = getRedis();
   if (!redis) {
     mem().orders.delete(id);
+    touch();
     return;
   }
   const pipe = redis.pipeline();
@@ -410,6 +559,7 @@ export async function trackProductView(slug: string): Promise<void> {
     const daily = m.viewsDaily.get(slug) ?? {};
     daily[day] = (daily[day] ?? 0) + 1;
     m.viewsDaily.set(slug, daily);
+    touch();
     return;
   }
   const pipe = redis.pipeline();
@@ -773,13 +923,11 @@ export async function setCache<T>(
 // Додаткові адміни бота (окрім головного з env) + запрошення
 // =====================================================================
 
-const memAdmins = new Set<number>();
-const memInvites = new Map<string, number>(); // token -> expireAt
-
 export async function addExtraAdmin(chatId: number): Promise<void> {
   const redis = getRedis();
   if (!redis) {
-    memAdmins.add(chatId);
+    mem().admins.add(chatId);
+    touch();
     return;
   }
   await redis.sadd(K.adminsExtra, chatId);
@@ -788,7 +936,8 @@ export async function addExtraAdmin(chatId: number): Promise<void> {
 export async function removeExtraAdmin(chatId: number): Promise<void> {
   const redis = getRedis();
   if (!redis) {
-    memAdmins.delete(chatId);
+    mem().admins.delete(chatId);
+    touch();
     return;
   }
   await redis.srem(K.adminsExtra, chatId);
@@ -796,14 +945,14 @@ export async function removeExtraAdmin(chatId: number): Promise<void> {
 
 export async function getExtraAdmins(): Promise<number[]> {
   const redis = getRedis();
-  if (!redis) return [...memAdmins];
+  if (!redis) return [...mem().admins];
   const ids = await redis.smembers(K.adminsExtra);
   return ids.map((x) => Number(x)).filter((n) => Number.isFinite(n));
 }
 
 export async function isExtraAdmin(chatId: number | string): Promise<boolean> {
   const redis = getRedis();
-  if (!redis) return memAdmins.has(Number(chatId));
+  if (!redis) return mem().admins.has(Number(chatId));
   return (await redis.sismember(K.adminsExtra, Number(chatId))) === 1;
 }
 
@@ -814,7 +963,8 @@ export async function createAdminInvite(
 ): Promise<void> {
   const redis = getRedis();
   if (!redis) {
-    memInvites.set(token, Date.now() + ttlSec * 1000);
+    mem().invites.set(token, Date.now() + ttlSec * 1000);
+    touch();
     return;
   }
   await redis.set(K.adminInvite(token), "1", { ex: ttlSec });
@@ -823,9 +973,11 @@ export async function createAdminInvite(
 export async function consumeAdminInvite(token: string): Promise<boolean> {
   const redis = getRedis();
   if (!redis) {
-    const exp = memInvites.get(token);
+    const m = mem();
+    const exp = m.invites.get(token);
     if (!exp || exp < Date.now()) return false;
-    memInvites.delete(token);
+    m.invites.delete(token);
+    touch();
     return true;
   }
   const v = await redis.get(K.adminInvite(token));

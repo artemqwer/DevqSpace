@@ -10,6 +10,10 @@ import { deliverOrder } from "@/lib/delivery";
 // IPN callback від NOWPayments. URL вказується при створенні інвойсу
 // (ipn_callback_url) і має збігатися з тим, що в налаштуваннях акаунта.
 
+// Всередині — збірка персонального архіву (розпакувати/зібрати/залити).
+// Дефолтних 10 с на Hobby для мегабайтних шаблонів впритул.
+export const maxDuration = 60;
+
 export async function POST(req: Request) {
   const raw = await req.text();
   const sig = req.headers.get("x-nowpayments-sig");

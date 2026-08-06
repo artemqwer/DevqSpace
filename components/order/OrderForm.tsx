@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { ACCENT_BUTTON, type Product } from "@/lib/products";
+import type { EnvValues } from "@/lib/envFields";
 import ProductThumb from "@/components/ProductThumb";
+import EnvFieldsForm from "./EnvFieldsForm";
+import { ORDER_INPUT_CLS } from "./styles";
 
 export default function OrderForm({
   product,
@@ -27,6 +30,17 @@ export default function OrderForm({
   const [contact, setContact] = useState("");
   const [message, setMessage] = useState("");
   const [company, setCompany] = useState(""); // honeypot
+  const [envValues, setEnvValues] = useState<EnvValues>(() =>
+    Object.fromEntries(
+      (product.envFields ?? [])
+        .filter((f) => f.defaultValue)
+        .map((f) => [f.key, f.defaultValue as string]),
+    ),
+  );
+  const envFields = product.envFields ?? [];
+  // Немає полів .env — нічого блокувати, поведінка як була.
+  const [envValid, setEnvValid] = useState(envFields.length === 0);
+  const onEnvValidity = useCallback((v: boolean) => setEnvValid(v), []);
   const [submitting, setSubmitting] = useState(false);
   const [paying, setPaying] = useState(false);
   const [jarPaying, setJarPaying] = useState(false);
@@ -55,6 +69,7 @@ export default function OrderForm({
           contact: contact.trim(),
           message: message.trim(),
           company,
+          envData: envValues,
         }),
       });
       const data = (await res.json()) as {
@@ -99,6 +114,7 @@ export default function OrderForm({
           contact: contact.trim(),
           message: message.trim(),
           company,
+          envData: envValues,
         }),
       });
       const data = (await res.json()) as {
@@ -140,6 +156,7 @@ export default function OrderForm({
           contact: contact.trim(),
           message: message.trim(),
           company,
+          envData: envValues,
         }),
       });
       const data = (await res.json()) as {
@@ -276,7 +293,7 @@ export default function OrderForm({
             onChange={(e) => setName(e.target.value)}
             placeholder="Артем"
             required
-            className="w-full bg-surface2 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue/50 transition-colors font-mono text-sm"
+            className={ORDER_INPUT_CLS}
           />
         </Field>
 
@@ -313,7 +330,7 @@ export default function OrderForm({
                   : "+380..."
             }
             required
-            className="w-full bg-surface2 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue/50 transition-colors font-mono text-sm"
+            className={ORDER_INPUT_CLS}
           />
         </Field>
 
@@ -327,6 +344,14 @@ export default function OrderForm({
           />
         </Field>
 
+        <EnvFieldsForm
+          fields={envFields}
+          values={envValues}
+          onChange={setEnvValues}
+          onValidityChange={onEnvValidity}
+          disabled={submitting || paying || jarPaying}
+        />
+
         {error && (
           <div className="text-sm text-neon-pink font-mono flex items-center gap-2">
             <i className="ph-fill ph-warning-circle" /> {error}
@@ -337,7 +362,7 @@ export default function OrderForm({
           <button
             type="button"
             onClick={handleJar}
-            disabled={jarPaying || paying || submitting}
+            disabled={jarPaying || paying || submitting || !envValid}
             className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-white text-black shadow-[0_10px_30px_-10px_rgba(255,255,255,0.3)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {jarPaying ? (
@@ -358,7 +383,7 @@ export default function OrderForm({
           <button
             type="button"
             onClick={handlePay}
-            disabled={paying || jarPaying || submitting}
+            disabled={paying || jarPaying || submitting || !envValid}
             className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-green to-neon-blue text-black shadow-[0_10px_30px_-10px_rgba(0,255,102,0.5)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {paying ? (
@@ -377,7 +402,7 @@ export default function OrderForm({
 
         <button
           type="submit"
-          disabled={submitting || paying || jarPaying}
+          disabled={submitting || paying || jarPaying || !envValid}
           className={
             cryptoEnabled || jarEnabled
               ? "w-full flex items-center justify-center gap-2 font-display font-medium rounded-xl px-6 py-3.5 bg-surface2 border border-white/10 text-white hover:border-neon-blue/50 active:scale-[0.98] transition-all disabled:opacity-60"

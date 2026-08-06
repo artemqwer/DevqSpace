@@ -1,14 +1,26 @@
 import "server-only";
+import { DEV_STUBS } from "./devStubs";
+import { devAppendMessage } from "./devStorage";
 
 // Надсилання листів через Resend (https://resend.com).
 // Потрібен RESEND_API_KEY. RESEND_FROM — адреса відправника з верифікованого
 // домену; для тесту можна лишити onboarding@resend.dev.
+//
+// Локально без ключа лист не зникає, а лягає в .devq-storage/mail і видно
+// на /dev/inbox — інакше lib/delivery звалилась би в ручну видачу і наскрізний
+// сценарій не перевірявся б.
 
 const API_KEY = process.env.RESEND_API_KEY;
 const FROM = process.env.RESEND_FROM || "DevqSpace <onboarding@resend.dev>";
 
+export type DevMail = { to: string; from: string; subject: string; html: string };
+
+function devMailboxActive(): boolean {
+  return DEV_STUBS && !API_KEY;
+}
+
 export function emailEnabled(): boolean {
-  return Boolean(API_KEY);
+  return Boolean(API_KEY) || DEV_STUBS;
 }
 
 export async function sendEmail(
@@ -16,6 +28,12 @@ export async function sendEmail(
   subject: string,
   html: string,
 ): Promise<{ ok: boolean; error?: string }> {
+  if (devMailboxActive()) {
+    const mail: DevMail = { to, from: FROM, subject, html };
+    devAppendMessage("mail", mail);
+    console.log(`[email] dev-скринька: "${subject}" → ${to} (див. /dev/inbox)`);
+    return { ok: true };
+  }
   if (!API_KEY) return { ok: false, error: "RESEND_API_KEY not set" };
   try {
     const res = await fetch("https://api.resend.com/emails", {

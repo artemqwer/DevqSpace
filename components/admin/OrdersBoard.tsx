@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { StoredOrder, OrderStatus } from "@/lib/store";
+import type { StoredOrder, OrderStatus, DeliveryStatus } from "@/lib/store";
 
 const STATUSES: { id: OrderStatus | "all"; label: string }[] = [
   { id: "all", label: "Усі" },
@@ -19,6 +19,33 @@ const STATUS_STYLE: Record<OrderStatus, string> = {
   rejected: "bg-neon-pink/10 text-neon-pink border-neon-pink/30",
 };
 
+// Стан збірки й видачі персонального архіву. Кольори — з тієї ж палітри,
+// що й статуси замовлення вище.
+const DELIVERY_STYLE: Record<DeliveryStatus, string> = {
+  PENDING: "bg-white/5 text-gray-400 border-white/10",
+  GENERATING: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
+  SENT: "bg-neon-green/10 text-neon-green border-neon-green/30",
+  FAILED: "bg-neon-pink/10 text-neon-pink border-neon-pink/30",
+};
+
+const DELIVERY_LABEL: Record<DeliveryStatus, string> = {
+  PENDING: "Очікує",
+  GENERATING: "Збирається",
+  SENT: "Видано",
+  FAILED: "Помилка",
+};
+
+const DELIVERY_ICON: Record<DeliveryStatus, string> = {
+  PENDING: "ph-hourglass",
+  GENERATING: "ph-spinner-gap",
+  SENT: "ph-paper-plane-tilt",
+  FAILED: "ph-warning-circle",
+};
+
+function deliveryOf(o: StoredOrder): DeliveryStatus {
+  return o.deliveryStatus ?? (o.delivered ? "SENT" : "PENDING");
+}
+
 const NEXT_STATUS: { id: OrderStatus; label: string; icon: string }[] = [
   { id: "new", label: "Нове", icon: "ph-sparkle" },
   { id: "in_progress", label: "В роботі", icon: "ph-spinner-gap" },
@@ -28,14 +55,18 @@ const NEXT_STATUS: { id: OrderStatus; label: string; icon: string }[] = [
 
 export default function OrdersBoard({
   initialOrders,
+  maskedEnv = {},
 }: {
   initialOrders: StoredOrder[];
+  // orderId -> [ключ, замасковане значення][]. Самі токени сюди не потрапляють.
+  maskedEnv?: Record<string, [string, string][]>;
 }) {
   const router = useRouter();
   const [orders, setOrders] = useState(initialOrders);
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
   const [openId, setOpenId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [regenNote, setRegenNote] = useState<Record<string, string>>({});
 
   const filtered =
     filter === "all" ? orders : orders.filter((o) => o.status === filter);
@@ -84,6 +115,39 @@ export default function OrdersBoard({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, paid: true }),
     });
+    setBusy(null);
+    router.refresh();
+  };
+
+  // Пересобрати архів і надіслати заново — для замовлень, що впали.
+  const regenerate = async (id: string) => {
+    setBusy(id);
+    setRegenNote((p) => ({ ...p, [id]: "" }));
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === id ? { ...o, deliveryStatus: "GENERATING" } : o,
+      ),
+    );
+    try {
+      const res = await fetch("/api/admin/orders/regenerate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = (await res.json()) as {
+        ok: boolean;
+        error?: string;
+        note?: string;
+      };
+      setRegenNote((p) => ({
+        ...p,
+        [id]: data.ok
+          ? "Готово — архів зібрано і надіслано"
+          : data.error || "Не вдалося",
+      }));
+    } catch {
+      setRegenNote((p) => ({ ...p, [id]: "Помилка мережі" }));
+    }
     setBusy(null);
     router.refresh();
   };
@@ -160,6 +224,16 @@ export default function OrdersBoard({
                       <i className="ph-fill ph-check-circle" /> Оплачено
                     </span>
                   )}
+                  {o.type === "product" && deliveryOf(o) !== "PENDING" && (
+                    <span
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded border shrink-0 items-center gap-1 hidden sm:flex ${DELIVERY_STYLE[deliveryOf(o)]}`}
+                    >
+                      <i
+                        className={`ph-bold ${DELIVERY_ICON[deliveryOf(o)]} ${deliveryOf(o) === "GENERATING" ? "animate-spin" : ""}`}
+                      />
+                      {DELIVERY_LABEL[deliveryOf(o)]}
+                    </span>
+                  )}
                   <span
                     className={`text-[10px] font-mono px-2 py-0.5 rounded border shrink-0 ${STATUS_STYLE[o.status]}`}
                   >
@@ -214,6 +288,36 @@ export default function OrdersBoard({
                       </div>
                     )}
 
+                    {/* Динамічна упаковка: що ввів клієнт і чим усе скінчилось */}
+                    {maskedEnv[o.id]?.length ? (
+                      <div className="bg-surface2 rounded-lg p-3">
+                        <div className="text-[10px] font-mono text-neon-purple uppercase tracking-wider mb-2">
+                          {"// .env клієнта"}
+                        </div>
+                        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px] font-mono">
+                          {maskedEnv[o.id].map(([k, v]) => (
+                            <div key={k} className="flex gap-2 min-w-0">
+                              <dt className="text-gray-500 shrink-0">{k}</dt>
+                              <dd className="text-gray-300 truncate">{v}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      </div>
+                    ) : null}
+
+                    {o.errorMessage && (
+                      <div className="text-xs font-mono text-neon-pink bg-neon-pink/5 border border-neon-pink/20 rounded-lg p-3 flex items-start gap-2">
+                        <i className="ph-fill ph-warning-circle mt-0.5 shrink-0" />
+                        <span className="break-words">{o.errorMessage}</span>
+                      </div>
+                    )}
+
+                    {regenNote[o.id] && (
+                      <div className="text-xs font-mono text-gray-400">
+                        {regenNote[o.id]}
+                      </div>
+                    )}
+
                     {/* Status controls */}
                     <div className="flex flex-wrap gap-2 pt-1">
                       {NEXT_STATUS.map((s) => (
@@ -244,6 +348,18 @@ export default function OrdersBoard({
                       >
                         <i className="ph-bold ph-chat-circle" /> Написати
                       </a>
+                      {o.type === "product" && o.paid && (
+                        <button
+                          onClick={() => regenerate(o.id)}
+                          disabled={busy === o.id}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neon-purple/30 bg-neon-purple/10 text-neon-purple text-xs font-mono transition-colors disabled:opacity-40"
+                        >
+                          <i
+                            className={`ph-bold ph-arrows-clockwise ${busy === o.id ? "animate-spin" : ""}`}
+                          />
+                          Перегенерувати і надіслати
+                        </button>
+                      )}
                       {!o.paid && (
                         <button
                           onClick={() => markPaid(o.id)}

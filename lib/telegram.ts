@@ -1,19 +1,42 @@
 // Telegram Bot API helper — серверна частина (Route Handler / Server Action only)
 import { getExtraAdmins } from "./store";
+import { DEV_STUBS } from "./devStubs";
+import { devAppendMessage } from "./devStorage";
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID;
 
+// Локально без токена вихідні повідомлення не зникають у warn-логах, а лягають
+// у .devq-storage/tg і видно на /dev/inbox. Вхідні апдейти так не підміниш —
+// Telegram не достукається до localhost, для них потрібен ngrok (див. DEPLOY.md).
+const DEV_TG = DEV_STUBS && !BOT_TOKEN;
+export const DEV_TG_ADMIN_CHAT_ID = "dev-admin";
+export const DEV_TG_BOT_USERNAME = "devq_dev_bot";
+
+export type DevTgMessage = {
+  kind: "message" | "document" | "edit" | "callback";
+  chatId: string | number;
+  text?: string;
+  documentUrl?: string;
+  keyboard?: unknown;
+};
+
+function devTgLog(msg: DevTgMessage): true {
+  devAppendMessage("tg", msg);
+  return true;
+}
+
 export const TG_CONFIG = {
-  hasToken: Boolean(BOT_TOKEN),
-  hasAdmin: Boolean(ADMIN_CHAT_ID),
-  adminChatId: ADMIN_CHAT_ID,
+  hasToken: Boolean(BOT_TOKEN) || DEV_TG,
+  hasAdmin: Boolean(ADMIN_CHAT_ID) || DEV_TG,
+  // || а не ?? — порожній рядок у .env теж означає «не задано».
+  adminChatId: ADMIN_CHAT_ID || (DEV_TG ? DEV_TG_ADMIN_CHAT_ID : undefined),
 };
 
 // Усі chat_id адмінів: головний (env) + додані через запрошення.
 export async function getAllAdminChatIds(): Promise<string[]> {
   const ids = new Set<string>();
-  if (ADMIN_CHAT_ID) ids.add(String(ADMIN_CHAT_ID));
+  if (TG_CONFIG.adminChatId) ids.add(String(TG_CONFIG.adminChatId));
   for (const id of await getExtraAdmins()) ids.add(String(id));
   return [...ids];
 }
@@ -35,6 +58,7 @@ export async function tgSendMessage(
   parseMode: "HTML" | "Markdown" | "" = "HTML",
   keyboard?: InlineKeyboard,
 ): Promise<boolean> {
+  if (DEV_TG) return devTgLog({ kind: "message", chatId, text, keyboard });
   if (!BOT_TOKEN) {
     console.warn("[telegram] BOT_TOKEN not set, skipping sendMessage");
     return false;
@@ -72,6 +96,7 @@ export async function tgEditMessageText(
   text: string,
   keyboard?: InlineKeyboard,
 ): Promise<boolean> {
+  if (DEV_TG) return devTgLog({ kind: "edit", chatId, text, keyboard });
   if (!BOT_TOKEN) return false;
   try {
     const res = await fetch(
@@ -106,6 +131,13 @@ export async function tgSendDocument(
   documentUrl: string,
   caption?: string,
 ): Promise<boolean> {
+  if (DEV_TG)
+    return devTgLog({
+      kind: "document",
+      chatId,
+      text: caption,
+      documentUrl,
+    });
   if (!BOT_TOKEN) return false;
   try {
     const res = await fetch(
@@ -135,6 +167,7 @@ export async function tgSendDocument(
 let cachedBotUsername: string | null | undefined;
 export async function tgGetBotUsername(): Promise<string | null> {
   if (cachedBotUsername !== undefined) return cachedBotUsername;
+  if (DEV_TG) return (cachedBotUsername = DEV_TG_BOT_USERNAME);
   if (!BOT_TOKEN) return (cachedBotUsername = null);
   try {
     const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`, {
@@ -403,7 +436,7 @@ export async function sendOrderToTelegram(
   payload: OrderPayload,
   orderId?: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  if (!BOT_TOKEN || !ADMIN_CHAT_ID) {
+  if (!DEV_TG && (!BOT_TOKEN || !ADMIN_CHAT_ID)) {
     console.warn(
       "[telegram] TELEGRAM_BOT_TOKEN або TELEGRAM_ADMIN_CHAT_ID не задано — повідомлення не надіслано",
     );
