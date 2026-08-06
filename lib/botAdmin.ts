@@ -72,6 +72,9 @@ export function helpText(): string {
     "/add — додати товар (пришле шаблон)\n" +
     "/setprice <code>&lt;slug&gt; &lt;ціна&gt;</code> — змінити ціну\n" +
     "/del <code>&lt;slug&gt;</code> — видалити товар\n\n" +
+    "<b>Доступ</b>\n" +
+    "/invite — видати доступ кенту (посилання)\n" +
+    "/admins — список адмінів\n\n" +
     "<b>Службові</b>\n" +
     "/ping — перевірити доступність\n" +
     "/where — дізнатися chat_id"

@@ -1,4 +1,5 @@
 // Telegram Bot API helper — серверна частина (Route Handler / Server Action only)
+import { getExtraAdmins } from "./store";
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID;
@@ -8,6 +9,23 @@ export const TG_CONFIG = {
   hasAdmin: Boolean(ADMIN_CHAT_ID),
   adminChatId: ADMIN_CHAT_ID,
 };
+
+// Усі chat_id адмінів: головний (env) + додані через запрошення.
+export async function getAllAdminChatIds(): Promise<string[]> {
+  const ids = new Set<string>();
+  if (ADMIN_CHAT_ID) ids.add(String(ADMIN_CHAT_ID));
+  for (const id of await getExtraAdmins()) ids.add(String(id));
+  return [...ids];
+}
+
+// Розсилка повідомлення всім адмінам (напр. сповіщення про замовлення).
+export async function notifyAllAdmins(
+  text: string,
+  keyboard?: InlineKeyboard,
+): Promise<void> {
+  const ids = await getAllAdminChatIds();
+  await Promise.all(ids.map((id) => tgSendMessage(id, text, "HTML", keyboard)));
+}
 
 export type InlineKeyboard = { inline_keyboard: InlineButton[][] };
 
@@ -394,28 +412,16 @@ export async function sendOrderToTelegram(
   }
 
   const text = formatOrderMessage(payload);
-  const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+  const keyboard = orderId ? buildOrderKeyboard(orderId, "new") : undefined;
+  const admins = await getAllAdminChatIds();
 
   try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: ADMIN_CHAT_ID,
-        text,
-        parse_mode: "HTML",
-        disable_web_page_preview: true,
-        reply_markup: orderId ? buildOrderKeyboard(orderId, "new") : undefined,
-      }),
-      cache: "no-store",
-    });
-
-    const data = (await res.json()) as { ok: boolean; description?: string };
-    if (!data.ok) {
-      console.error("[telegram] API error:", data);
-      return { ok: false, error: data.description ?? "Telegram API error" };
-    }
-    return { ok: true };
+    // Надсилаємо всім адмінам (головний + додані). Успіх, якщо хоч комусь дійшло.
+    const results = await Promise.all(
+      admins.map((id) => tgSendMessage(id, text, "HTML", keyboard)),
+    );
+    if (results.some(Boolean)) return { ok: true };
+    return { ok: false, error: "Telegram API error" };
   } catch (e) {
     console.error("[telegram] fetch error:", e);
     return { ok: false, error: "Не вдалось зв'язатися з Telegram" };

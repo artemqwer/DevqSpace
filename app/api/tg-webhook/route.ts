@@ -6,6 +6,7 @@ import {
   tgEditReplyMarkup,
   tgSetChatMenuButton,
   tgSetMyCommands,
+  tgGetBotUsername,
   ORDER_STATUS_LABEL,
 } from "@/lib/telegram";
 import {
@@ -13,6 +14,12 @@ import {
   markOrderPaid,
   getOrder,
   setOrderTgChat,
+  isExtraAdmin,
+  addExtraAdmin,
+  removeExtraAdmin,
+  getExtraAdmins,
+  createAdminInvite,
+  consumeAdminInvite,
   type OrderStatus,
 } from "@/lib/store";
 import { deliverOrder } from "@/lib/delivery";
@@ -114,7 +121,8 @@ export async function POST(req: Request) {
   // (sendMessage з сайту йде сюди ж назад як update — це нормально, бо
   //  chat_id буде ADMIN, але text без leading "/" — отже команд не буде.)
   const adminId = TG_CONFIG.adminChatId;
-  const isAdmin = adminId ? String(msg.chat.id) === String(adminId) : false;
+  const isPrimary = adminId ? String(msg.chat.id) === String(adminId) : false;
+  const isAdmin = isPrimary || (await isExtraAdmin(msg.chat.id));
 
   const text = msg.text.trim();
   const [rawCmd] = text.split(/\s+/);
@@ -164,6 +172,34 @@ export async function POST(req: Request) {
     return Response.json({ ok: true });
   }
 
+  // Deep-link надання доступу адміна: t.me/<bot>?start=admin_<token>
+  if (cmd === "/start" && args[0]?.startsWith("admin_")) {
+    if (isPrimary) {
+      await tgSendMessage(chatId, "Ти вже головний адмін 🙂");
+      return Response.json({ ok: true });
+    }
+    const token = args[0].slice(6);
+    const ok = await consumeAdminInvite(token);
+    if (ok) {
+      await addExtraAdmin(msg.chat.id);
+      await tgSendMessage(
+        chatId,
+        "✅ <b>Доступ адміна надано!</b>\nТепер тобі приходитимуть замовлення й доступні всі команди. Напиши /help.",
+      );
+      if (adminId)
+        await tgSendMessage(
+          adminId,
+          `➕ Додано адміна: @${msg.from?.username ?? "—"} (<code>${msg.chat.id}</code>)`,
+        );
+    } else {
+      await tgSendMessage(
+        chatId,
+        "Запрошення недійсне або застаріле. Попроси головного адміна нове (/invite).",
+      );
+    }
+    return Response.json({ ok: true });
+  }
+
   if (!isAdmin) {
     // Не адмін — мовчимо, нічого не відповідаємо (крім /where і deep-link)
     return Response.json({ ok: true });
@@ -208,6 +244,63 @@ export async function POST(req: Request) {
 
   if (cmd === "/ping") {
     await tgSendMessage(chatId, "🟢 pong");
+    return Response.json({ ok: true });
+  }
+
+  // ---- Керування адмінами (тільки головний адмін) ----
+  if (cmd === "/invite" || cmd === "/admins" || cmd === "/removeadmin" || cmd === "/deladmin") {
+    if (!isPrimary) {
+      await tgSendMessage(chatId, "🔒 Лише головний адмін може керувати доступом.");
+      return Response.json({ ok: true });
+    }
+
+    if (cmd === "/invite") {
+      const token =
+        Math.random().toString(36).slice(2, 10) +
+        Math.random().toString(36).slice(2, 6);
+      await createAdminInvite(token);
+      const uname = await tgGetBotUsername();
+      const link = uname
+        ? `https://t.me/${uname}?start=admin_${token}`
+        : `admin_${token} (username бота недоступний)`;
+      await tgSendMessage(
+        chatId,
+        "🔑 <b>Запрошення адміна</b>\n\n" +
+          "Надішли кенту це посилання — хай відкриє й натисне <b>Start</b>:\n" +
+          `${link}\n\n` +
+          "<i>Одноразове, діє 24 години.</i>",
+      );
+      return Response.json({ ok: true });
+    }
+
+    if (cmd === "/admins") {
+      const extra = await getExtraAdmins();
+      const lines = [
+        "👥 <b>Адміни бота</b>",
+        `⭐ Головний: <code>${adminId}</code>`,
+      ];
+      if (extra.length) {
+        lines.push("", "Додаткові:");
+        extra.forEach((id) => lines.push(`• <code>${id}</code>`));
+        lines.push("", "Видалити: /removeadmin <code>&lt;chat_id&gt;</code>");
+      } else {
+        lines.push("", "Додаткових нема. /invite — щоб надати доступ.");
+      }
+      await tgSendMessage(chatId, lines.join("\n"));
+      return Response.json({ ok: true });
+    }
+
+    // /removeadmin | /deladmin
+    const id = Number(args[0]);
+    if (!id) {
+      await tgSendMessage(
+        chatId,
+        "Формат: /removeadmin <code>&lt;chat_id&gt;</code> (id глянь у /admins)",
+      );
+      return Response.json({ ok: true });
+    }
+    await removeExtraAdmin(id);
+    await tgSendMessage(chatId, `✅ Адміна <code>${id}</code> видалено.`);
     return Response.json({ ok: true });
   }
 
@@ -273,7 +366,9 @@ async function handleCallback(
 ): Promise<void> {
   const adminId = TG_CONFIG.adminChatId;
   const fromId = cb.message?.chat.id ?? cb.from.id;
-  const isAdmin = adminId ? String(fromId) === String(adminId) : false;
+  const isAdmin =
+    (adminId && String(fromId) === String(adminId)) ||
+    (await isExtraAdmin(fromId));
 
   if (!isAdmin) {
     await tgAnswerCallback(cb.id, "Немає доступу");

@@ -93,6 +93,8 @@ const K = {
   viewsIndex: "views:index", // sorted set: slug -> total views (для рейтингу)
   viewsDaily: (slug: string) => `views:daily:${slug}`, // hash: YYYY-MM-DD -> count
   viewsTotalAll: "views:total", // глобальний лічильник усіх переглядів
+  adminsExtra: "admins:extra", // set додаткових chat_id адмінів
+  adminInvite: (t: string) => `admininvite:${t}`, // одноразове запрошення
 };
 
 // ---- Seeding --------------------------------------------------------
@@ -765,6 +767,71 @@ export async function setCache<T>(
     return;
   }
   await redis.set(`cache:${key}`, value, { ex: ttlSec });
+}
+
+// =====================================================================
+// Додаткові адміни бота (окрім головного з env) + запрошення
+// =====================================================================
+
+const memAdmins = new Set<number>();
+const memInvites = new Map<string, number>(); // token -> expireAt
+
+export async function addExtraAdmin(chatId: number): Promise<void> {
+  const redis = getRedis();
+  if (!redis) {
+    memAdmins.add(chatId);
+    return;
+  }
+  await redis.sadd(K.adminsExtra, chatId);
+}
+
+export async function removeExtraAdmin(chatId: number): Promise<void> {
+  const redis = getRedis();
+  if (!redis) {
+    memAdmins.delete(chatId);
+    return;
+  }
+  await redis.srem(K.adminsExtra, chatId);
+}
+
+export async function getExtraAdmins(): Promise<number[]> {
+  const redis = getRedis();
+  if (!redis) return [...memAdmins];
+  const ids = await redis.smembers(K.adminsExtra);
+  return ids.map((x) => Number(x)).filter((n) => Number.isFinite(n));
+}
+
+export async function isExtraAdmin(chatId: number | string): Promise<boolean> {
+  const redis = getRedis();
+  if (!redis) return memAdmins.has(Number(chatId));
+  return (await redis.sismember(K.adminsExtra, Number(chatId))) === 1;
+}
+
+// Одноразове запрошення-токен для видачі доступу адміна.
+export async function createAdminInvite(
+  token: string,
+  ttlSec = 60 * 60 * 24,
+): Promise<void> {
+  const redis = getRedis();
+  if (!redis) {
+    memInvites.set(token, Date.now() + ttlSec * 1000);
+    return;
+  }
+  await redis.set(K.adminInvite(token), "1", { ex: ttlSec });
+}
+
+export async function consumeAdminInvite(token: string): Promise<boolean> {
+  const redis = getRedis();
+  if (!redis) {
+    const exp = memInvites.get(token);
+    if (!exp || exp < Date.now()) return false;
+    memInvites.delete(token);
+    return true;
+  }
+  const v = await redis.get(K.adminInvite(token));
+  if (!v) return false;
+  await redis.del(K.adminInvite(token));
+  return true;
 }
 
 // ---- utils ----------------------------------------------------------
