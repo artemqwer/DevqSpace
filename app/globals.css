@@ -205,11 +205,14 @@ footer {
     0 0 42px rgba(138, 43, 226, 0.35);
 }
 
-/* hollow outlined display text — прозора заливка + неоново-зелений контур */
+/* hollow outlined display text — прозора заливка + неоново-зелений контур.
+   БЕЗ text-shadow: на iOS Safari тінь малюється по суцільній формі літери
+   (заливка ігнорується) і виходить зелений «блоб» замість чистого контуру.
+   Легке світіння даємо через filter: drop-shadow (працює по обведенню). */
 .text-outline {
   color: transparent;
   -webkit-text-stroke: 1.5px var(--color-neon-green);
-  text-shadow: 0 0 22px rgba(0, 255, 102, 0.35);
+  filter: drop-shadow(0 0 6px rgba(0, 255, 102, 0.35));
 }
 @media (min-width: 1024px) {
   .text-outline {
