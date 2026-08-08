@@ -402,7 +402,9 @@ export default function OrderForm({
 
         <button
           type="submit"
-          disabled={submitting || paying || jarPaying || !envValid}
+          // Свідомо БЕЗ envValid: якщо клієнт не розібрався в налаштуваннях,
+          // він має змогу просто залишити заявку — оформимо підтримкою.
+          disabled={submitting || paying || jarPaying}
           className={
             cryptoEnabled || jarEnabled
               ? "w-full flex items-center justify-center gap-2 font-display font-medium rounded-xl px-6 py-3.5 bg-surface2 border border-white/10 text-white hover:border-neon-blue/50 active:scale-[0.98] transition-all disabled:opacity-60"
@@ -423,9 +425,11 @@ export default function OrderForm({
         </button>
 
         <p className="text-xs text-gray-500 font-mono text-center">
-          {cryptoEnabled || jarEnabled
-            ? "Оплата карткою чи криптою. Або просто залиште заявку."
-            : "Відповімо в Telegram протягом 2 годин у робочий час"}
+          {envFields.length > 0 && !envValid
+            ? "Щоб оплатити — заповніть налаштування вище. Не розібрались? Залиште заявку, допоможемо."
+            : cryptoEnabled || jarEnabled
+              ? "Оплата карткою чи криптою. Або просто залиште заявку."
+              : "Відповімо в Telegram протягом 2 годин у робочий час"}
         </p>
       </form>
 

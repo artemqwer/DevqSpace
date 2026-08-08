@@ -72,6 +72,17 @@ export async function POST(req: Request) {
         { status: 404 },
       );
     }
+    // Заявка без оплати — м'який режим: клієнт міг не розібратися в
+    // налаштуваннях, і це нормальний сценарій («оформимо підтримкою»).
+    // Заявку приймаємо, а адміну показуємо, чого бракує.
+    const env = await prepareEnvData(product, body.envData, "lenient");
+    if (!env.ok) {
+      return Response.json({ ok: false, error: env.error }, { status: 400 });
+    }
+    const envNote = env.warnings.length
+      ? `\n\n⚠️ Налаштування заповнені не повністю:\n• ${env.warnings.join("\n• ")}`
+      : "";
+
     payload = {
       type: "product",
       productSlug: product.slug,
@@ -80,12 +91,8 @@ export async function POST(req: Request) {
       name,
       contactMethod,
       contact,
-      message,
+      message: message + envNote,
     };
-    const env = await prepareEnvData(product, body.envData);
-    if (!env.ok) {
-      return Response.json({ ok: false, error: env.error }, { status: 400 });
-    }
     orderData = {
       type: "product",
       productSlug: product.slug,
@@ -94,7 +101,7 @@ export async function POST(req: Request) {
       name,
       contactMethod,
       contact,
-      message,
+      message: message + envNote,
       envData: env.envData,
       envDataAt: env.envData ? Date.now() : undefined,
       deliveryStatus: "PENDING",

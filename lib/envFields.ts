@@ -18,6 +18,9 @@ export type ValidationResult =
 export function validateEnvValues(
   fields: EnvField[],
   input: unknown,
+  // ignoreRequired — для шляху «залишити заявку»: незаповнене обов'язкове поле
+  // там не помилка, клієнту допоможе саппорт.
+  opts?: { ignoreRequired?: boolean },
 ): ValidationResult {
   if (!fields.length) return { ok: true, values: {} };
 
@@ -35,7 +38,7 @@ export function validateEnvValues(
       .trim();
 
     if (!value) {
-      if (field.required) {
+      if (field.required && !opts?.ignoreRequired) {
         return { ok: false, error: `Заповніть поле «${field.label}»` };
       }
       continue;

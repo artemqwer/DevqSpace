@@ -198,7 +198,13 @@ async function ensureSeeded(): Promise<void> {
   if (!redis) {
     const m = mem();
     if (!m.seeded) {
-      for (const p of SEED_PRODUCTS) m.products.set(p.slug, { ...p });
+      // Тільки відсутні slug'и. Раніше сід перезаписував усе підряд, і товар,
+      // збережений адміном до першого читання, мовчки відкочувався до версії
+      // з lib/products.ts (saveProduct не виставляє прапорець seeded).
+      // На Redis такого не буває: після saveProduct scard > 0 і сід не йде.
+      for (const p of SEED_PRODUCTS) {
+        if (!m.products.has(p.slug)) m.products.set(p.slug, { ...p });
+      }
       m.seeded = true;
       touch();
     }
