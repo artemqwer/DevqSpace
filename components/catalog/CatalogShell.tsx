@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { MagnifyingGlass, PaperPlaneTilt } from "@phosphor-icons/react";
+import { useTranslations } from "next-intl";
 import { CATEGORIES, type CategoryId, type Product } from "@/lib/products";
 import { ProductCard } from "@/components/site/ProductCard";
 
@@ -15,6 +16,8 @@ export default function CatalogShell({
   products: Product[];
   initialFilter?: Filter;
 }) {
+  const t = useTranslations("catalog");
+  const tc = useTranslations("cat");
   const [filter, setFilter] = useState<Filter>(initialFilter);
   const [query, setQuery] = useState("");
 
@@ -37,13 +40,12 @@ export default function CatalogShell({
     <div className="mx-auto max-w-7xl px-4 pb-28 pt-28 md:px-6 md:pb-24 md:pt-32">
       {/* Header */}
       <div className="mb-6 flex flex-col gap-3 md:mb-10">
-        <span className="mono-label text-neon-blue">{"// каталог"}</span>
+        <span className="mono-label text-neon-blue">{t("eyebrow")}</span>
         <h1 className="text-balance font-display text-3xl font-bold tracking-tight text-foreground md:text-5xl">
-          Усі <span className="text-gradient">продукти</span>
+          {t("titleA")} <span className="text-gradient">{t("titleB")}</span>
         </h1>
         <p className="max-w-2xl text-pretty leading-relaxed text-muted-foreground">
-          {products.length} готових рішень з підтримкою й повним сорс-кодом. Або
-          замовте кастомну розробку під ключ.
+          {t("sub", { count: products.length })}
         </p>
       </div>
 
@@ -54,7 +56,7 @@ export default function CatalogShell({
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Шукати: shop, AI, CRM, RN..."
+          placeholder={t("search")}
           className="w-full rounded-xl border border-border bg-surface-2/60 py-3.5 pl-11 pr-4 font-mono text-sm text-foreground placeholder-muted-foreground transition-colors focus:border-neon-blue/50 focus:outline-none focus:ring-1 focus:ring-neon-blue/40"
         />
       </div>
@@ -64,7 +66,7 @@ export default function CatalogShell({
         <CategoryButton
           active={filter === "all"}
           onClick={() => setFilter("all")}
-          label="Усі"
+          label={t("all")}
           count={products.length}
         />
         {CATEGORIES.map((c) => (
@@ -73,7 +75,7 @@ export default function CatalogShell({
             active={filter === c.id}
             onClick={() => setFilter(c.id)}
             icon={c.icon}
-            label={c.label}
+            label={tc(`${c.id}.label`)}
             count={products.filter((p) => p.category === c.id).length}
           />
         ))}
@@ -82,7 +84,7 @@ export default function CatalogShell({
       {/* Grid */}
       {filtered.length === 0 ? (
         <div className="mono-label py-20 text-center text-muted-foreground">
-          Нічого не знайдено
+          {t("empty")}
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
@@ -97,13 +99,12 @@ export default function CatalogShell({
         <div className="orb -left-16 -top-16 h-64 w-64 bg-neon-pink opacity-20" aria-hidden />
         <div className="relative grid grid-cols-1 items-start gap-5 md:grid-cols-[1fr_auto] md:items-center">
           <div className="flex flex-col gap-2">
-            <span className="mono-label text-neon-pink">{"// розробка під ключ"}</span>
+            <span className="mono-label text-neon-pink">{t("ctaEyebrow")}</span>
             <h2 className="font-display text-xl font-bold text-foreground md:text-2xl">
-              Не знайшли потрібного?
+              {t("ctaTitle")}
             </h2>
             <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-              Зробимо під вашу задачу з нуля. Брифінг 30 хв, фіксована вартість,
-              MVP за 2–4 тижні.
+              {t("ctaText")}
             </p>
           </div>
           <Link
@@ -111,7 +112,7 @@ export default function CatalogShell({
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-neon-blue to-neon-purple px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5"
           >
             <PaperPlaneTilt weight="fill" className="h-4 w-4" />
-            Замовити кастом
+            {t("ctaBtn")}
           </Link>
         </div>
       </div>

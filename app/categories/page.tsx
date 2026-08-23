@@ -15,6 +15,7 @@ import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
 import { CATEGORIES, type CategoryId } from "@/lib/products";
 import { getAllProducts } from "@/lib/store";
+import { getTranslations } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,8 @@ const iconByCategory: Record<CategoryId, ComponentType<IconProps>> = {
 
 export default async function CategoriesPage() {
   const products = await getAllProducts();
+  const t = await getTranslations("categories");
+  const tc = await getTranslations("cat");
   const countById = (id: CategoryId) =>
     products.filter((p) => p.category === id).length;
 
@@ -44,13 +47,12 @@ export default async function CategoriesPage() {
       <Navbar />
       <main className="relative mx-auto max-w-6xl px-4 pb-28 pt-24 md:px-8 md:pb-24 md:pt-32">
         <div className="mb-8 flex flex-col gap-4 md:mb-12">
-          <span className="mono-label text-neon-blue">{"// категорії"}</span>
+          <span className="mono-label text-neon-blue">{t("eyebrow")}</span>
           <h1 className="text-balance font-display text-3xl font-bold leading-[1.05] tracking-tight text-foreground md:text-6xl">
-            Обирайте <span className="text-gradient">напрям</span>
+            {t("pageHeadA")} <span className="text-gradient">{t("pageHeadB")}</span>
           </h1>
           <p className="max-w-2xl text-pretty leading-relaxed text-muted-foreground md:text-lg">
-            {products.length} готових рішень у шести напрямах — від Telegram-ботів
-            до Web3. Кожен продукт перевірено й задокументовано.
+            {products.length} {t("pageSub")}
           </p>
         </div>
 
@@ -73,14 +75,14 @@ export default async function CategoriesPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="font-display text-lg font-bold text-foreground">
-                      {cat.label}
+                      {tc(`${cat.id}.label`)}
                     </h2>
                     <span className="mono-label rounded-full border border-border bg-surface-2 px-2 py-0.5 text-muted-foreground">
                       {count}
                     </span>
                   </div>
                   <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                    {cat.description}
+                    {tc(`${cat.id}.desc`)}
                   </p>
                 </div>
               </Link>

@@ -24,7 +24,7 @@ import {
   getAllProducts,
   trackProductView,
 } from "@/lib/store";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +48,8 @@ export default async function ProductPage({ params }: Props) {
   after(() => trackProductView(raw.slug));
 
   const locale = await getLocale();
+  const t = await getTranslations("product");
+  const tc = await getTranslations("cat");
   const product = localizeProduct(raw, locale);
   const category = CATEGORIES.find((c) => c.id === product.category);
   const all = await getAllProducts();
@@ -95,12 +97,12 @@ export default async function ProductPage({ params }: Props) {
                   className="flex items-center gap-1 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[0.7rem] text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <i className={`ph ${category.icon}`} />
-                  {category.label}
+                  {tc(`${category.id}.label`)}
                 </Link>
               )}
               <span className="flex items-center gap-1 rounded-full border border-neon-green/30 bg-neon-green/10 px-2.5 py-1 text-[0.7rem] font-semibold text-neon-green">
                 <SealCheck weight="fill" className="h-3.5 w-3.5" />
-                Верифіковано
+                {t("verified")}
               </span>
             </div>
 
@@ -116,20 +118,20 @@ export default async function ProductPage({ params }: Props) {
                   <span className="text-muted-foreground">({product.ratingCount})</span>
                 </span>
                 <span className="flex items-center gap-1 text-muted-foreground">
-                  <Package className="h-3.5 w-3.5" /> {product.sold} продано
+                  <Package className="h-3.5 w-3.5" /> {product.sold} {t("sold")}
                 </span>
               </div>
             </div>
 
             {/* Description */}
-            <Section title="Опис">
+            <Section title={t("descTitle")}>
               <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
                 {product.description}
               </p>
             </Section>
 
             {/* Features */}
-            <Section title="Що вміє">
+            <Section title={t("featuresTitle")}>
               <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:gap-3">
                 {product.features.map((f) => (
                   <li key={f} className="flex items-start gap-2.5 text-sm text-foreground/90">
@@ -143,7 +145,7 @@ export default async function ProductPage({ params }: Props) {
             </Section>
 
             {/* Stack */}
-            <Section title="Стек">
+            <Section title={t("stackTitle")}>
               <div className="flex flex-wrap gap-1.5 md:gap-2">
                 {product.stack.map((s) => (
                   <span
@@ -157,7 +159,7 @@ export default async function ProductPage({ params }: Props) {
             </Section>
 
             {/* What's included */}
-            <Section title="Що ви отримаєте">
+            <Section title={t("includedTitle")}>
               <ul className="space-y-2">
                 {product.whatsIncluded.map((w) => (
                   <li key={w} className="flex items-center gap-3 text-sm text-foreground/90">
@@ -183,7 +185,7 @@ export default async function ProductPage({ params }: Props) {
                   <span className="text-muted-foreground">({product.ratingCount})</span>
                 </span>
                 <span className="flex items-center gap-1 text-muted-foreground">
-                  <Package className="h-3.5 w-3.5" /> {product.sold} продано
+                  <Package className="h-3.5 w-3.5" /> {product.sold} {t("sold")}
                 </span>
               </div>
 
@@ -191,7 +193,7 @@ export default async function ProductPage({ params }: Props) {
                 <div className="font-display text-4xl font-bold text-foreground md:text-5xl">
                   ${product.price}
                 </div>
-                <div className="mono-label text-muted-foreground">одноразово</div>
+                <div className="mono-label text-muted-foreground">{t("once")}</div>
               </div>
 
               <Link
@@ -199,7 +201,7 @@ export default async function ProductPage({ params }: Props) {
                 className="glow-strong mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-neon-blue to-neon-purple px-6 py-4 font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5"
               >
                 <ShoppingCartSimple weight="bold" className="h-5 w-5" />
-                Замовити
+                {t("order")}
               </Link>
 
               <a
@@ -207,28 +209,26 @@ export default async function ProductPage({ params }: Props) {
                 className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface-2/40 px-6 py-3 font-medium text-foreground transition-colors hover:border-neon-blue/50"
               >
                 <TelegramLogo weight="fill" className="h-5 w-5" />
-                Запитати в Telegram
+                {t("askTg")}
               </a>
 
               <div className="space-y-3 border-t border-border pt-5 text-sm">
-                <InfoRow icon={<Truck />} label="Доставка" value={product.delivery} />
+                <InfoRow icon={<Truck />} label={t("delivery")} value={product.delivery} />
                 <InfoRow
                   icon={<ShieldCheck />}
-                  label="Гарантія"
+                  label={t("warranty")}
                   value={product.warranty}
                   accent
                 />
-                <InfoRow icon={<ArrowsClockwise />} label="Апдейти" value="Безкоштовно" />
-                <InfoRow icon={<Code />} label="Сорс-код" value="Повний доступ" />
+                <InfoRow icon={<ArrowsClockwise />} label={t("updates")} value={t("updatesV")} />
+                <InfoRow icon={<Code />} label={t("source")} value={t("sourceV")} />
               </div>
             </div>
 
             <div className="mt-4 flex items-start gap-3 rounded-xl border border-neon-green/20 bg-neon-green/5 p-4">
               <ShieldCheck weight="fill" className="h-6 w-6 shrink-0 text-neon-green" />
               <div className="text-xs leading-relaxed text-muted-foreground">
-                <strong className="text-foreground">Безпечно.</strong> Спочатку
-                обговорюємо, виставляємо рахунок, потім оплата і миттєва доставка
-                коду.
+                <strong className="text-foreground">{t("safeTitle")}</strong> {t("safeText")}
               </div>
             </div>
           </aside>
@@ -236,15 +236,15 @@ export default async function ProductPage({ params }: Props) {
           {/* Mobile details list */}
           <aside className="lg:hidden">
             <div className="mt-6 space-y-2.5 rounded-xl border border-border bg-surface/50 p-4 text-sm backdrop-blur">
-              <InfoRow icon={<Truck />} label="Доставка" value={product.delivery} />
+              <InfoRow icon={<Truck />} label={t("delivery")} value={product.delivery} />
               <InfoRow
                 icon={<ShieldCheck />}
-                label="Гарантія"
+                label={t("warranty")}
                 value={product.warranty}
                 accent
               />
-              <InfoRow icon={<ArrowsClockwise />} label="Апдейти" value="Безкоштовно" />
-              <InfoRow icon={<Code />} label="Сорс-код" value="Повний доступ" />
+              <InfoRow icon={<ArrowsClockwise />} label={t("updates")} value={t("updatesV")} />
+              <InfoRow icon={<Code />} label={t("source")} value={t("sourceV")} />
             </div>
           </aside>
         </div>
@@ -253,7 +253,7 @@ export default async function ProductPage({ params }: Props) {
         {related.length > 0 && (
           <div className="mt-12 md:mt-24">
             <h2 className="mb-4 font-display text-lg font-bold text-foreground md:mb-5 md:text-2xl">
-              Схожі продукти
+              {t("related")}
             </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((p) => (
@@ -271,7 +271,7 @@ export default async function ProductPage({ params }: Props) {
       >
         <div className="glass flex items-center gap-2 rounded-2xl border border-border p-2 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)]">
           <div className="flex-1 pl-2">
-            <div className="mono-label text-muted-foreground">Ціна</div>
+            <div className="mono-label text-muted-foreground">{t("price")}</div>
             <div className="font-display text-xl font-bold leading-none text-foreground">
               ${product.price}
             </div>
@@ -281,7 +281,7 @@ export default async function ProductPage({ params }: Props) {
             className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-neon-blue to-neon-purple px-5 py-3 text-sm font-semibold text-primary-foreground"
           >
             <ShoppingCartSimple weight="bold" className="h-4 w-4" />
-            Замовити
+            {t("order")}
           </Link>
         </div>
       </div>
