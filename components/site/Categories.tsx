@@ -10,6 +10,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import type { IconProps } from "@phosphor-icons/react";
 import type { ComponentType } from "react";
+import { useTranslations } from "next-intl";
 import { CATEGORIES, type CategoryId } from "@/lib/products";
 
 // Реальні категорії → декоративна React-іконка
@@ -23,17 +24,18 @@ const iconByCategory: Record<CategoryId, ComponentType<IconProps>> = {
 };
 
 export function Categories() {
+  const t = useTranslations("categories");
+  const tc = useTranslations("cat");
   return (
     <section id="categories" className="relative py-16 md:py-24">
       <div className="mx-auto max-w-7xl px-4 md:px-6">
         <div className="flex flex-col gap-3">
-          <span className="mono-label text-neon-blue">{"// категорії"}</span>
+          <span className="mono-label text-neon-blue">{t("eyebrow")}</span>
           <h2 className="text-balance font-display text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-            Обирайте напрям
+            {t("title")}
           </h2>
           <p className="max-w-xl text-pretty leading-relaxed text-muted-foreground">
-            Готові рішення в шести напрямах — від Telegram-ботів до Web3. Кожен
-            продукт перевірено й задокументовано.
+            {t("subtitle")}
           </p>
         </div>
 
@@ -54,10 +56,10 @@ export function Categories() {
                 </div>
                 <div>
                   <h3 className="font-display text-lg font-bold text-foreground">
-                    {cat.label}
+                    {tc(`${cat.id}.label`)}
                   </h3>
                   <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                    {cat.description}
+                    {tc(`${cat.id}.desc`)}
                   </p>
                 </div>
               </Link>

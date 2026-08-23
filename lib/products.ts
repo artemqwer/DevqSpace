@@ -28,6 +28,12 @@ export type Product = {
   image?: string; // URL реального зображення; якщо є — показується замість градієнта
   fileUrl?: string; // URL ZIP-архіву товару (Vercel Blob) — видається після оплати
   fileName?: string; // оригінальна назва файлу для видачі
+  // Англійські варіанти (опційно). Порожні → фолбек на базові поля.
+  title_en?: string;
+  tagline_en?: string;
+  description_en?: string;
+  features_en?: string[];
+  whatsIncluded_en?: string[];
   price: number;
   currency: "USD";
   delivery: string;
@@ -39,6 +45,21 @@ export type Product = {
   rating: number;
   ratingCount: number;
 };
+
+// Повертає товар із підставленими EN-полями для locale="en" (фолбек на базові).
+export function localizeProduct(p: Product, locale: string): Product {
+  if (locale !== "en") return p;
+  return {
+    ...p,
+    title: p.title_en || p.title,
+    tagline: p.tagline_en || p.tagline,
+    description: p.description_en || p.description,
+    features: p.features_en?.length ? p.features_en : p.features,
+    whatsIncluded: p.whatsIncluded_en?.length
+      ? p.whatsIncluded_en
+      : p.whatsIncluded,
+  };
+}
 
 export const CATEGORIES: Category[] = [
   {

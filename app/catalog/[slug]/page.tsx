@@ -18,12 +18,13 @@ import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
 import { ProductCard } from "@/components/site/ProductCard";
 import { ProductCover } from "@/components/site/ProductCover";
-import { CATEGORIES } from "@/lib/products";
+import { CATEGORIES, localizeProduct } from "@/lib/products";
 import {
   getProductBySlug,
   getAllProducts,
   trackProductView,
 } from "@/lib/store";
+import { getLocale } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
@@ -41,16 +42,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
-  if (!product) notFound();
+  const raw = await getProductBySlug(slug);
+  if (!raw) notFound();
 
-  after(() => trackProductView(product.slug));
+  after(() => trackProductView(raw.slug));
 
+  const locale = await getLocale();
+  const product = localizeProduct(raw, locale);
   const category = CATEGORIES.find((c) => c.id === product.category);
   const all = await getAllProducts();
   const related = all
     .filter((p) => p.category === product.category && p.slug !== product.slug)
-    .slice(0, 3);
+    .slice(0, 3)
+    .map((p) => localizeProduct(p, locale));
 
   return (
     <div className="min-h-screen bg-background">

@@ -3,7 +3,8 @@ import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
 import CatalogShell from "@/components/catalog/CatalogShell";
 import { getAllProducts } from "@/lib/store";
-import { CATEGORIES, type CategoryId } from "@/lib/products";
+import { CATEGORIES, localizeProduct, type CategoryId } from "@/lib/products";
+import { getLocale } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,12 @@ export default async function CatalogPage({
 }: {
   searchParams: Promise<{ cat?: string }>;
 }) {
-  const [products, sp] = await Promise.all([getAllProducts(), searchParams]);
+  const [raw, sp, locale] = await Promise.all([
+    getAllProducts(),
+    searchParams,
+    getLocale(),
+  ]);
+  const products = raw.map((p) => localizeProduct(p, locale));
   const initialFilter =
     sp.cat && VALID_CATS.has(sp.cat as CategoryId)
       ? (sp.cat as CategoryId)

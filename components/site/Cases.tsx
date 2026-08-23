@@ -1,4 +1,5 @@
 import { Quotes, TrendUp } from "@phosphor-icons/react/dist/ssr";
+import { useTranslations } from "next-intl";
 
 // TODO: замінити на реальні кейси й відгуки клієнтів.
 const cases = [
@@ -44,13 +45,14 @@ const testimonials = [
 ];
 
 export function Cases() {
+  const t = useTranslations("cases");
   return (
     <section id="cases" className="relative py-16 md:py-24">
       <div className="mx-auto max-w-7xl px-4 md:px-6">
         <div className="flex flex-col gap-3">
-          <span className="mono-label text-neon-blue">{"// кейси"}</span>
+          <span className="mono-label text-neon-blue">{t("eyebrow")}</span>
           <h2 className="text-balance font-display text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-            Результати, яким довіряють
+            {t("title")}
           </h2>
         </div>
 

@@ -1,36 +1,7 @@
 import Link from "next/link";
 import { TelegramLogo, XLogo, GithubLogo, EnvelopeSimple } from "@phosphor-icons/react/dist/ssr";
+import { useTranslations } from "next-intl";
 import { Wordmark } from "./Wordmark";
-
-const columns: { title: string; links: { label: string; href: string }[] }[] = [
-  {
-    title: "Продукти",
-    links: [
-      { label: "Telegram-боти", href: "/catalog" },
-      { label: "Web / SaaS", href: "/catalog" },
-      { label: "Мобільні", href: "/catalog" },
-      { label: "Web3", href: "/catalog" },
-      { label: "Шаблони", href: "/catalog" },
-    ],
-  },
-  {
-    title: "Студія",
-    links: [
-      { label: "Про нас", href: "/about" },
-      { label: "Кейси", href: "/cases" },
-      { label: "Розробка під ключ", href: "/custom" },
-      { label: "Гарантія", href: "/about" },
-    ],
-  },
-  {
-    title: "Підтримка",
-    links: [
-      { label: "Каталог", href: "/catalog" },
-      { label: "Замовити", href: "/custom" },
-      { label: "Контакти", href: "/about" },
-    ],
-  },
-];
 
 const socials = [
   { icon: TelegramLogo, label: "Telegram", href: "#" },
@@ -40,6 +11,37 @@ const socials = [
 ];
 
 export function Footer() {
+  const t = useTranslations("footer");
+  const tc = useTranslations("cat");
+  const columns = [
+    {
+      title: t("colProducts"),
+      links: [
+        { label: tc("telegram-bots.label"), href: "/catalog" },
+        { label: tc("web.label"), href: "/catalog" },
+        { label: tc("mobile.label"), href: "/catalog" },
+        { label: tc("web3.label"), href: "/catalog" },
+        { label: tc("templates.label"), href: "/catalog" },
+      ],
+    },
+    {
+      title: t("colStudio"),
+      links: [
+        { label: t("linkAbout"), href: "/about" },
+        { label: t("linkCases"), href: "/cases" },
+        { label: t("linkCustom"), href: "/custom" },
+        { label: t("linkWarranty"), href: "/about" },
+      ],
+    },
+    {
+      title: t("colSupport"),
+      links: [
+        { label: t("linkCatalog"), href: "/catalog" },
+        { label: t("linkOrder"), href: "/custom" },
+        { label: t("linkContacts"), href: "/about" },
+      ],
+    },
+  ];
   return (
     <footer id="footer" className="border-t border-border bg-surface/40 pb-24 pt-14 md:pb-14">
       <div className="mx-auto max-w-7xl px-4 md:px-6">
@@ -51,8 +53,7 @@ export function Footer() {
               <Wordmark className="text-lg" />
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              Цифрова студія: готові продукти та розробка під ключ з повним
-              сорс-кодом і гарантією.
+              {t("tagline")}
             </p>
             <div className="mt-5 flex items-center gap-2">
               {socials.map(({ icon: Icon, label, href }) => (
@@ -89,7 +90,7 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-border pt-6 sm:flex-row">
           <p className="mono-label text-muted-foreground">© 2026 DevqSpace · devq.space</p>
-          <p className="mono-label text-muted-foreground">зроблено з увагою до деталей</p>
+          <p className="mono-label text-muted-foreground">{t("note")}</p>
         </div>
       </div>
     </footer>

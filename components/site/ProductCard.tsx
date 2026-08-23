@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { Star, SealCheck } from "@phosphor-icons/react/dist/ssr";
-import { CATEGORIES, type Product } from "@/lib/products";
+import { useTranslations } from "next-intl";
+import { type Product } from "@/lib/products";
 import { ProductCover } from "./ProductCover";
 
-function categoryLabel(id: string): string {
-  return CATEGORIES.find((c) => c.id === id)?.label ?? id;
-}
-
 export function ProductCard({ product }: { product: Product }) {
+  const t = useTranslations("top");
+  const tc = useTranslations("cat");
   return (
     <article className="grad-border group flex flex-col overflow-hidden rounded-2xl border border-border bg-surface/40 transition-colors hover:bg-surface-2/50">
       <Link
@@ -28,7 +27,7 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="flex flex-1 flex-col p-4">
         <div className="flex items-center gap-2">
           <span className="mono-label text-muted-foreground">
-            {categoryLabel(product.category)}
+            {tc(`${product.category}.label`)}
           </span>
           <SealCheck weight="fill" className="h-3.5 w-3.5 text-neon-green" />
         </div>
@@ -46,7 +45,7 @@ export function ProductCard({ product }: { product: Product }) {
           <span className="inline-flex items-center gap-1 text-foreground">
             <Star weight="fill" className="h-3.5 w-3.5 text-neon-blue" /> {product.rating}
           </span>
-          <span className="text-muted-foreground">{product.sold} продано</span>
+          <span className="text-muted-foreground">{product.sold} {t("sold")}</span>
         </div>
 
         <div className="mt-4 flex items-end justify-between border-t border-border pt-4">
@@ -57,7 +56,7 @@ export function ProductCard({ product }: { product: Product }) {
             href={`/order/${product.slug}`}
             className="rounded-lg border border-border-strong bg-surface-2 px-3.5 py-2 text-xs font-semibold text-foreground transition-colors group-hover:border-neon-blue/50 group-hover:text-neon-blue"
           >
-            Купити
+            {t("buy")}
           </Link>
         </div>
       </div>

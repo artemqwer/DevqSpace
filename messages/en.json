@@ -1,0 +1,118 @@
+{
+  "nav": {
+    "catalog": "Catalog",
+    "categories": "Categories",
+    "cases": "Cases",
+    "about": "About",
+    "custom": "Custom build",
+    "search": "Search"
+  },
+  "hero": {
+    "status": "// MARKETPLACE READY",
+    "stat": "[ 40+ PRODUCTS · 320 CLIENTS ]",
+    "eyebrow": "VERIFIED DIGITAL PRODUCTS",
+    "line1": "Buy.",
+    "line2": "Launch.",
+    "line3": "Scale.",
+    "subtitle": "Ready-made Telegram bots, web apps, scripts and Web3 solutions with full source code — or custom development with a one-year warranty.",
+    "ctaCatalog": "Browse catalog",
+    "ctaCustom": "Custom build",
+    "s1": "Telegram bots",
+    "s2": "Web apps / SaaS",
+    "s3": "Web3 / smart contracts",
+    "s4": "AI bots & automation"
+  },
+  "trust": {
+    "clients": "clients",
+    "warrantyV": "1-year warranty",
+    "warrantyL": "on every product",
+    "sourceV": "Full source code",
+    "sourceL": "no lock-in",
+    "payV": "Crypto / card",
+    "payL": "secure payment"
+  },
+  "categories": {
+    "eyebrow": "// categories",
+    "title": "Pick a direction",
+    "subtitle": "Ready-made solutions across six directions — from Telegram bots to Web3. Every product is tested and documented.",
+    "pageTitle": "Categories",
+    "pageHeadA": "Pick a",
+    "pageHeadB": "direction",
+    "pageSub": "ready-made solutions across six directions — from Telegram bots to Web3. Every product is tested and documented."
+  },
+  "top": {
+    "eyebrow": "// top products",
+    "title": "Ready to launch",
+    "all": "Full catalog",
+    "sold": "sold",
+    "buy": "Buy",
+    "verified": "Verified"
+  },
+  "process": {
+    "eyebrow": "// custom development",
+    "title": "Order a custom product",
+    "subtitle": "A transparent process from request to code handover. Fixed budget, clear stages, full source code and a one-year warranty.",
+    "cta": "Leave a request",
+    "s1t": "Request",
+    "s1d": "You leave a request describing the task and the desired outcome.",
+    "s2t": "Discussion",
+    "s2d": "We clarify requirements, propose a solution and lock the scope.",
+    "s3t": "Invoice",
+    "s3d": "We agree on budget and timeline and issue a transparent invoice.",
+    "s4t": "Development",
+    "s4d": "We build the product with interim demos and progress reports.",
+    "s5t": "Code delivery",
+    "s5d": "We hand over the full source code, documentation and a one-year warranty."
+  },
+  "cases": {
+    "eyebrow": "// cases",
+    "title": "Results you can trust"
+  },
+  "guarantee": {
+    "eyebrow": "// warranty & security",
+    "title": "Buy with confidence",
+    "g1t": "1-year warranty",
+    "g1d": "We fix bugs and support the product for a year after handover.",
+    "g2t": "Secure payment",
+    "g2d": "Pay by card or crypto. Transparent invoices, no hidden fees.",
+    "g3t": "Support",
+    "g3d": "Help with deployment and setup, consultations after launch.",
+    "g4t": "Updates",
+    "g4d": "Free updates of ready-made products within the current version."
+  },
+  "finalCta": {
+    "eyebrow": "// ready to start?",
+    "title": "Pick something ready or build your own",
+    "subtitle": "Launch a product today from a ready-made solution, or order custom development for your needs.",
+    "buy": "Buy ready-made",
+    "order": "Custom build"
+  },
+  "footer": {
+    "tagline": "Digital studio: ready-made products and custom development with full source code and warranty.",
+    "colProducts": "Products",
+    "colStudio": "Studio",
+    "colSupport": "Support",
+    "linkAbout": "About",
+    "linkCases": "Cases",
+    "linkCustom": "Custom development",
+    "linkWarranty": "Warranty",
+    "linkCatalog": "Catalog",
+    "linkOrder": "Order",
+    "linkContacts": "Contacts",
+    "note": "made with attention to detail"
+  },
+  "mobile": {
+    "home": "Home",
+    "catalog": "Catalog",
+    "categories": "Categories",
+    "custom": "Custom"
+  },
+  "cat": {
+    "telegram-bots": { "label": "Telegram bots", "desc": "Shops, AI, support, group automation." },
+    "web": { "label": "Web / SaaS", "desc": "Admin panels, CRM, landings, builders." },
+    "mobile": { "label": "Mobile apps", "desc": "React Native templates for iOS and Android." },
+    "automation": { "label": "Scripts / Automation", "desc": "Parsers, mailings, AI scripts, integrations." },
+    "web3": { "label": "Smart contracts / Web3", "desc": "Tokens, NFTs, staking, snipers, DEX." },
+    "templates": { "label": "Templates / UI kits", "desc": "Landings, dashboards, shops, email." }
+  }
+}

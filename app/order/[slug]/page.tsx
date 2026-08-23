@@ -5,6 +5,8 @@ import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
 import OrderForm from "@/components/order/OrderForm";
 import { getProductBySlug } from "@/lib/store";
+import { localizeProduct } from "@/lib/products";
+import { getLocale } from "next-intl/server";
 import { tgGetBotUsername } from "@/lib/telegram";
 import { nowPaymentsEnabled } from "@/lib/nowpayments";
 import { jarEnabled, usdToUah } from "@/lib/monojar";
@@ -23,14 +25,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function OrderPage({ params }: Props) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
-  if (!product) notFound();
+  const raw = await getProductBySlug(slug);
+  if (!raw) notFound();
 
   const jarOn = jarEnabled();
-  const [jarAmountUah, botUsername] = await Promise.all([
-    jarOn ? usdToUah(product.price) : Promise.resolve(0),
+  const [jarAmountUah, botUsername, locale] = await Promise.all([
+    jarOn ? usdToUah(raw.price) : Promise.resolve(0),
     tgGetBotUsername(),
+    getLocale(),
   ]);
+  const product = localizeProduct(raw, locale);
 
   return (
     <div className="min-h-screen bg-background">

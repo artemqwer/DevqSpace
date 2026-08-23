@@ -46,6 +46,11 @@ export default function ProductForm({
     badge: product?.badge ?? "NEW",
     tagline: product?.tagline ?? "",
     description: product?.description ?? "",
+    title_en: product?.title_en ?? "",
+    tagline_en: product?.tagline_en ?? "",
+    description_en: product?.description_en ?? "",
+    features_en: product?.features_en?.join("\n") ?? "",
+    whatsIncluded_en: product?.whatsIncluded_en?.join("\n") ?? "",
     price: String(product?.price ?? 0),
     delivery: product?.delivery ?? "1 день",
     warranty: product?.warranty ?? "3 міс. саппорту",
@@ -406,6 +411,28 @@ export default function ProductForm({
           placeholder={"Повний вихідний код\nІнструкція\n1 рік саппорту"}
         />
       </Field>
+
+      {/* English (optional) — фолбек на базові поля, якщо порожньо */}
+      <div className="rounded-xl border border-white/10 bg-surface2/40 p-4 space-y-4">
+        <div className="text-xs font-mono text-gray-400 uppercase tracking-wider">
+          🇬🇧 English (опційно — порожнє = показуємо базове)
+        </div>
+        <Field label="Title (EN)">
+          <input value={f.title_en} onChange={(e) => set("title_en", e.target.value)} className={inputCls} />
+        </Field>
+        <Field label="Tagline (EN)">
+          <input value={f.tagline_en} onChange={(e) => set("tagline_en", e.target.value)} className={inputCls} />
+        </Field>
+        <Field label="Description (EN)">
+          <textarea value={f.description_en} onChange={(e) => set("description_en", e.target.value)} rows={3} className={inputCls + " resize-y"} />
+        </Field>
+        <Field label="Features (EN)" hint="кожна з нового рядка">
+          <textarea value={f.features_en} onChange={(e) => set("features_en", e.target.value)} rows={4} className={inputCls + " resize-y font-mono text-xs"} />
+        </Field>
+        <Field label="What's included (EN)" hint="кожне з нового рядка">
+          <textarea value={f.whatsIncluded_en} onChange={(e) => set("whatsIncluded_en", e.target.value)} rows={3} className={inputCls + " resize-y font-mono text-xs"} />
+        </Field>
+      </div>
 
       {error && (
         <div className="text-sm text-neon-pink font-mono flex items-center gap-2">

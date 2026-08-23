@@ -1,12 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "@phosphor-icons/react/dist/ssr";
+import { useTranslations } from "next-intl";
 
-const services = [
-  { id: "01", label: "Telegram-боти" },
-  { id: "02", label: "Веб-додатки / SaaS" },
-  { id: "03", label: "Web3 / смарт-контракти" },
-  { id: "04", label: "AI-боти та автоматизація" },
-];
+const services = ["s1", "s2", "s3", "s4"] as const;
 
 const marquee = [
   "Next.js", "Telegram API", "Solidity", "Python", "OpenAI", "PostgreSQL",
@@ -14,6 +10,7 @@ const marquee = [
 ];
 
 export function Hero() {
+  const t = useTranslations("hero");
   return (
     <section id="top" className="relative flex min-h-screen flex-col overflow-hidden pt-20 md:pt-24">
       {/* backdrop layers */}
@@ -76,10 +73,10 @@ export function Hero() {
         <div className="reveal flex items-center justify-between pt-3 md:pt-6">
           <span className="mono-label inline-flex items-center gap-2 text-muted-foreground">
             <span className="pulse-dot h-2 w-2 rounded-full bg-neon-green" />
-            <span className="text-neon-green">SYS.ONLINE</span>{" // МАРКЕТПЛЕЙС ГОТОВИЙ"}
+            <span className="text-neon-green">SYS.ONLINE</span> {t("status")}
           </span>
           <span className="mono-label hidden text-muted-foreground sm:inline">
-            [ 40+ ПРОДУКТІВ · 320 КЛІЄНТІВ ]
+            {t("stat")}
           </span>
         </div>
 
@@ -90,18 +87,18 @@ export function Hero() {
             style={{ animationDelay: "0.05s" }}
           >
             <span className="h-px w-10 bg-neon-blue" />
-            ВЕРИФІКОВАНІ ЦИФРОВІ ПРОДУКТИ
+            {t("eyebrow")}
           </span>
 
           <h1 className="font-display font-bold uppercase leading-[0.95] tracking-tight text-foreground sm:leading-[0.9] lg:leading-[0.86]">
             <span className="reveal block text-[12.5vw] sm:text-[11vw] lg:text-[9rem]" style={{ animationDelay: "0.1s" }}>
-              Купуй.
+              {t("line1")}
             </span>
             <span className="reveal block text-outline text-[12.5vw] sm:text-[11vw] lg:text-[9rem]" style={{ animationDelay: "0.18s" }}>
-              Запускай.
+              {t("line2")}
             </span>
             <span className="reveal block text-gradient text-glow text-[12.5vw] sm:text-[11vw] lg:text-[9rem]" style={{ animationDelay: "0.26s" }}>
-              Масштабуй.
+              {t("line3")}
             </span>
           </h1>
 
@@ -109,8 +106,7 @@ export function Hero() {
             className="reveal mt-8 max-w-lg text-pretty text-base leading-relaxed text-muted-foreground md:text-lg"
             style={{ animationDelay: "0.34s" }}
           >
-            Готові Telegram-боти, веб-додатки, скрипти та Web3-рішення з повним
-            сорс-кодом — або розробка під ключ із гарантією на рік.
+            {t("subtitle")}
           </p>
 
           {/* CTAs */}
@@ -122,14 +118,14 @@ export function Hero() {
               href="/catalog"
               className="glow-strong group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-neon-blue to-neon-purple px-8 py-4 text-sm font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5"
             >
-              Переглянути каталог
+              {t("ctaCatalog")}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
             <Link
               href="/custom"
               className="group inline-flex items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-2/40 px-8 py-4 text-sm font-semibold text-foreground backdrop-blur transition-colors hover:border-neon-purple/60"
             >
-              Замовити під ключ
+              {t("ctaCustom")}
               <ArrowUpRight className="h-4 w-4 text-neon-purple transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </Link>
           </div>
@@ -139,11 +135,11 @@ export function Hero() {
             className="reveal mt-12 grid max-w-3xl grid-cols-2 gap-x-8 gap-y-3 border-t border-border pt-6 sm:grid-cols-4"
             style={{ animationDelay: "0.5s" }}
           >
-            {services.map((s) => (
-              <Link key={s.id} href="/catalog" className="group flex items-start gap-2 text-left">
-                <span className="mono-label text-neon-blue">{s.id}</span>
+            {services.map((key, i) => (
+              <Link key={key} href="/catalog" className="group flex items-start gap-2 text-left">
+                <span className="mono-label text-neon-blue">{`0${i + 1}`}</span>
                 <span className="text-sm text-muted-foreground transition-colors group-hover:text-foreground">
-                  {s.label}
+                  {t(key)}
                 </span>
               </Link>
             ))}

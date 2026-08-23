@@ -3,16 +3,25 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { List, X, MagnifyingGlass } from "@phosphor-icons/react";
+import { useTranslations, useLocale } from "next-intl";
 import { Wordmark } from "./Wordmark";
 
 const navLinks = [
-  { label: "Каталог", href: "/catalog" },
-  { label: "Категорії", href: "/categories" },
-  { label: "Кейси", href: "/cases" },
-  { label: "Про нас", href: "/about" },
-];
+  { key: "catalog", href: "/catalog" },
+  { key: "categories", href: "/categories" },
+  { key: "cases", href: "/cases" },
+  { key: "about", href: "/about" },
+] as const;
+
+function switchLocale(current: string) {
+  const next = current === "en" ? "uk" : "en";
+  document.cookie = `NEXT_LOCALE=${next}; path=/; max-age=31536000; samesite=lax`;
+  location.reload();
+}
 
 export function Navbar() {
+  const t = useTranslations("nav");
+  const locale = useLocale();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -48,17 +57,24 @@ export function Navbar() {
                 href={link.href}
                 className="text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
-                {link.label}
+                {t(link.key)}
               </Link>
             </li>
           ))}
         </ul>
 
         <div className="hidden items-center gap-3 md:flex">
+          <button
+            onClick={() => switchLocale(locale)}
+            className="grid h-9 min-w-9 place-items-center rounded-lg border border-border px-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground"
+            aria-label="Switch language"
+          >
+            {locale === "en" ? "UK" : "EN"}
+          </button>
           <Link
             href="/catalog"
             className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground"
-            aria-label="Пошук"
+            aria-label={t("search")}
           >
             <MagnifyingGlass className="h-4 w-4" />
           </Link>
@@ -66,7 +82,7 @@ export function Navbar() {
             href="/custom"
             className="rounded-lg bg-gradient-to-r from-neon-blue to-neon-purple px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
           >
-            Замовити під ключ
+            {t("custom")}
           </Link>
         </div>
 
@@ -90,17 +106,25 @@ export function Navbar() {
                   onClick={() => setOpen(false)}
                   className="block rounded-lg px-3 py-3 text-sm text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
                 >
-                  {link.label}
+                  {t(link.key)}
                 </Link>
               </li>
             ))}
+            <li>
+              <button
+                onClick={() => switchLocale(locale)}
+                className="block w-full rounded-lg px-3 py-3 text-left text-sm text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+              >
+                🌐 {locale === "en" ? "Українська" : "English"}
+              </button>
+            </li>
             <li className="mt-2">
               <Link
                 href="/custom"
                 onClick={() => setOpen(false)}
                 className="block rounded-lg bg-gradient-to-r from-neon-blue to-neon-purple px-3 py-3 text-center text-sm font-semibold text-primary-foreground"
               >
-                Замовити під ключ
+                {t("custom")}
               </Link>
             </li>
           </ul>

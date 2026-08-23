@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import { WelcomeSheet } from "@/components/site/WelcomeSheet";
 import "./globals.css";
 
@@ -76,19 +78,23 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
   return (
     <html
-      lang="uk"
+      lang={locale}
       className={`${inter.variable} ${spaceGrotesk.variable} ${jetBrainsMono.variable} dark scroll-smooth`}
     >
       <body className="custom-scrollbar font-sans antialiased selection:bg-neon-blue selection:text-black">
-        {children}
-        <WelcomeSheet />
+        <NextIntlClientProvider messages={messages}>
+          {children}
+          <WelcomeSheet />
+        </NextIntlClientProvider>
       </body>
     </html>
   );
