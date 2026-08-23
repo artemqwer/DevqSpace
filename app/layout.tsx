@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { WelcomeSheet } from "@/components/site/WelcomeSheet";
 import "./globals.css";
 
 const inter = Inter({
@@ -87,6 +88,7 @@ export default function RootLayout({
     >
       <body className="custom-scrollbar font-sans antialiased selection:bg-neon-blue selection:text-black">
         {children}
+        <WelcomeSheet />
       </body>
     </html>
   );
