@@ -9,7 +9,17 @@ type Body = {
   contact?: string;
   message?: string;
   company?: string; // honeypot
+  envValues?: Record<string, string>;
 };
+
+function cleanEnv(v: unknown): Record<string, string> | undefined {
+  if (!v || typeof v !== "object") return undefined;
+  const out: Record<string, string> = {};
+  for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+    if (typeof val === "string" && val.trim()) out[k] = val.trim().slice(0, 500);
+  }
+  return Object.keys(out).length ? out : undefined;
+}
 
 export async function POST(req: Request) {
   if (!jarEnabled()) {
@@ -82,6 +92,7 @@ export async function POST(req: Request) {
     contact,
     message,
     payMethod: "jar",
+    envValues: cleanEnv(body.envValues),
   });
 
   // Telegram: очікує оплати на банку (з кнопками статусу + 💰 Оплачено)

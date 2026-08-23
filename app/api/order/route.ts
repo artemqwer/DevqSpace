@@ -1,7 +1,20 @@
 import { sendOrderToTelegram, type OrderPayload } from "@/lib/telegram";
 import { getProductBySlug, addOrder, rateLimit } from "@/lib/store";
 
-type OrderBody = Partial<OrderPayload> & { company?: string };
+type OrderBody = Partial<OrderPayload> & {
+  company?: string;
+  envValues?: Record<string, string>;
+};
+
+// Лишає тільки рядкові значення (захист від сміття у payload).
+function cleanEnv(v: unknown): Record<string, string> | undefined {
+  if (!v || typeof v !== "object") return undefined;
+  const out: Record<string, string> = {};
+  for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+    if (typeof val === "string" && val.trim()) out[k] = val.trim().slice(0, 500);
+  }
+  return Object.keys(out).length ? out : undefined;
+}
 
 export async function POST(req: Request) {
   let body: OrderBody;
@@ -87,6 +100,7 @@ export async function POST(req: Request) {
       contactMethod,
       contact,
       message,
+      envValues: cleanEnv(body.envValues),
     };
   } else {
     const customType = (body.customType ?? "").trim() || "—";

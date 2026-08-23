@@ -108,12 +108,30 @@
     "custom": "Custom"
   },
   "cat": {
-    "telegram-bots": { "label": "Telegram bots", "desc": "Shops, AI, support, group automation." },
-    "web": { "label": "Web / SaaS", "desc": "Admin panels, CRM, landings, builders." },
-    "mobile": { "label": "Mobile apps", "desc": "React Native templates for iOS and Android." },
-    "automation": { "label": "Scripts / Automation", "desc": "Parsers, mailings, AI scripts, integrations." },
-    "web3": { "label": "Smart contracts / Web3", "desc": "Tokens, NFTs, staking, snipers, DEX." },
-    "templates": { "label": "Templates / UI kits", "desc": "Landings, dashboards, shops, email." }
+    "telegram-bots": {
+      "label": "Telegram bots",
+      "desc": "Shops, AI, support, group automation."
+    },
+    "web": {
+      "label": "Web / SaaS",
+      "desc": "Admin panels, CRM, landings, builders."
+    },
+    "mobile": {
+      "label": "Mobile apps",
+      "desc": "React Native templates for iOS and Android."
+    },
+    "automation": {
+      "label": "Scripts / Automation",
+      "desc": "Parsers, mailings, AI scripts, integrations."
+    },
+    "web3": {
+      "label": "Smart contracts / Web3",
+      "desc": "Tokens, NFTs, staking, snipers, DEX."
+    },
+    "templates": {
+      "label": "Templates / UI kits",
+      "desc": "Landings, dashboards, shops, email."
+    }
   },
   "catalog": {
     "eyebrow": "// catalog",
@@ -239,7 +257,9 @@
     "sumUpdates": "Updates",
     "sumUpdatesV": "Free",
     "total": "Total",
-    "back": "back to product"
+    "back": "back to product",
+    "configLabel": "Bot configuration",
+    "configHint": "🔧 Your token is auto-injected into the .env inside the archive — you get a ready-to-run bot."
   },
   "success": {
     "eyebrow": "// request received",

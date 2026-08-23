@@ -34,6 +34,9 @@ export type Product = {
   description_en?: string;
   features_en?: string[];
   whatsIncluded_en?: string[];
+  // Конфіг перед покупкою (для ботів): покупець вводить значення, які
+  // підставляються в .env усередині ZIP. Порожньо → крок конфігурації нема.
+  envFields?: { key: string; label: string }[];
   price: number;
   currency: "USD";
   delivery: string;

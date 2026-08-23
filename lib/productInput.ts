@@ -40,6 +40,32 @@ function transliterate(s: string): string {
   return out;
 }
 
+// env-поля: рядки виду "KEY | Назва" (або масив об'єктів). Ключ ліворуч.
+export function parseEnvFields(
+  v: unknown,
+): { key: string; label: string }[] | undefined {
+  let lines: string[] = [];
+  if (Array.isArray(v)) {
+    const arr = v
+      .map((x) =>
+        typeof x === "object" && x
+          ? { key: String((x as Record<string, unknown>).key ?? "").trim(), label: String((x as Record<string, unknown>).label ?? "").trim() }
+          : null,
+      )
+      .filter((x): x is { key: string; label: string } => Boolean(x && x.key));
+    return arr.length ? arr : undefined;
+  }
+  if (typeof v === "string") lines = v.split("\n");
+  const out = lines
+    .map((line) => {
+      const [k, l] = line.split("|");
+      const key = (k ?? "").trim();
+      return key ? { key, label: (l ?? "").trim() || key } : null;
+    })
+    .filter((x): x is { key: string; label: string } => Boolean(x));
+  return out.length ? out : undefined;
+}
+
 export function slugify(s: string): string {
   return transliterate(s)
     .replace(/[^a-z0-9]+/g, "-")
@@ -89,6 +115,7 @@ export function buildProduct(body: Record<string, unknown>): Product | null {
     whatsIncluded_en: toLines(body.whatsIncluded_en).length
       ? toLines(body.whatsIncluded_en)
       : undefined,
+    envFields: parseEnvFields(body.envFields),
     price,
     currency: "USD",
     delivery: String(body.delivery ?? "").trim() || "1 день",

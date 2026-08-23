@@ -37,6 +37,8 @@ export type StoredOrder = {
   deliveryChannel?: "telegram" | "email" | "manual";
   deliveryNote?: string; // напр. "клієнт ще не підключив Telegram"
   downloadToken?: string; // токен для захищеного посилання на завантаження
+  envValues?: Record<string, string>; // значення конфігу (токен бота тощо)
+  deliverFileUrl?: string; // персональний ZIP (з підставленим .env)
 };
 
 // ---- Redis client (lazy) --------------------------------------------
@@ -351,6 +353,19 @@ export async function getOrderByToken(
     : memTokens.get(token);
   if (!id) return null;
   return getOrder(id);
+}
+
+// Зберігає URL персонального (пропатченого) ZIP на замовленні.
+export async function setOrderDeliverFile(
+  id: string,
+  url: string,
+): Promise<void> {
+  const order = await getOrder(id);
+  if (!order) return;
+  order.deliverFileUrl = url;
+  const redis = getRedis();
+  if (!redis) mem().orders.set(id, order);
+  else await redis.set(K.order(id), order);
 }
 
 export async function markOrderDelivered(

@@ -41,6 +41,7 @@ export default function ProductForm({
     image: product?.image ?? "",
     fileUrl: product?.fileUrl ?? "",
     fileName: product?.fileName ?? "",
+    envFields: product?.envFields?.map((e) => `${e.key} | ${e.label}`).join("\n") ?? "",
     category: product?.category ?? "telegram-bots",
     accent: product?.accent ?? "blue",
     badge: product?.badge ?? "NEW",
@@ -255,6 +256,16 @@ export default function ProductForm({
             </div>
           </div>
         </div>
+      </Field>
+
+      <Field label="Конфіг перед покупкою (для ботів)" hint="кожен рядок: KEY | Назва поля">
+        <textarea
+          value={f.envFields}
+          onChange={(e) => set("envFields", e.target.value)}
+          rows={3}
+          className={inputCls + " resize-y font-mono text-xs"}
+          placeholder={"BOT_TOKEN | Токен бота від @BotFather\nADMIN_CHAT_ID | Ваш chat_id"}
+        />
       </Field>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

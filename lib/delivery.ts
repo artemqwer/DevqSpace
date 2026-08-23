@@ -3,11 +3,13 @@ import { randomUUID } from "node:crypto";
 import {
   getProductBySlug,
   setOrderDownloadToken,
+  setOrderDeliverFile,
   markOrderDelivered,
   type StoredOrder,
 } from "./store";
 import { tgSendDocument, tgSendMessage, TG_CONFIG } from "./telegram";
 import { sendDeliveryEmail, emailEnabled } from "./email";
+import { buildCustomZip } from "./zipConfig";
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -44,6 +46,21 @@ export async function deliverOrder(
     return { ok: false, channel: "-", note: "немає файлу" };
   }
 
+  // Персональний ZIP із підставленим .env (для товарів-ботів з конфігом).
+  let deliverUrl = product.fileUrl;
+  if (product.envFields?.length && order.envValues) {
+    const custom = await buildCustomZip({
+      fileUrl: product.fileUrl,
+      envFields: product.envFields,
+      envValues: order.envValues,
+      orderId: order.id,
+    });
+    if (custom) {
+      await setOrderDeliverFile(order.id, custom);
+      deliverUrl = custom;
+    }
+  }
+
   // Захищене посилання (email + запасний варіант для ручної видачі)
   const token = randomUUID().replace(/-/g, "");
   await setOrderDownloadToken(order.id, token);
@@ -55,7 +72,7 @@ export async function deliverOrder(
       // Спроба 1: надіслати сам файл документом.
       const ok = await tgSendDocument(
         order.tgChatId,
-        product.fileUrl,
+        deliverUrl,
         `✅ <b>${esc(product.title)}</b>\nДякуємо за покупку! Ваш архів у вкладенні. Гарантія 1 рік 🚀`,
       );
       if (ok) {

@@ -28,6 +28,7 @@ export default function OrderForm({
   >("telegram");
   const [contact, setContact] = useState("");
   const [message, setMessage] = useState("");
+  const [env, setEnv] = useState<Record<string, string>>({});
   const [company, setCompany] = useState(""); // honeypot
   const [submitting, setSubmitting] = useState(false);
   const [paying, setPaying] = useState(false);
@@ -57,6 +58,7 @@ export default function OrderForm({
           contact: contact.trim(),
           message: message.trim(),
           company,
+          envValues: env,
         }),
       });
       const data = (await res.json()) as {
@@ -101,6 +103,7 @@ export default function OrderForm({
           contact: contact.trim(),
           message: message.trim(),
           company,
+          envValues: env,
         }),
       });
       const data = (await res.json()) as {
@@ -142,6 +145,7 @@ export default function OrderForm({
           contact: contact.trim(),
           message: message.trim(),
           company,
+          envValues: env,
         }),
       });
       const data = (await res.json()) as {
@@ -328,6 +332,28 @@ export default function OrderForm({
             className="w-full bg-surface2 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue/50 transition-colors font-mono text-sm resize-none"
           />
         </Field>
+
+        {product.envFields?.length ? (
+          <div className="space-y-3 rounded-xl border border-neon-blue/30 bg-neon-blue/5 p-4">
+            <div className="flex items-center gap-2 font-display text-sm font-bold text-white">
+              <i className="ph-fill ph-gear text-neon-blue" /> {to("configLabel")}
+            </div>
+            <p className="text-xs leading-relaxed text-gray-400">{to("configHint")}</p>
+            {product.envFields.map((fld) => (
+              <div key={fld.key}>
+                <label className="mb-1 block font-mono text-[11px] uppercase tracking-wider text-gray-500">
+                  {fld.label || fld.key}
+                </label>
+                <input
+                  value={env[fld.key] ?? ""}
+                  onChange={(e) => setEnv((p) => ({ ...p, [fld.key]: e.target.value }))}
+                  placeholder={fld.key}
+                  className="w-full rounded-lg border border-white/10 bg-surface2 px-4 py-3 font-mono text-sm text-white placeholder-gray-500 transition-colors focus:border-neon-blue/50 focus:outline-none"
+                />
+              </div>
+            ))}
+          </div>
+        ) : null}
 
         {error && (
           <div className="text-sm text-neon-pink font-mono flex items-center gap-2">
