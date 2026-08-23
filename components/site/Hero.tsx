@@ -97,7 +97,7 @@ export function Hero() {
             <span className="reveal block text-outline text-[12.5vw] sm:text-[11vw] lg:text-[9rem]" style={{ animationDelay: "0.18s" }}>
               {t("line2")}
             </span>
-            <span className="reveal block text-gradient text-glow text-[12.5vw] sm:text-[11vw] lg:text-[9rem]" style={{ animationDelay: "0.26s" }}>
+            <span className="reveal block text-gradient text-glow pb-[0.14em] -mb-[0.1em] text-[12.5vw] sm:text-[11vw] lg:text-[9rem]" style={{ animationDelay: "0.26s" }}>
               {t("line3")}
             </span>
           </h1>
