@@ -1,14 +1,13 @@
 import { getRequestConfig } from "next-intl/server";
 import { cookies } from "next/headers";
-
-export type Locale = "uk" | "en";
+import { getMessages, type Locale } from "@/lib/content";
 
 export default getRequestConfig(async () => {
   const store = await cookies();
-  const locale: Locale =
-    store.get("NEXT_LOCALE")?.value === "en" ? "en" : "uk";
+  const locale: Locale = store.get("NEXT_LOCALE")?.value === "en" ? "en" : "uk";
   return {
     locale,
-    messages: (await import(`../messages/${locale}.json`)).default,
+    // Файл + правки з адмінки. Див. lib/content.ts.
+    messages: await getMessages(locale),
   };
 });

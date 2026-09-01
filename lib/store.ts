@@ -94,6 +94,7 @@ type MemDB = {
   tokens: Map<string, string>; // downloadToken -> orderId
   admins: Set<number>; // додаткові адміни бота
   invites: Map<string, number>; // token -> expireAt
+  content: Map<string, Record<string, string>>; // locale -> { "hero.title": "..." }
 };
 
 const g = globalThis as unknown as {
@@ -112,6 +113,7 @@ type MemSnapshot = {
   tokens: [string, string][];
   admins: number[];
   invites: [string, number][];
+  content: [string, Record<string, string>][];
 };
 
 function emptyMem(): MemDB {
@@ -124,6 +126,7 @@ function emptyMem(): MemDB {
     tokens: new Map(),
     admins: new Set(),
     invites: new Map(),
+    content: new Map(),
   };
 }
 
@@ -141,6 +144,7 @@ function hydrate(): MemDB {
     db.tokens = new Map(raw.tokens ?? []);
     db.admins = new Set(raw.admins ?? []);
     db.invites = new Map(raw.invites ?? []);
+    db.content = new Map(raw.content ?? []);
   } catch {
     return emptyMem();
   }
@@ -168,6 +172,7 @@ function touch(): void {
       tokens: [...m.tokens.entries()],
       admins: [...m.admins],
       invites: [...m.invites.entries()],
+      content: [...m.content.entries()],
     };
     try {
       devWriteState(DB_FILE, snapshot);
@@ -192,6 +197,7 @@ const K = {
   viewsTotalAll: "views:total", // глобальний лічильник усіх переглядів
   adminsExtra: "admins:extra", // set додаткових chat_id адмінів
   adminInvite: (t: string) => `admininvite:${t}`, // одноразове запрошення
+  content: (locale: string) => `content:${locale}`, // hash: "hero.title" -> текст
 };
 
 // ---- Seeding --------------------------------------------------------
@@ -1001,4 +1007,57 @@ function genId(): string {
   return (
     Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
   ).toUpperCase();
+}
+
+// =====================================================================
+// Правки текстів сайту (перекривають messages/<locale>.json)
+// =====================================================================
+//
+// Зберігаємо лише те, що адмін реально змінив, — плоскими ключами
+// («hero.title»). Файли лишаються джерелом дефолтів: «скинути» = прибрати
+// ключ звідси, і текст повертається до задеплоєного.
+
+export async function getContentOverrides(
+  locale: string,
+): Promise<Record<string, string>> {
+  const redis = getRedis();
+  if (!redis) return { ...(mem().content.get(locale) ?? {}) };
+  return (await redis.hgetall<Record<string, string>>(K.content(locale))) ?? {};
+}
+
+// value === null прибирає правку (повернення до тексту з файлу).
+export async function setContentOverrides(
+  locale: string,
+  patch: Record<string, string | null>,
+): Promise<void> {
+  const redis = getRedis();
+  const set: Record<string, string> = {};
+  const del: string[] = [];
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === null) del.push(key);
+    else set[key] = value;
+  }
+
+  if (!redis) {
+    const m = mem();
+    const current = { ...(m.content.get(locale) ?? {}) };
+    Object.assign(current, set);
+    for (const key of del) delete current[key];
+    m.content.set(locale, current);
+    touch();
+    return;
+  }
+
+  if (Object.keys(set).length) await redis.hset(K.content(locale), set);
+  if (del.length) await redis.hdel(K.content(locale), ...del);
+}
+
+export async function resetContent(locale: string): Promise<void> {
+  const redis = getRedis();
+  if (!redis) {
+    mem().content.delete(locale);
+    touch();
+    return;
+  }
+  await redis.del(K.content(locale));
 }

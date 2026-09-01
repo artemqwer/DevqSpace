@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/admin", label: "Дашборд", icon: "ph-chart-line-up", exact: true },
   { href: "/admin/orders", label: "Замовлення", icon: "ph-tray" },
   { href: "/admin/products", label: "Товари", icon: "ph-package" },
+  { href: "/admin/content", label: "Тексти", icon: "ph-text-aa" },
 ];
 
 export default function AdminNav({
