@@ -3,7 +3,7 @@ import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
 import { Footer } from "@/components/site/Footer";
 import CatalogShell from "@/components/catalog/CatalogShell";
-import { getAllProducts } from "@/lib/store";
+import { getPublicProducts } from "@/lib/store";
 import { CATEGORIES, localizeProduct, type CategoryId } from "@/lib/products";
 import { getLocale } from "next-intl/server";
 
@@ -23,7 +23,7 @@ export default async function CatalogPage({
   searchParams: Promise<{ cat?: string }>;
 }) {
   const [raw, sp, locale] = await Promise.all([
-    getAllProducts(),
+    getPublicProducts(),
     searchParams,
     getLocale(),
   ]);

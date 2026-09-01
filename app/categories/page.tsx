@@ -15,7 +15,7 @@ import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
 import { Footer } from "@/components/site/Footer";
 import { CATEGORIES, type CategoryId } from "@/lib/products";
-import { getAllProducts } from "@/lib/store";
+import { getPublicProducts } from "@/lib/store";
 import { getTranslations } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
@@ -36,11 +36,12 @@ const iconByCategory: Record<CategoryId, ComponentType<IconProps>> = {
 };
 
 export default async function CategoriesPage() {
-  const products = await getAllProducts();
+  const products = await getPublicProducts();
   const t = await getTranslations("categories");
   const tc = await getTranslations("cat");
   const countById = (id: CategoryId) =>
     products.filter((p) => p.category === id).length;
+  const shown = CATEGORIES.filter((c) => countById(c.id) > 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,12 +54,14 @@ export default async function CategoriesPage() {
             {t("pageHeadA")} <span className="text-gradient">{t("pageHeadB")}</span>
           </h1>
           <p className="max-w-2xl text-pretty leading-relaxed text-muted-foreground md:text-lg">
-            {products.length} {t("pageSub")}
+            {products.length} {t("pageSub", { count: shown.length })}
           </p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {CATEGORIES.map((cat) => {
+          {/* Порожня категорія — це «сайт занедбаний», а не «скоро буде».
+              Показуємо лише ті, де є що купити. */}
+          {shown.map((cat) => {
             const Icon = iconByCategory[cat.id] ?? Stack;
             const count = countById(cat.id);
             return (

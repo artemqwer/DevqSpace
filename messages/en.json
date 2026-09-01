@@ -34,11 +34,11 @@
   "categories": {
     "eyebrow": "// categories",
     "title": "Pick a direction",
-    "subtitle": "Ready-made solutions across six directions — from Telegram bots to Web3. Every product is tested and documented.",
+    "subtitle": "Ready-made solutions across {count} directions — from Telegram bots to Web3. Every product is tested and documented.",
     "pageTitle": "Categories",
     "pageHeadA": "Pick a",
     "pageHeadB": "direction",
-    "pageSub": "ready-made solutions across six directions — from Telegram bots to Web3. Every product is tested and documented."
+    "pageSub": "ready-made solutions across {count} directions — from Telegram bots to Web3. Every product is tested and documented."
   },
   "top": {
     "eyebrow": "// top products",
@@ -165,7 +165,10 @@
     "safeTitle": "Safe.",
     "safeText": "First we discuss, issue an invoice, then payment and instant code delivery.",
     "related": "Related products",
-    "price": "Price"
+    "price": "Price",
+    "demo": "Try the demo",
+    "license": "Licence",
+    "repoIncluded": "Private repository access"
   },
   "custom": {
     "eyebrow": "// custom development",

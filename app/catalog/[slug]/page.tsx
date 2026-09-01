@@ -11,6 +11,9 @@ import {
   ArrowsClockwise,
   Code,
   ShoppingCartSimple,
+  Play,
+  Certificate,
+  GitBranch,
   TelegramLogo,
   Check,
 } from "@phosphor-icons/react/dist/ssr";
@@ -22,7 +25,7 @@ import { ProductCover } from "@/components/site/ProductCover";
 import { CATEGORIES, localizeProduct } from "@/lib/products";
 import {
   getProductBySlug,
-  getAllProducts,
+  getPublicProducts,
   trackProductView,
 } from "@/lib/store";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -54,7 +57,7 @@ export default async function ProductPage({ params }: Props) {
   const tc = await getTranslations("cat");
   const product = localizeProduct(raw, locale);
   const category = CATEGORIES.find((c) => c.id === product.category);
-  const all = await getAllProducts();
+  const all = await getPublicProducts();
   const related = all
     .filter((p) => p.category === product.category && p.slug !== product.slug)
     .slice(0, 3)
@@ -133,7 +136,7 @@ export default async function ProductPage({ params }: Props) {
             </Section>
 
             {/* Features */}
-            <Section title={t("featuresTitle")}>
+            <Section title={t("featuresTitle")} hasContent={product.features.length > 0}>
               <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:gap-3">
                 {product.features.map((f) => (
                   <li key={f} className="flex items-start gap-2.5 text-sm text-foreground/90">
@@ -147,7 +150,7 @@ export default async function ProductPage({ params }: Props) {
             </Section>
 
             {/* Stack */}
-            <Section title={t("stackTitle")}>
+            <Section title={t("stackTitle")} hasContent={product.stack.length > 0}>
               <div className="flex flex-wrap gap-1.5 md:gap-2">
                 {product.stack.map((s) => (
                   <span
@@ -161,7 +164,7 @@ export default async function ProductPage({ params }: Props) {
             </Section>
 
             {/* What's included */}
-            <Section title={t("includedTitle")}>
+            <Section title={t("includedTitle")} hasContent={product.whatsIncluded.length > 0}>
               <ul className="space-y-2">
                 {product.whatsIncluded.map((w) => (
                   <li key={w} className="flex items-center gap-3 text-sm text-foreground/90">
@@ -206,6 +209,18 @@ export default async function ProductPage({ params }: Props) {
                 {t("order")}
               </Link>
 
+              {product.demoUrl && (
+                <a
+                  href={product.demoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-neon-green/40 bg-neon-green/10 px-6 py-3 font-semibold text-neon-green transition-colors hover:bg-neon-green/15"
+                >
+                  <Play weight="fill" className="h-5 w-5" />
+                  {t("demo")}
+                </a>
+              )}
+
               <SupportTgLink
                 label={t("askTg")}
                 className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface-2/40 px-6 py-3 font-medium text-foreground transition-colors hover:border-neon-blue/50"
@@ -223,6 +238,20 @@ export default async function ProductPage({ params }: Props) {
                 />
                 <InfoRow icon={<ArrowsClockwise />} label={t("updates")} value={t("updatesV")} />
                 <InfoRow icon={<Code />} label={t("source")} value={t("sourceV")} />
+                {product.license && (
+                  <InfoRow
+                    icon={<Certificate />}
+                    label={t("license")}
+                    value={product.license}
+                  />
+                )}
+                {product.repoUrl && (
+                  <InfoRow
+                    icon={<GitBranch />}
+                    label={t("source")}
+                    value={t("repoIncluded")}
+                  />
+                )}
               </div>
             </div>
 
@@ -293,7 +322,18 @@ export default async function ProductPage({ params }: Props) {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+// hasContent — щоб порожній «Стек» не давав заголовок над пусткою:
+// у товарів, доданих через адмінку, масив часто порожній.
+function Section({
+  title,
+  children,
+  hasContent = true,
+}: {
+  title: string;
+  children: React.ReactNode;
+  hasContent?: boolean;
+}) {
+  if (!hasContent) return null;
   return (
     <div className="mt-6 md:mt-10">
       <h2 className="mb-3 font-display text-base font-bold text-foreground md:mb-4 md:text-xl">

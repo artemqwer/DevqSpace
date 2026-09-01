@@ -23,9 +23,12 @@ const iconByCategory: Record<CategoryId, ComponentType<IconProps>> = {
   templates: Stack,
 };
 
-export function Categories() {
+// Порожні напрями не показуємо: клік по такій картці веде в порожній
+// каталог і читається як «сайт занедбали».
+export function Categories({ available }: { available: CategoryId[] }) {
   const t = useTranslations("categories");
   const tc = useTranslations("cat");
+  const shown = CATEGORIES.filter((c) => available.includes(c.id));
   return (
     <section id="categories" className="relative py-16 md:py-24">
       <div className="mx-auto max-w-7xl px-4 md:px-6">
@@ -35,12 +38,12 @@ export function Categories() {
             {t("title")}
           </h2>
           <p className="max-w-xl text-pretty leading-relaxed text-muted-foreground">
-            {t("subtitle")}
+            {t("subtitle", { count: shown.length })}
           </p>
         </div>
 
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {CATEGORIES.map((cat) => {
+          {shown.map((cat) => {
             const Icon = iconByCategory[cat.id] ?? Stack;
             return (
               <Link

@@ -172,6 +172,19 @@ function guessFieldType(key: string): EnvFieldType {
 
 // Будує повний об'єкт Product з довільного словника полів.
 // Повертає null якщо немає обов'язкового title (або похідного slug).
+// Приймаємо лише http(s): інакше в картку можна було б покласти javascript:
+// і отримати XSS через посилання «Демо».
+function safeUrl(v: unknown): string | undefined {
+  const raw = String(v ?? "").trim();
+  if (!raw) return undefined;
+  try {
+    const u = new URL(raw);
+    return u.protocol === "http:" || u.protocol === "https:" ? u.href : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function buildProduct(body: Record<string, unknown>): Product | null {
   const title = String(body.title ?? "").trim();
   if (!title) return null;
@@ -225,5 +238,10 @@ export function buildProduct(body: Record<string, unknown>): Product | null {
     sold: Math.max(0, Math.round(Number(body.sold) || 0)),
     rating: Math.min(5, Math.max(0, Number(body.rating) || 5)),
     ratingCount: Math.max(0, Math.round(Number(body.ratingCount) || 0)),
+    offlineSold: Math.max(0, Math.round(Number(body.offlineSold) || 0)) || undefined,
+    demoUrl: safeUrl(body.demoUrl),
+    repoUrl: safeUrl(body.repoUrl),
+    license: String(body.license ?? "").trim() || undefined,
+    hidden: body.hidden === true || body.hidden === "true" || undefined,
   };
 }

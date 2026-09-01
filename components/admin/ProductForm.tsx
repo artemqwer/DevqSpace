@@ -65,7 +65,12 @@ export default function ProductForm({
     sold: String(product?.sold ?? 0),
     rating: String(product?.rating ?? 5),
     ratingCount: String(product?.ratingCount ?? 0),
+    offlineSold: String(product?.offlineSold ?? 0),
+    demoUrl: product?.demoUrl ?? "",
+    repoUrl: product?.repoUrl ?? "",
+    license: product?.license ?? "",
   });
+  const [hidden, setHidden] = useState(Boolean(product?.hidden));
 
   const set = (k: keyof typeof f, v: string) =>
     setF((prev) => ({ ...prev, [k]: v }));
@@ -163,7 +168,7 @@ export default function ProductForm({
     const res = await fetch("/api/admin/products", {
       method: mode === "create" ? "POST" : "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...f, price: Number(f.price), envFields }),
+      body: JSON.stringify({ ...f, price: Number(f.price), hidden, envFields }),
     });
     const data = (await res.json()) as { ok: boolean; error?: string };
     if (!data.ok) {
@@ -474,6 +479,65 @@ export default function ProductForm({
           placeholder={"Повний вихідний код\nІнструкція\n1 рік саппорту"}
         />
       </Field>
+
+      {/* Докази того, що товар справжній. Без них готовий бот не купують:
+          клієнт хоче спершу «поклацати». */}
+      <div className="rounded-xl border border-white/10 bg-surface2/40 p-4 space-y-4">
+        <div className="text-xs font-mono text-gray-400 uppercase tracking-wider">
+          Довіра
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field label="Демо" hint="робочий бот або стенд — посилання">
+            <input
+              value={f.demoUrl}
+              onChange={(e) => set("demoUrl", e.target.value)}
+              className={inputCls}
+              placeholder="https://t.me/devq_shop_demo_bot"
+            />
+          </Field>
+          <Field label="Репозиторій" hint="приватний, доступ після оплати">
+            <input
+              value={f.repoUrl}
+              onChange={(e) => set("repoUrl", e.target.value)}
+              className={inputCls}
+              placeholder="https://github.com/..."
+            />
+          </Field>
+          <Field label="Ліцензія">
+            <input
+              value={f.license}
+              onChange={(e) => set("license", e.target.value)}
+              className={inputCls}
+              placeholder="1 проєкт, з правом модифікації"
+            />
+          </Field>
+          <Field label="Продажі поза сайтом" hint="чесний облік, не накрутка">
+            <input
+              type="number"
+              min={0}
+              value={f.offlineSold}
+              onChange={(e) => set("offlineSold", e.target.value)}
+              className={inputCls}
+            />
+          </Field>
+        </div>
+
+        <label className="flex cursor-pointer items-start gap-2.5">
+          <input
+            type="checkbox"
+            checked={hidden}
+            onChange={(e) => setHidden(e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-neon-pink"
+          />
+          <span>
+            <span className="block text-sm text-white">Чернетка</span>
+            <span className="block text-xs text-gray-500">
+              Не видно в каталозі, на головній і в категоріях. Для тестових
+              товарів і незакінчених карток.
+            </span>
+          </span>
+        </label>
+      </div>
 
       {/* English (optional) — фолбек на базові поля, якщо порожньо */}
       <div className="rounded-xl border border-white/10 bg-surface2/40 p-4 space-y-4">

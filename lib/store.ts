@@ -754,9 +754,15 @@ export type MiniAppOverview = {
   products: MiniAppProduct[];
 };
 
+// Товари, які бачить відвідувач. Фільтр саме тут, а не на кожній сторінці:
+// інакше чернетка рано чи пізно вилізе там, де про неї забули.
+export async function getPublicProducts(): Promise<Product[]> {
+  return (await getAllProducts()).filter((p) => !p.hidden);
+}
+
 export async function getMiniAppOverview(): Promise<MiniAppOverview> {
   const [products, ranking, orders, totalViews] = await Promise.all([
-    getAllProducts(),
+    getPublicProducts(),
     getViewsRanking(10000),
     getAllOrders(),
     getTotalViews(),
@@ -1127,7 +1133,7 @@ export async function setOfflineCounters(next: OfflineCounters): Promise<void> {
 
 export async function getSiteCounters(): Promise<SiteCounters> {
   const [products, orders, offline] = await Promise.all([
-    getAllProducts(),
+    getPublicProducts(),
     getAllOrders(),
     getOfflineCounters(),
   ]);
