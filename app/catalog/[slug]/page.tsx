@@ -16,6 +16,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
+import { Footer } from "@/components/site/Footer";
 import { ProductCard } from "@/components/site/ProductCard";
 import { ProductCover } from "@/components/site/ProductCover";
 import { CATEGORIES, localizeProduct } from "@/lib/products";
@@ -25,6 +26,7 @@ import {
   trackProductView,
 } from "@/lib/store";
 import { getLocale, getTranslations } from "next-intl/server";
+import { SupportTgLink } from "@/components/site/SupportTgLink";
 
 export const dynamic = "force-dynamic";
 
@@ -204,13 +206,12 @@ export default async function ProductPage({ params }: Props) {
                 {t("order")}
               </Link>
 
-              <a
-                href="https://t.me/"
+              <SupportTgLink
+                label={t("askTg")}
                 className="mb-6 flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface-2/40 px-6 py-3 font-medium text-foreground transition-colors hover:border-neon-blue/50"
               >
                 <TelegramLogo weight="fill" className="h-5 w-5" />
-                {t("askTg")}
-              </a>
+              </SupportTgLink>
 
               <div className="space-y-3 border-t border-border pt-5 text-sm">
                 <InfoRow icon={<Truck />} label={t("delivery")} value={product.delivery} />
@@ -286,6 +287,7 @@ export default async function ProductPage({ params }: Props) {
         </div>
       </div>
 
+      <Footer />
       <MobileNav />
     </div>
   );

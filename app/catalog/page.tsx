@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
+import { Footer } from "@/components/site/Footer";
 import CatalogShell from "@/components/catalog/CatalogShell";
 import { getAllProducts } from "@/lib/store";
 import { CATEGORIES, localizeProduct, type CategoryId } from "@/lib/products";
@@ -38,6 +39,7 @@ export default async function CatalogPage({
       <main>
         <CatalogShell products={products} initialFilter={initialFilter} />
       </main>
+      <Footer />
       <MobileNav />
     </div>
   );

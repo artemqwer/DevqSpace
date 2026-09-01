@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
+import { Footer } from "@/components/site/Footer";
 import OrderForm from "@/components/order/OrderForm";
 import { getProductBySlug } from "@/lib/store";
 import { localizeProduct } from "@/lib/products";
@@ -83,6 +84,7 @@ export default async function OrderPage({ params }: Props) {
           botUsername={botUsername}
         />
       </main>
+      <Footer />
       <MobileNav />
     </div>
   );

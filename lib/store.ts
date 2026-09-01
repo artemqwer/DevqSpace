@@ -100,6 +100,7 @@ type MemDB = {
   invites: Map<string, number>; // token -> expireAt
   content: Map<string, Record<string, string>>; // locale -> { "hero.title": "..." }
   counters: Map<string, number>; // офлайнові добавки до лічильників на сайті
+  settings: Map<string, string>; // налаштування сайту (контакти, реквізити)
 };
 
 const g = globalThis as unknown as {
@@ -120,6 +121,7 @@ type MemSnapshot = {
   invites: [string, number][];
   content: [string, Record<string, string>][];
   counters: [string, number][];
+  settings: [string, string][];
 };
 
 function emptyMem(): MemDB {
@@ -134,6 +136,7 @@ function emptyMem(): MemDB {
     invites: new Map(),
     content: new Map(),
     counters: new Map(),
+    settings: new Map(),
   };
 }
 
@@ -153,6 +156,7 @@ function hydrate(): MemDB {
     db.invites = new Map(raw.invites ?? []);
     db.content = new Map(raw.content ?? []);
     db.counters = new Map(raw.counters ?? []);
+    db.settings = new Map(raw.settings ?? []);
   } catch {
     return emptyMem();
   }
@@ -182,6 +186,7 @@ function touch(): void {
       invites: [...m.invites.entries()],
       content: [...m.content.entries()],
       counters: [...m.counters.entries()],
+      settings: [...m.settings.entries()],
     };
     try {
       devWriteState(DB_FILE, snapshot);
@@ -208,6 +213,7 @@ const K = {
   adminInvite: (t: string) => `admininvite:${t}`, // одноразове запрошення
   content: (locale: string) => `content:${locale}`, // hash: "hero.title" -> текст
   counters: "counters", // hash: products / clients -> офлайнова добавка
+  settings: "settings", // hash: налаштування сайту
 };
 
 // ---- Seeding --------------------------------------------------------
@@ -1143,4 +1149,40 @@ export async function getSiteCounters(): Promise<SiteCounters> {
     products: roundCounter(totalProducts),
     clients: roundCounter(totalClients),
   };
+}
+
+// =====================================================================
+// Налаштування сайту (контакт підтримки, реквізити, тумблери)
+// =====================================================================
+//
+// Плоскі рядкові пари, як і правки текстів. Зберігаємо лише те, що адмін
+// справді заповнив: порожнє значення прибирає ключ і повертає дефолт з коду.
+
+export async function getSiteSettings(): Promise<Record<string, string>> {
+  const redis = getRedis();
+  if (!redis) return Object.fromEntries(mem().settings);
+  return (await redis.hgetall<Record<string, string>>(K.settings)) ?? {};
+}
+
+export async function setSiteSettings(
+  patch: Record<string, string | null>,
+): Promise<void> {
+  const redis = getRedis();
+  const set: Record<string, string> = {};
+  const del: string[] = [];
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === null || value === "") del.push(key);
+    else set[key] = value;
+  }
+
+  if (!redis) {
+    const m = mem().settings;
+    for (const [k, v] of Object.entries(set)) m.set(k, v);
+    for (const k of del) m.delete(k);
+    touch();
+    return;
+  }
+
+  if (Object.keys(set).length) await redis.hset(K.settings, set);
+  if (del.length) await redis.hdel(K.settings, ...del);
 }

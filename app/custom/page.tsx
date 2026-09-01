@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
 import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
+import { Footer } from "@/components/site/Footer";
 import CustomForm from "@/components/custom/CustomForm";
 
 export const metadata: Metadata = {
@@ -58,6 +59,7 @@ export default function CustomPage() {
           <CustomForm />
         </div>
       </main>
+      <Footer />
       <MobileNav />
     </div>
   );

@@ -13,6 +13,7 @@ import type { IconProps } from "@phosphor-icons/react";
 import type { ComponentType } from "react";
 import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
+import { Footer } from "@/components/site/Footer";
 import { CATEGORIES, type CategoryId } from "@/lib/products";
 import { getAllProducts } from "@/lib/store";
 import { getTranslations } from "next-intl/server";
@@ -90,6 +91,7 @@ export default async function CategoriesPage() {
           })}
         </div>
       </main>
+      <Footer />
       <MobileNav />
     </div>
   );

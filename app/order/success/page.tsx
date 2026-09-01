@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
+import { Footer } from "@/components/site/Footer";
 import { getOrder } from "@/lib/store";
 import { tgGetBotUsername } from "@/lib/telegram";
 import { getTranslations } from "next-intl/server";
+import { SupportTgLink } from "@/components/site/SupportTgLink";
 
 export const dynamic = "force-dynamic";
 
@@ -83,14 +85,15 @@ export default async function OrderSuccessPage({
           >
             <i className="ph-bold ph-arrow-left" /> {t("toCatalog")}
           </Link>
-          <a
-            href="https://t.me/"
+          <SupportTgLink
+            label={t("writeTg")}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-neon-blue to-neon-purple px-6 py-3 font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5"
           >
-            <i className="ph-fill ph-telegram-logo" /> {t("writeTg")}
-          </a>
+            <i className="ph-fill ph-telegram-logo" />
+          </SupportTgLink>
         </div>
       </main>
+      <Footer />
       <MobileNav />
     </div>
   );

@@ -3,7 +3,9 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
+import { Footer } from "@/components/site/Footer";
 import { AboutStats } from "@/components/site/AboutStats";
+import { SupportTgLink } from "@/components/site/SupportTgLink";
 
 export const metadata: Metadata = {
   title: "Про нас",
@@ -86,12 +88,12 @@ export default function AboutPage() {
               {t("ctaText")}
             </p>
             <div className="flex flex-col justify-center gap-3 sm:flex-row">
-              <a
-                href="https://t.me/"
+              <SupportTgLink
+                label={t("ctaTg")}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-neon-blue to-neon-purple px-6 py-3 font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5"
               >
-                <i className="ph-fill ph-telegram-logo" /> {t("ctaTg")}
-              </a>
+                <i className="ph-fill ph-telegram-logo" />
+              </SupportTgLink>
               <Link
                 href="/cases"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-surface-2/40 px-6 py-3 font-medium text-foreground transition-colors hover:border-neon-blue/50"
@@ -102,6 +104,7 @@ export default function AboutPage() {
           </div>
         </div>
       </main>
+      <Footer />
       <MobileNav />
     </div>
   );

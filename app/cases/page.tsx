@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
+import { Footer } from "@/components/site/Footer";
 
 export const metadata: Metadata = {
   title: "Кейси",
@@ -105,6 +106,7 @@ export default function CasesPage() {
           </div>
         </div>
       </main>
+      <Footer />
       <MobileNav />
     </div>
   );
