@@ -3,19 +3,13 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
+import { AboutStats } from "@/components/site/AboutStats";
 
 export const metadata: Metadata = {
   title: "Про нас",
   description:
     "DevqSpace — студія цифрових продуктів. Розробляємо та продаємо готові Telegram-боти, веб-додатки та мобільні застосунки.",
 };
-
-const STATS = [
-  { value: "40+", k: "stat1", accent: "text-neon-blue" },
-  { value: "320", k: "stat2", accent: "text-neon-purple" },
-  { value: "5 р.", k: "stat3", accent: "text-neon-green" },
-  { value: "24h", k: "stat4", accent: "text-neon-pink" },
-] as const;
 
 const VALUES = [
   { icon: "ph-rocket-launch", k: "v1" },
@@ -46,19 +40,7 @@ export default function AboutPage() {
           </p>
         </div>
 
-        <div className="mb-10 grid grid-cols-2 gap-3 md:mb-16 md:grid-cols-4 md:gap-4">
-          {STATS.map((s) => (
-            <div
-              key={s.k}
-              className="rounded-2xl border border-border bg-surface/50 p-4 text-center md:p-5"
-            >
-              <div className={`font-display text-2xl font-bold leading-none md:text-4xl ${s.accent}`}>
-                {s.value}
-              </div>
-              <div className="mono-label mt-2 text-muted-foreground">{t(s.k)}</div>
-            </div>
-          ))}
-        </div>
+        <AboutStats />
 
         <h2 className="mb-5 font-display text-xl font-bold text-foreground md:text-2xl">
           {t("valuesTitle")}

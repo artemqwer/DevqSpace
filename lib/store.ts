@@ -1,6 +1,10 @@
 import "server-only";
 import { Redis } from "@upstash/redis";
-import { PRODUCTS as SEED_PRODUCTS, type Product } from "./products";
+import {
+  PRODUCTS as SEED_PRODUCTS,
+  roundCounter,
+  type Product,
+} from "./products";
 import { DEV_STUBS } from "./devStubs";
 import { devReadState, devWriteState } from "./devStorage";
 
@@ -1079,8 +1083,10 @@ export async function resetContent(locale: string): Promise<void> {
 
 export type OfflineCounters = { products: number; clients: number };
 export type SiteCounters = {
-  products: number; // разом
+  products: number; // те, що бачить відвідувач: округлено вниз до 5
   clients: number;
+  totalProducts: number; // реальні + офлайнові, до округлення
+  totalClients: number;
   realProducts: number; // з чого складається — щоб адмін бачив
   realClients: number;
   offline: OfflineCounters;
@@ -1125,11 +1131,16 @@ export async function getSiteCounters(): Promise<SiteCounters> {
     if (o.paid && o.contact) buyers.add(o.contact.trim().toLowerCase());
   }
 
+  const totalProducts = products.length + offline.products;
+  const totalClients = buyers.size + offline.clients;
+
   return {
     realProducts: products.length,
     realClients: buyers.size,
     offline,
-    products: products.length + offline.products,
-    clients: buyers.size + offline.clients,
+    totalProducts,
+    totalClients,
+    products: roundCounter(totalProducts),
+    clients: roundCounter(totalClients),
   };
 }

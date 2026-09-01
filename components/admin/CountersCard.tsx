@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { roundCounter } from "@/lib/products";
 import type { SiteCounters } from "@/lib/store";
 
-// «40+ продуктів · 320 клієнтів» у шапці сайту. Реальні числа рахуються самі,
-// адмін лише додає те, що сталося поза сайтом.
+// «30+ продуктів · 320+ клієнтів» у шапці сайту й на «Про нас». Реальні числа
+// рахуються самі, адмін лише додає те, що сталося поза сайтом.
 
 const INPUT_CLS =
   "w-24 bg-surface2 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-neon-blue/50 focus:outline-none";
@@ -52,7 +53,10 @@ export default function CountersCard({ counters }: { counters: SiteCounters }) {
         title="Скільки додати до реальних"
       />
       <span className="font-mono text-xs text-gray-600">
-        = на сайті <span className="text-white">{total}</span>
+        = на сайті{" "}
+        <span className="text-white">
+          {roundCounter(total) > 0 ? `${roundCounter(total)}+` : "не показуємо"}
+        </span>
       </span>
     </div>
   );
@@ -66,8 +70,9 @@ export default function CountersCard({ counters }: { counters: SiteCounters }) {
         <p className="mt-1 text-xs text-gray-500">
           Реальні рахуються самі: товари — з каталогу, клієнти — унікальні
           покупці серед оплачених замовлень. У друге поле впишіть те, що було
-          поза сайтом (продажі в Telegram, знайомим). Поки клієнтів нуль,
-          рядок на сайті не показується взагалі — «0 клієнтів» гірше за нічого.
+          поза сайтом (продажі в Telegram, знайомим). На сайті число
+          округлюється вниз до кратного п&apos;яти й показується як «30+» —
+          менше за 5 не показуємо взагалі, бо «2 клієнти» гірше за нічого.
         </p>
       </div>
 

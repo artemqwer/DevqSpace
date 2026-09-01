@@ -1197,3 +1197,13 @@ export const ACCENT_BUTTON: Record<Accent, string> = {
   pink: "bg-neon-pink text-black shadow-[0_10px_30px_-10px_rgba(255,0,127,0.5)]",
   green: "bg-neon-green text-black shadow-[0_10px_30px_-10px_rgba(0,255,102,0.5)]",
 };
+
+// Округлення вниз до кратного 5 для публічних лічильників: 34 -> «30+»,
+// 322 -> «320+». Показуємо менше, ніж є насправді, — так число ніколи не
+// збільшується від округлення і не стрибає туди-сюди на кожній покупці.
+// Менше за 5 дає 0 — такий лічильник не показуємо взагалі.
+export const COUNTER_STEP = 5;
+
+export function roundCounter(n: number): number {
+  return Math.floor(n / COUNTER_STEP) * COUNTER_STEP;
+}
