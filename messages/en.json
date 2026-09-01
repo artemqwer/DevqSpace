@@ -364,5 +364,58 @@
     "t3": "The smart contracts passed the audit with no critical findings. Professional approach and honest communication.",
     "t3n": "Dmytro Ivanenko",
     "t3r": "CTO, LoyalDAO"
+  },
+  "legal": {
+    "footerLegal": "Legal",
+    "terms": {
+      "title": "Terms of Sale",
+      "intro": "This document is an official offer by {entityType} {entityName} to enter into a contract for the sale of digital goods on the terms set out below. Paying for an order means full and unconditional acceptance of these terms.",
+      "h1": "1. General",
+      "b1": "Seller — {entityType} {entityName}, registration number {edrpou}, address: {address}. Buyer — any legally capable person who places an order on this site. The contract takes effect once payment is received.",
+      "h2": "2. Subject",
+      "b2": "The Seller transfers to the Buyer a digital product — the source code of a software product, its documentation and accompanying files, in electronic form. No physical medium is supplied; delivery happens over communication channels.",
+      "h3": "3. Price and payment",
+      "b3": "Prices are shown on each product page. Payment is accepted by bank card, cryptocurrency or bank transfer — the Buyer chooses at checkout. The price is fixed at the moment the order is created.",
+      "h4": "4. Delivery",
+      "b4": "Once payment is confirmed, the download link is sent automatically — via Telegram or to the email given at checkout. If the product requires configuration, the values entered by the Buyer are injected into the delivered archive. In case of a technical failure the Seller delivers the product manually within one business day.",
+      "h5": "5. Licence",
+      "b5": "The Buyer receives a non-exclusive, perpetual licence to use and modify the code in their own projects. Reselling, publishing the code publicly or passing it to third parties as a standalone product is prohibited. Exclusive proprietary rights remain with the Seller.",
+      "h6": "6. Warranty and support",
+      "b6": "The Seller warrants that the product works as described on its product page. The support period is stated on each product card. The warranty does not cover faults caused by the Buyer's own changes to the code, or the behaviour of third-party services (Telegram, payment systems, hosting).",
+      "h7": "7. Liability",
+      "b7": "The Seller is not liable for lost profit or indirect damages related to the use of the product. The Seller's liability is limited to the amount paid for the particular product.",
+      "h8": "8. Company details",
+      "b8": "{entityType} {entityName}, registration number {edrpou}, {address}. Email: {supportEmail}. Phone: {supportPhone}. Support hours: {workHours}."
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "intro": "This document explains what data the site collects, why, and how long it is kept. Data controller — {entityType} {entityName}.",
+      "h1": "1. What we collect",
+      "b1": "The name and contact you provide in the form (Telegram, email or phone), the contents and amount of your order, and anonymous product-view statistics. We do not collect payment details: payment is handled on the payment provider's side.",
+      "h2": "2. Why",
+      "b2": "To process your order, deliver the product, answer your questions and honour the warranty. We do not ask for data we do not need for that.",
+      "h3": "3. Product configuration data",
+      "b3": "If a product requires configuration, you enter your own values in the form — including a bot token. They are encrypted with AES-256-GCM, used solely to build your archive, and deleted automatically 30 days after the order.",
+      "h4": "4. Who we share with",
+      "b4": "Payment providers — only as needed to process the payment. Telegram and the email service — to deliver the product. Data is never sold or shared with third parties for advertising.",
+      "h5": "5. Cookies",
+      "b5": "The site stores your interface language and the administrator session. There are no advertising or third-party tracking cookies.",
+      "h6": "6. Retention and deletion",
+      "b6": "Order data is kept for as long as warranty obligations apply. You may ask us to delete your data — write to {supportEmail} and we will comply within 30 days, except for data we are legally required to retain.",
+      "h7": "7. Your rights",
+      "b7": "You have the right to know what data we hold about you, to have it corrected or deleted, and to withdraw your consent to processing. Write to {supportEmail}."
+    },
+    "refund": {
+      "title": "Refund Policy",
+      "intro": "A digital product cannot be returned the way a physical one can: once the code has been delivered, access to it cannot be revoked. So here are clear rules on when we refund.",
+      "h1": "1. Full refund",
+      "b1": "You paid but never received the product and we could not deliver it within three business days. The product does not match its description. The product does not run following our instructions and we could not fix it.",
+      "h2": "2. No refund",
+      "b2": "You received the archive and changed your mind. The product works as described but did not fit your task. The fault appeared after your own changes to the code, or is caused by third-party services.",
+      "h3": "3. How to request",
+      "b3": "Write to {supportEmail} or to our Telegram support within 14 days of payment. Include the order number and describe the problem. We reply during: {workHours}.",
+      "h4": "4. Timing",
+      "b4": "We first try to solve the problem technically — that is faster than a refund and usually works. If it does not, we refund within 10 business days using the same method the payment came through. Crypto network fees cannot be refunded for technical reasons."
+    }
   }
 }

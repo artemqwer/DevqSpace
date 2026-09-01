@@ -40,9 +40,17 @@ const INPUT_CLS =
 export default function ContentEditor({
   defaults,
   overrides,
+  // only — показати лише один розділ (напр. "legal"), розбивши його на
+  // під-розділи; exclude — навпаки, сховати розділ, у якого є власна вкладка.
+  only,
+  exclude,
+  labels = SECTION_LABEL,
 }: {
   defaults: ByLocale<Flat>;
   overrides: ByLocale<Flat>;
+  only?: string;
+  exclude?: string;
+  labels?: Record<string, string>;
 }) {
   const router = useRouter();
 
@@ -59,9 +67,26 @@ export default function ContentEditor({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+
+  // Ключі, з якими взагалі працює цей редактор.
+  const allKeys = useMemo(
+    () =>
+      Object.keys(defaults.uk).filter((k) =>
+        only ? k.startsWith(`${only}.`) : !exclude || !k.startsWith(`${exclude}.`),
+      ),
+    [defaults.uk, only, exclude],
+  );
+
+  // У режимі only розділами стають під-ключі: legal.terms.* -> "terms".
+  const sectionOf = useMemo(
+    () => (key: string) =>
+      (only ? key.slice(only.length + 1) : key).split(".")[0],
+    [only],
+  );
+
   const sections = useMemo(
-    () => [...new Set(Object.keys(defaults.uk).map((k) => k.split(".")[0]))],
-    [defaults.uk],
+    () => [...new Set(allKeys.map(sectionOf))],
+    [allKeys, sectionOf],
   );
   const [section, setSection] = useState(sections[0] ?? "");
 
@@ -71,33 +96,31 @@ export default function ContentEditor({
   const dirty = useMemo(() => {
     const keys = new Set<string>();
     for (const locale of ["uk", "en"] as Locale[]) {
-      for (const key of Object.keys(defaults[locale])) {
+      for (const key of allKeys) {
         if (values[locale][key] !== initial[locale][key]) keys.add(key);
       }
     }
     return keys;
-  }, [values, initial, defaults]);
+  }, [values, initial, allKeys]);
 
   // Скільки правок узагалі є в розділі — щоб було видно, де щось міняли.
   const changedInSection = (name: string) =>
-    Object.keys(defaults.uk).filter(
-      (k) =>
-        k.startsWith(`${name}.`) && (isChanged(k, "uk") || isChanged(k, "en")),
+    allKeys.filter(
+      (k) => sectionOf(k) === name && (isChanged(k, "uk") || isChanged(k, "en")),
     ).length;
 
   const visibleKeys = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const keys = Object.keys(defaults.uk);
     if (q) {
-      return keys.filter(
+      return allKeys.filter(
         (k) =>
           k.toLowerCase().includes(q) ||
           defaults.uk[k].toLowerCase().includes(q) ||
           defaults.en[k].toLowerCase().includes(q),
       );
     }
-    return keys.filter((k) => k.startsWith(`${section}.`));
-  }, [query, section, defaults]);
+    return allKeys.filter((k) => sectionOf(k) === section);
+  }, [query, section, defaults, allKeys, sectionOf]);
 
   const setValue = (locale: Locale, key: string, value: string) =>
     setValues((prev) => ({
@@ -139,12 +162,33 @@ export default function ContentEditor({
   const resetAll = async () => {
     if (!confirm("Скинути ВСІ правки текстів і повернути початкові?")) return;
     setSaving(true);
-    await Promise.all(
-      (["uk", "en"] as Locale[]).map((l) =>
-        fetch(`/api/admin/content?locale=${l}`, { method: "DELETE" }),
-      ),
-    );
-    setValues({ uk: { ...defaults.uk }, en: { ...defaults.en } });
+    if (only) {
+      // У вкладці одного розділу «скинути все» має чіпати тільки його —
+      // інакше кнопка тут стерла б і правки решти сайту.
+      for (const locale of ["uk", "en"] as Locale[]) {
+        const payload: Flat = {};
+        for (const key of allKeys) payload[key] = "";
+        await fetch("/api/admin/content", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ locale, values: payload }),
+        });
+      }
+    } else {
+      await Promise.all(
+        (["uk", "en"] as Locale[]).map((l) =>
+          fetch(`/api/admin/content?locale=${l}`, { method: "DELETE" }),
+        ),
+      );
+    }
+    setValues((prev) => {
+      const next = { uk: { ...prev.uk }, en: { ...prev.en } };
+      for (const key of allKeys) {
+        next.uk[key] = defaults.uk[key];
+        next.en[key] = defaults.en[key];
+      }
+      return next;
+    });
     setSaving(false);
     router.refresh();
   };
@@ -203,7 +247,7 @@ export default function ContentEditor({
                     : "border-transparent text-gray-400 hover:bg-white/5 hover:text-white"
                 }`}
               >
-                <span className="truncate">{SECTION_LABEL[name] ?? name}</span>
+                <span className="truncate">{labels[name] ?? name}</span>
                 {count > 0 && (
                   <span className="shrink-0 rounded bg-neon-purple/20 px-1.5 font-mono text-[10px] text-neon-purple">
                     {count}

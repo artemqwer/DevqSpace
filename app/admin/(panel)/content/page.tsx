@@ -32,6 +32,7 @@ export default async function AdminContentPage() {
       </div>
 
       <ContentEditor
+        exclude="legal"
         defaults={{ uk: defaultsFlat("uk"), en: defaultsFlat("en") }}
         overrides={{ uk: ukOverrides, en: enOverrides }}
       />
