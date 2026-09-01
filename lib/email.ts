@@ -62,6 +62,7 @@ export async function sendDeliveryEmail(
   to: string,
   productTitle: string,
   downloadUrl: string,
+  reviewUrl?: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const esc = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -83,6 +84,18 @@ export async function sendDeliveryEmail(
         <span style="color:#8b8f98;word-break:break-all">${esc(downloadUrl)}</span>
       </p>
     </div>
+    ${
+      reviewUrl
+        ? `<div style="padding:0 28px 24px">
+      <p style="color:#9aa4b2;font-size:13px;line-height:1.6;margin:0 0 10px">
+        Розкажете, як вам? Це займе хвилину і дуже допомагає іншим покупцям.
+      </p>
+      <a href="${esc(reviewUrl)}" style="display:inline-block;border:1px solid rgba(255,255,255,.15);color:#e5e7eb;font-size:13px;text-decoration:none;padding:10px 18px;border-radius:10px">
+        ★ Залишити відгук
+      </a>
+    </div>`
+        : ""
+    }
     <div style="padding:16px 28px;border-top:1px solid rgba(255,255,255,.06);color:#5b6472;font-size:12px">
       DevqSpace — цифрова студія. Гарантія 1 рік і повний сорс-код.
     </div>

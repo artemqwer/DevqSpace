@@ -59,6 +59,24 @@ export type StoredOrder = {
 // deliveryChannel, на які зав'язані бот і адмінка, — вони лишаються як були.
 export type DeliveryStatus = "PENDING" | "GENERATING" | "SENT" | "FAILED";
 
+// Відгук. Два шляхи: з листа після видачі (verified, публікується одразу)
+// і з форми на сторінці товару (премодерація) — фальшиві «5 зірок» на
+// новому магазині шкодять більше, ніж їх відсутність.
+export type ReviewStatus = "pending" | "published" | "hidden";
+
+export type Review = {
+  id: string;
+  productSlug: string;
+  orderId?: string;
+  authorName: string;
+  rating: number; // 1..5
+  text: string;
+  verified: boolean;
+  status: ReviewStatus;
+  createdAt: number;
+  reply?: { text: string; at: number };
+};
+
 // Для замовлень, створених до появи поля.
 export function effectiveDeliveryStatus(order: StoredOrder): DeliveryStatus {
   if (order.deliveryStatus) return order.deliveryStatus;
@@ -101,6 +119,8 @@ type MemDB = {
   content: Map<string, Record<string, string>>; // locale -> { "hero.title": "..." }
   counters: Map<string, number>; // офлайнові добавки до лічильників на сайті
   settings: Map<string, string>; // налаштування сайту (контакти, реквізити)
+  reviews: Map<string, Review>;
+  reviewTokens: Map<string, string>; // одноразовий токен -> orderId
 };
 
 const g = globalThis as unknown as {
@@ -122,6 +142,8 @@ type MemSnapshot = {
   content: [string, Record<string, string>][];
   counters: [string, number][];
   settings: [string, string][];
+  reviews: [string, Review][];
+  reviewTokens: [string, string][];
 };
 
 function emptyMem(): MemDB {
@@ -137,6 +159,8 @@ function emptyMem(): MemDB {
     content: new Map(),
     counters: new Map(),
     settings: new Map(),
+    reviews: new Map(),
+    reviewTokens: new Map(),
   };
 }
 
@@ -157,6 +181,8 @@ function hydrate(): MemDB {
     db.content = new Map(raw.content ?? []);
     db.counters = new Map(raw.counters ?? []);
     db.settings = new Map(raw.settings ?? []);
+    db.reviews = new Map(raw.reviews ?? []);
+    db.reviewTokens = new Map(raw.reviewTokens ?? []);
   } catch {
     return emptyMem();
   }
@@ -187,6 +213,8 @@ function touch(): void {
       content: [...m.content.entries()],
       counters: [...m.counters.entries()],
       settings: [...m.settings.entries()],
+      reviews: [...m.reviews.entries()],
+      reviewTokens: [...m.reviewTokens.entries()],
     };
     try {
       devWriteState(DB_FILE, snapshot);
@@ -214,6 +242,9 @@ const K = {
   content: (locale: string) => `content:${locale}`, // hash: "hero.title" -> текст
   counters: "counters", // hash: products / clients -> офлайнова добавка
   settings: "settings", // hash: налаштування сайту
+  review: (id: string) => `review:${id}`,
+  reviewIndex: "reviews:index", // sorted set за createdAt
+  reviewToken: (t: string) => `reviewtoken:${t}`, // одноразовий токен -> orderId
 };
 
 // ---- Seeding --------------------------------------------------------
@@ -1191,4 +1222,108 @@ export async function setSiteSettings(
 
   if (Object.keys(set).length) await redis.hset(K.settings, set);
   if (del.length) await redis.hdel(K.settings, ...del);
+}
+
+// =====================================================================
+// Відгуки
+// =====================================================================
+//
+// ponytail: індекс — один sorted set на всі відгуки, фільтрація за товаром
+// і статусом у пам'яті. При тисячах відгуків знадобиться окремий набір на
+// товар; на теперішньому обсязі це зайва складність.
+
+export async function addReview(review: Review): Promise<void> {
+  const redis = getRedis();
+  if (!redis) {
+    mem().reviews.set(review.id, review);
+    touch();
+    return;
+  }
+  await redis.set(K.review(review.id), review);
+  await redis.zadd(K.reviewIndex, { score: review.createdAt, member: review.id });
+}
+
+export async function getAllReviews(): Promise<Review[]> {
+  const redis = getRedis();
+  if (!redis) {
+    return [...mem().reviews.values()].sort((a, b) => b.createdAt - a.createdAt);
+  }
+  const ids = await redis.zrange<string[]>(K.reviewIndex, 0, -1, { rev: true });
+  if (!ids.length) return [];
+  const rows = await redis.mget<Review[]>(...ids.map((id) => K.review(id)));
+  return rows.filter((r): r is Review => Boolean(r));
+}
+
+export async function getPublishedReviews(slug: string): Promise<Review[]> {
+  return (await getAllReviews()).filter(
+    (r) => r.productSlug === slug && r.status === "published",
+  );
+}
+
+export async function updateReview(
+  id: string,
+  patch: Partial<Review>,
+): Promise<Review | null> {
+  const redis = getRedis();
+  const current = redis
+    ? await redis.get<Review>(K.review(id))
+    : (mem().reviews.get(id) ?? null);
+  if (!current) return null;
+
+  const next = { ...current, ...patch, id: current.id };
+  if (!redis) {
+    mem().reviews.set(id, next);
+    touch();
+    return next;
+  }
+  await redis.set(K.review(id), next);
+  return next;
+}
+
+export async function deleteReview(id: string): Promise<void> {
+  const redis = getRedis();
+  if (!redis) {
+    mem().reviews.delete(id);
+    touch();
+    return;
+  }
+  await redis.del(K.review(id));
+  await redis.zrem(K.reviewIndex, id);
+}
+
+// Одноразове запрошення лишити відгук — видається разом із товаром.
+export async function setReviewToken(
+  token: string,
+  orderId: string,
+  ttlSec = 60 * 60 * 24 * 90,
+): Promise<void> {
+  const redis = getRedis();
+  if (!redis) {
+    mem().reviewTokens.set(token, orderId);
+    touch();
+    return;
+  }
+  await redis.set(K.reviewToken(token), orderId, { ex: ttlSec });
+}
+
+export async function getOrderByReviewToken(
+  token: string,
+): Promise<StoredOrder | null> {
+  const redis = getRedis();
+  const id = redis
+    ? await redis.get<string>(K.reviewToken(token))
+    : mem().reviewTokens.get(token);
+  if (!id) return null;
+  return getOrder(id);
+}
+
+// Токен одноразовий: погашаємо після успішного відгуку.
+export async function consumeReviewToken(token: string): Promise<void> {
+  const redis = getRedis();
+  if (!redis) {
+    mem().reviewTokens.delete(token);
+    touch();
+    return;
+  }
+  await redis.del(K.reviewToken(token));
 }

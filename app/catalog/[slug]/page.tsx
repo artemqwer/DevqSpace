@@ -30,6 +30,7 @@ import {
 } from "@/lib/store";
 import { getLocale, getTranslations } from "next-intl/server";
 import { SupportTgLink } from "@/components/site/SupportTgLink";
+import { Reviews } from "@/components/site/Reviews";
 
 export const dynamic = "force-dynamic";
 
@@ -174,6 +175,8 @@ export default async function ProductPage({ params }: Props) {
                 ))}
               </ul>
             </Section>
+
+            <Reviews productSlug={product.slug} />
           </div>
 
           {/* Right — desktop sticky purchase panel */}

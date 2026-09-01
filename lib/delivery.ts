@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import {
   getProductBySlug,
   setOrderDownloadToken,
+  setReviewToken,
   markOrderDelivered,
   updateOrder,
   type StoredOrder,
@@ -108,6 +109,12 @@ export async function deliverOrder(
   await setOrderDownloadToken(order.id, token);
   const dlUrl = `${baseUrl}/api/download?t=${token}`;
 
+  // Одноразове запрошення лишити відгук — видається тут же: момент видачі
+  // єдиний, коли ми точно знаємо, що людина справді купила товар.
+  const reviewToken = randomUUID().replace(/-/g, "");
+  await setReviewToken(reviewToken, order.id);
+  const reviewUrl = `${baseUrl}/review/${reviewToken}`;
+
   // ---- Telegram ----
   if (order.contactMethod === "telegram") {
     if (order.tgChatId) {
@@ -115,7 +122,7 @@ export async function deliverOrder(
       const ok = await tgSendDocument(
         order.tgChatId,
         fileUrl,
-        `✅ <b>${esc(product.title)}</b>\nДякуємо за покупку! Ваш архів у вкладенні. Гарантія 1 рік 🚀`,
+        `✅ <b>${esc(product.title)}</b>\nДякуємо за покупку! Ваш архів у вкладенні. Гарантія 1 рік 🚀\n\n★ Розкажете, як вам? ${reviewUrl}`,
       );
       if (ok) {
         await markOrderDelivered(order.id, "telegram");
@@ -130,7 +137,7 @@ export async function deliverOrder(
       // Спроба 2: файл не пішов (напр. >20 МБ для URL) — шлемо посилання в чат.
       const linkOk = await tgSendMessage(
         order.tgChatId,
-        `✅ <b>${esc(product.title)}</b>\nДякуємо за покупку! Завантажте архів за посиланням:\n${dlUrl}`,
+        `✅ <b>${esc(product.title)}</b>\nДякуємо за покупку! Завантажте архів за посиланням:\n${dlUrl}\n\n★ Розкажете, як вам? ${reviewUrl}`,
       );
       if (linkOk) {
         await markOrderDelivered(order.id, "telegram", "надіслано посиланням");
@@ -165,7 +172,12 @@ export async function deliverOrder(
   if (order.contactMethod === "email") {
     let reason = "RESEND_API_KEY не задано";
     if (emailEnabled()) {
-      const r = await sendDeliveryEmail(order.contact, product.title, dlUrl);
+      const r = await sendDeliveryEmail(
+        order.contact,
+        product.title,
+        dlUrl,
+        reviewUrl,
+      );
       if (r.ok) {
         await markOrderDelivered(order.id, "email");
         await updateOrder(order.id, { deliveryStatus: "SENT" });

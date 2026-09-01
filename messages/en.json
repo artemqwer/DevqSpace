@@ -420,5 +420,22 @@
       "h4": "4. Timing",
       "b4": "We first try to solve the problem technically — that is faster than a refund and usually works. If it does not, we refund within 10 business days using the same method the payment came through. Crypto network fees cannot be refunded for technical reasons."
     }
+  },
+  "reviews": {
+    "title": "Reviews",
+    "none": "No reviews yet",
+    "leave": "Write a review",
+    "verified": "Verified purchase",
+    "yourName": "Your name",
+    "yourRating": "Rating",
+    "yourText": "Your experience",
+    "send": "Send",
+    "sentPending": "Thank you! Your review will appear after moderation.",
+    "sentPublished": "Thank you! Your review is published.",
+    "sellerReply": "Seller reply",
+    "formHint": "Tell what worked or did not — it helps others.",
+    "tokenTitle": "How was it?",
+    "tokenSub": "You bought this product, so your review appears right away with a “Verified purchase” badge.",
+    "tokenBad": "This link is invalid or already used."
   }
 }
