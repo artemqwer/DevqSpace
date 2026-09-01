@@ -2,6 +2,7 @@ import { jarEnabled, getJarUrl, usdToUah } from "@/lib/monojar";
 import { getProductBySlug, addOrder, rateLimit } from "@/lib/store";
 import { sendOrderToTelegram, type OrderPayload } from "@/lib/telegram";
 import { prepareEnvData } from "@/lib/orderEnv";
+import { parseContact } from "@/lib/contact";
 
 type Body = {
   productSlug?: string;
@@ -44,25 +45,11 @@ export async function POST(req: Request) {
     );
   }
 
-  const name = (body.name ?? "").trim();
-  const contact = (body.contact ?? "").trim();
-  const contactMethod = body.contactMethod;
-  if (!name || !contact) {
-    return Response.json(
-      { ok: false, error: "Вкажіть ім'я та контакт для доставки" },
-      { status: 400 },
-    );
+  const parsed = parseContact(body);
+  if (!parsed.ok) {
+    return Response.json({ ok: false, error: parsed.error }, { status: 400 });
   }
-  if (
-    contactMethod !== "telegram" &&
-    contactMethod !== "email" &&
-    contactMethod !== "phone"
-  ) {
-    return Response.json(
-      { ok: false, error: "Невірний контакт" },
-      { status: 400 },
-    );
-  }
+  const { name, contact, contactMethod } = parsed;
 
   const product = await getProductBySlug(body.productSlug ?? "");
   if (!product) {

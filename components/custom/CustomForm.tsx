@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { validateContact, contactErrorKey } from "@/lib/contact";
 import { useTranslations } from "next-intl";
 
 const TYPES = [
@@ -31,6 +32,12 @@ export default function CustomForm() {
   const [company, setCompany] = useState(""); // honeypot
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Червоне під полем показуємо лише коли в ньому вже щось введено.
+  const contactCheck = validateContact(contactMethod, contact);
+  const contactError =
+    contact.trim() && !contactCheck.ok
+      ? tr(contactErrorKey(contactMethod, contactCheck.reason))
+      : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,8 +47,8 @@ export default function CustomForm() {
       setError(tr("errType"));
       return;
     }
-    if (!name.trim() || !contact.trim()) {
-      setError(tr("errContact"));
+    if (!name.trim() || !contactCheck.ok) {
+      setError(contactError ?? tr("errContact"));
       return;
     }
     if (!message.trim()) {
@@ -205,9 +212,17 @@ export default function CustomForm() {
                   : "+380..."
             }
             required
-            className="bg-surface2 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue/50 transition-colors font-mono text-sm"
+            className={`bg-surface2 border rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue/50 transition-colors font-mono text-sm ${
+              contactError ? "border-neon-pink/60" : "border-white/10"
+            }`}
           />
         </div>
+        {contactError && (
+          <p className="mt-2 flex items-center gap-1.5 text-xs text-neon-pink">
+            <i className="ph-bold ph-warning-circle" />
+            {contactError}
+          </p>
+        )}
         <div className="grid grid-cols-3 gap-2 mt-3">
           <ContactTab
             active={contactMethod === "telegram"}

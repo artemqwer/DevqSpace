@@ -211,7 +211,11 @@
     "errContact": "Fill in name and contact",
     "errBrief": "Describe the task in at least two sentences",
     "errSend": "Failed to send",
-    "errNet": "Network error"
+    "errNet": "Network error",
+    "contactEmpty": "Enter your name and contact",
+    "contactBadTelegram": "Handle looks like @username — 5–32 characters, letters, digits and “_” only",
+    "contactBadEmail": "That email looks wrong. Example: name@example.com",
+    "contactBadPhone": "That number looks wrong. Example: +380 67 123 45 67"
   },
   "order": {
     "eyebrow": "// order",
@@ -260,7 +264,11 @@
     "back": "back to product",
     "configLabel": "Bot configuration",
     "configHint": "🔧 Your token is auto-injected into the .env inside the archive — you get a ready-to-run bot.",
-    "noteConfig": "Fill in the settings above to pay. Not sure how? Just send a request and we will help."
+    "noteConfig": "Fill in the settings above to pay. Not sure how? Just send a request and we will help.",
+    "contactEmpty": "Enter your name and contact",
+    "contactBadTelegram": "Handle looks like @username — 5–32 characters, letters, digits and “_” only",
+    "contactBadEmail": "That email looks wrong. Example: name@example.com",
+    "contactBadPhone": "That number looks wrong. Example: +380 67 123 45 67"
   },
   "success": {
     "eyebrow": "// request received",

@@ -6,6 +6,7 @@ import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ACCENT_BUTTON, type Product } from "@/lib/products";
 import type { EnvValues } from "@/lib/envFields";
+import { validateContact, contactErrorKey } from "@/lib/contact";
 import ProductThumb from "@/components/ProductThumb";
 import EnvFieldsForm from "./EnvFieldsForm";
 import { ORDER_INPUT_CLS } from "./styles";
@@ -92,11 +93,19 @@ export default function OrderForm({
     amountUah: number;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Показуємо помилку формату лише коли в полі вже щось є — інакше червоне
+  // спалахує на порожній формі, щойно людина клікнула у поле.
+  const contactCheck = validateContact(contactMethod, contact);
+  const contactError =
+    contact.trim() && !contactCheck.ok
+      ? to(contactErrorKey(contactMethod, contactCheck.reason))
+      : null;
+  const contactOk = contactCheck.ok;
 
   const handleWfp = async () => {
     setError(null);
-    if (!name.trim() || !contact.trim()) {
-      setError(to("errNameContact"));
+    if (!name.trim() || !contactOk) {
+      setError(contactError ?? to("errNameContact"));
       return;
     }
     setWfpPaying(true);
@@ -153,8 +162,8 @@ export default function OrderForm({
 
   const handleJar = async () => {
     setError(null);
-    if (!name.trim() || !contact.trim()) {
-      setError(to("errNameContact"));
+    if (!name.trim() || !contactOk) {
+      setError(contactError ?? to("errNameContact"));
       return;
     }
     setJarPaying(true);
@@ -198,8 +207,8 @@ export default function OrderForm({
 
   const handlePay = async () => {
     setError(null);
-    if (!name.trim() || !contact.trim()) {
-      setError(to("errNameContact"));
+    if (!name.trim() || !contactOk) {
+      setError(contactError ?? to("errNameContact"));
       return;
     }
     setPaying(true);
@@ -238,8 +247,8 @@ export default function OrderForm({
     e.preventDefault();
     setError(null);
 
-    if (!name.trim() || !contact.trim()) {
-      setError(to("errNameContact2"));
+    if (!name.trim() || !contactOk) {
+      setError(contactError ?? to("errNameContact2"));
       return;
     }
 
@@ -430,8 +439,14 @@ export default function OrderForm({
                   : "+380..."
             }
             required
-            className={ORDER_INPUT_CLS}
+            className={`${ORDER_INPUT_CLS} ${contactError ? "border-neon-pink/60" : ""}`}
           />
+          {contactError && (
+            <p className="mt-1.5 flex items-center gap-1.5 text-xs text-neon-pink">
+              <i className="ph-bold ph-warning-circle" />
+              {contactError}
+            </p>
+          )}
         </Field>
 
         <Field label={to("detailsLabel")}>
