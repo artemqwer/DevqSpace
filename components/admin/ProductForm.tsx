@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { EnvField, Product } from "@/lib/products";
 import EnvFieldsEditor from "./EnvFieldsEditor";
 
@@ -36,6 +36,7 @@ export default function ProductForm({
 
   const [uploading, setUploading] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [envFields, setEnvFields] = useState<EnvField[]>(
     product?.envFields ?? [],
   );
@@ -95,9 +96,11 @@ export default function ProductForm({
     }
   };
 
-  const onUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const uploadArchive = async (file: File) => {
+    if (!/\.zip$/i.test(file.name)) {
+      setError("Потрібен ZIP-архів");
+      return;
+    }
     setUploadingFile(true);
     setError(null);
     try {
@@ -122,6 +125,31 @@ export default function ProductForm({
     } finally {
       setUploadingFile(false);
     }
+  };
+
+  const onUploadFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) uploadArchive(file);
+  };
+
+  // Перетягування архіву. dragCounter, бо dragleave стріляє і при переході
+  // між дочірніми елементами — інакше підсвітка блимає.
+  const dragCounter = useRef(0);
+  const onDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounter.current++;
+    setDragOver(true);
+  };
+  const onDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (--dragCounter.current <= 0) setDragOver(false);
+  };
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounter.current = 0;
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) uploadArchive(file);
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -210,16 +238,39 @@ export default function ProductForm({
         </div>
       </Field>
 
-      {/* Deliverable file (ZIP) */}
-      <Field label="Файл товару (ZIP)" hint="видається клієнту після оплати">
-        <div className="flex items-center gap-3">
+      {/* Deliverable file (ZIP) — клік або перетягування */}
+      <Field
+        label="Файл товару (ZIP)"
+        hint="видається клієнту після оплати — можна перетягнути сюди"
+      >
+        <div
+          onDragEnter={onDragEnter}
+          onDragOver={(e) => e.preventDefault()}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
+          className={`flex items-center gap-3 rounded-lg border border-dashed p-3 transition-colors ${
+            dragOver
+              ? "border-neon-blue bg-neon-blue/10"
+              : "border-white/10 bg-transparent"
+          }`}
+        >
           <div className="w-12 h-12 shrink-0 rounded-lg border border-white/10 bg-surface2 flex items-center justify-center">
             <i
-              className={`ph text-2xl ${f.fileUrl ? "ph-file-zip text-neon-green" : "ph-file-dashed text-gray-600"}`}
+              className={`ph text-2xl ${
+                dragOver
+                  ? "ph-download-simple text-neon-blue"
+                  : f.fileUrl
+                    ? "ph-file-zip text-neon-green"
+                    : "ph-file-dashed text-gray-600"
+              }`}
             />
           </div>
           <div className="flex-1 min-w-0">
-            {f.fileUrl ? (
+            {dragOver ? (
+              <div className="text-xs font-mono text-neon-blue">
+                Відпустіть — завантажимо архів
+              </div>
+            ) : f.fileUrl ? (
               <div className="text-xs font-mono text-gray-300 truncate">
                 {f.fileName || "файл завантажено"}
               </div>

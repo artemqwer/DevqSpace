@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { ArrowRight } from "@phosphor-icons/react";
 
 // Слайдер першого візиту: вибір мови + згода на cookie.
@@ -12,10 +13,14 @@ function setLocaleCookie(lang: "uk" | "en") {
 
 export function WelcomeSheet() {
   const [open, setOpen] = useState(false);
+  // Рендериться з кореневого layout, тобто і над адмінкою. Адміну вибір мови
+  // й cookie-згода не потрібні — вони перекривають панель.
+  const isAdmin = usePathname()?.startsWith("/admin") ?? false;
 
   useEffect(() => {
+    if (isAdmin) return;
     if (!localStorage.getItem(KEY)) setOpen(true);
-  }, []);
+  }, [isAdmin]);
 
   function choose(lang: "uk" | "en") {
     localStorage.setItem(KEY, JSON.stringify({ lang, consent: true, ts: Date.now() }));
@@ -24,7 +29,7 @@ export function WelcomeSheet() {
     if (lang !== "uk") location.reload();
   }
 
-  if (!open) return null;
+  if (!open || isAdmin) return null;
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 p-3 backdrop-blur-sm sm:items-center">
