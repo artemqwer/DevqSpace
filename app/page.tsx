@@ -9,7 +9,7 @@ import { Guarantee } from "@/components/site/Guarantee";
 import { FinalCta } from "@/components/site/FinalCta";
 import { Footer } from "@/components/site/Footer";
 import { MobileNav } from "@/components/site/MobileNav";
-import { getAllProducts } from "@/lib/store";
+import { getAllProducts, getSiteCounters } from "@/lib/store";
 import { localizeProduct } from "@/lib/products";
 import { getLocale } from "next-intl/server";
 
@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const locale = await getLocale();
-  const all = await getAllProducts();
+  const [all, counters] = await Promise.all([getAllProducts(), getSiteCounters()]);
   const top = [...all]
     .sort((a, b) => b.sold - a.sold)
     .slice(0, 8)
@@ -27,7 +27,7 @@ export default async function HomePage() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main>
-        <Hero />
+        <Hero products={counters.products} clients={counters.clients} />
         <TrustBar />
         <Categories />
         <TopProducts products={top} />

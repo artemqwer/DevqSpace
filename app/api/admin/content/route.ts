@@ -6,6 +6,16 @@ function pickLocale(value: unknown): Locale | null {
   return value === "uk" || value === "en" ? value : null;
 }
 
+// Деякі тексти мають підстановки — напр. hero.stat: "[ {products}+ ... ]".
+// Якщо адмін зітре або зламає фігурні дужки, next-intl впаде на рендері й
+// покладе сторінку, тож набір підстановок має лишитись тим самим.
+function placeholders(text: string): string {
+  return [...text.matchAll(/{\s*(\w+)/g)]
+    .map((m) => m[1])
+    .sort()
+    .join(",");
+}
+
 // Зберігає правки. Порожній рядок = «скинути до тексту з файлу», щоб адмін не
 // міг випадково зробити текст порожнім і отримати діру на сайті.
 export async function PUT(req: Request) {
@@ -28,6 +38,18 @@ export async function PUT(req: Request) {
     // правками для текстів, яких на сайті вже немає.
     if (!(key in known)) continue;
     const value = typeof raw === "string" ? raw.trim() : "";
+    if (value && placeholders(value) !== placeholders(known[key])) {
+      return Response.json(
+        {
+          ok: false,
+          error: `«${key}»: не можна прибирати підстановки ${placeholders(known[key])
+            .split(",")
+            .map((p) => `{${p}}`)
+            .join(" ")}`,
+        },
+        { status: 400 },
+      );
+    }
     patch[key] = !value || value === known[key] ? null : value;
   }
 

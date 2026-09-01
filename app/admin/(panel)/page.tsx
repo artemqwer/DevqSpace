@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getStats, getAllOrders } from "@/lib/store";
+import { getStats, getAllOrders, getSiteCounters } from "@/lib/store";
+import CountersCard from "@/components/admin/CountersCard";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,11 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default async function DashboardPage() {
-  const [stats, orders] = await Promise.all([getStats(), getAllOrders()]);
+  const [stats, orders, counters] = await Promise.all([
+    getStats(),
+    getAllOrders(),
+    getSiteCounters(),
+  ]);
   const recent = orders.slice(0, 5);
 
   return (
@@ -59,6 +64,8 @@ export default async function DashboardPage() {
           accent="text-neon-green"
         />
       </div>
+
+      <CountersCard counters={counters} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* By status */}

@@ -9,7 +9,13 @@ const marquee = [
   "Stripe", "React", "Node.js", "Web3.js", "Docker", "TON",
 ];
 
-export function Hero() {
+export function Hero({
+  products,
+  clients,
+}: {
+  products: number;
+  clients: number;
+}) {
   const t = useTranslations("hero");
   return (
     <section id="top" className="relative flex min-h-screen flex-col overflow-hidden pt-20 md:pt-24">
@@ -75,9 +81,12 @@ export function Hero() {
             <span className="pulse-dot h-2 w-2 rounded-full bg-neon-green" />
             <span className="text-neon-green">SYS.ONLINE</span> {t("status")}
           </span>
-          <span className="mono-label hidden text-muted-foreground sm:inline">
-            {t("stat")}
-          </span>
+          {/* Нуль клієнтів не показуємо — «0+ КЛІЄНТІВ» гірше, ніж нічого. */}
+          {clients > 0 && (
+            <span className="mono-label hidden text-muted-foreground sm:inline">
+              {t("stat", { products, clients })}
+            </span>
+          )}
         </div>
 
         {/* giant headline */}

@@ -57,6 +57,7 @@ export default function ContentEditor({
 
   const [values, setValues] = useState<ByLocale<Flat>>(initial);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const sections = useMemo(
     () => [...new Set(Object.keys(defaults.uk).map((k) => k.split(".")[0]))],
@@ -113,14 +114,23 @@ export default function ContentEditor({
   const save = async () => {
     if (!dirty.size) return;
     setSaving(true);
+    setError(null);
     for (const locale of ["uk", "en"] as Locale[]) {
       const payload: Flat = {};
       for (const key of dirty) payload[key] = values[locale][key];
-      await fetch("/api/admin/content", {
+      const res = await fetch("/api/admin/content", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ locale, values: payload }),
       });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        setError(data?.error ?? "Не вдалося зберегти");
+        setSaving(false);
+        return;
+      }
     }
     setSaving(false);
     router.refresh();
@@ -168,6 +178,12 @@ export default function ContentEditor({
           Скинути все
         </button>
       </div>
+
+      {error && (
+        <div className="rounded-lg border border-neon-pink/30 bg-neon-pink/10 px-3 py-2 text-sm text-neon-pink">
+          {error}
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-[200px_1fr]">
         <nav className="flex gap-1 overflow-x-auto pb-1 md:flex-col md:overflow-visible md:pb-0">

@@ -9,7 +9,7 @@
   },
   "hero": {
     "status": "// MARKETPLACE READY",
-    "stat": "[ 40+ PRODUCTS · 320 CLIENTS ]",
+    "stat": "[ {products}+ PRODUCTS · {clients}+ CLIENTS ]",
     "eyebrow": "VERIFIED DIGITAL PRODUCTS",
     "line1": "Buy.",
     "line2": "Launch.",

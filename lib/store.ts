@@ -95,6 +95,7 @@ type MemDB = {
   admins: Set<number>; // додаткові адміни бота
   invites: Map<string, number>; // token -> expireAt
   content: Map<string, Record<string, string>>; // locale -> { "hero.title": "..." }
+  counters: Map<string, number>; // офлайнові добавки до лічильників на сайті
 };
 
 const g = globalThis as unknown as {
@@ -114,6 +115,7 @@ type MemSnapshot = {
   admins: number[];
   invites: [string, number][];
   content: [string, Record<string, string>][];
+  counters: [string, number][];
 };
 
 function emptyMem(): MemDB {
@@ -127,6 +129,7 @@ function emptyMem(): MemDB {
     admins: new Set(),
     invites: new Map(),
     content: new Map(),
+    counters: new Map(),
   };
 }
 
@@ -145,6 +148,7 @@ function hydrate(): MemDB {
     db.admins = new Set(raw.admins ?? []);
     db.invites = new Map(raw.invites ?? []);
     db.content = new Map(raw.content ?? []);
+    db.counters = new Map(raw.counters ?? []);
   } catch {
     return emptyMem();
   }
@@ -173,6 +177,7 @@ function touch(): void {
       admins: [...m.admins],
       invites: [...m.invites.entries()],
       content: [...m.content.entries()],
+      counters: [...m.counters.entries()],
     };
     try {
       devWriteState(DB_FILE, snapshot);
@@ -198,6 +203,7 @@ const K = {
   adminsExtra: "admins:extra", // set додаткових chat_id адмінів
   adminInvite: (t: string) => `admininvite:${t}`, // одноразове запрошення
   content: (locale: string) => `content:${locale}`, // hash: "hero.title" -> текст
+  counters: "counters", // hash: products / clients -> офлайнова добавка
 };
 
 // ---- Seeding --------------------------------------------------------
@@ -1060,4 +1066,70 @@ export async function resetContent(locale: string): Promise<void> {
     return;
   }
   await redis.del(K.content(locale));
+}
+
+// =====================================================================
+// Лічильники на сайті («N продуктів · N клієнтів»)
+// =====================================================================
+//
+// Показуємо реальні числа плюс офлайнову добавку, яку ставить адмін: продажі
+// до появи сайту (Telegram, знайомі) — це чесна бухгалтерія, а не накрутка.
+// Реальних клієнтів рахуємо за унікальним контактом серед оплачених
+// замовлень: одна людина, що купила тричі, — це один клієнт.
+
+export type OfflineCounters = { products: number; clients: number };
+export type SiteCounters = {
+  products: number; // разом
+  clients: number;
+  realProducts: number; // з чого складається — щоб адмін бачив
+  realClients: number;
+  offline: OfflineCounters;
+};
+
+export async function getOfflineCounters(): Promise<OfflineCounters> {
+  const redis = getRedis();
+  const read = (v: unknown) => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+  };
+  if (!redis) {
+    const m = mem().counters;
+    return { products: read(m.get("products")), clients: read(m.get("clients")) };
+  }
+  const raw =
+    (await redis.hgetall<Record<string, unknown>>(K.counters)) ?? {};
+  return { products: read(raw.products), clients: read(raw.clients) };
+}
+
+export async function setOfflineCounters(next: OfflineCounters): Promise<void> {
+  const redis = getRedis();
+  if (!redis) {
+    const m = mem().counters;
+    m.set("products", next.products);
+    m.set("clients", next.clients);
+    touch();
+    return;
+  }
+  await redis.hset(K.counters, { ...next });
+}
+
+export async function getSiteCounters(): Promise<SiteCounters> {
+  const [products, orders, offline] = await Promise.all([
+    getAllProducts(),
+    getAllOrders(),
+    getOfflineCounters(),
+  ]);
+
+  const buyers = new Set<string>();
+  for (const o of orders) {
+    if (o.paid && o.contact) buyers.add(o.contact.trim().toLowerCase());
+  }
+
+  return {
+    realProducts: products.length,
+    realClients: buyers.size,
+    offline,
+    products: products.length + offline.products,
+    clients: buyers.size + offline.clients,
+  };
 }
