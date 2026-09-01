@@ -119,13 +119,17 @@ export default async function ProductPage({ params }: Props) {
               </h1>
               <p className="text-sm text-muted-foreground">{product.tagline}</p>
               <div className="mono-label mt-3 flex items-center gap-4">
-                <span className="flex items-center gap-1 text-neon-blue">
-                  <Star weight="fill" className="h-3.5 w-3.5" /> {product.rating}{" "}
-                  <span className="text-muted-foreground">({product.ratingCount})</span>
-                </span>
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <Package className="h-3.5 w-3.5" /> {product.sold} {t("sold")}
-                </span>
+                {product.ratingCount > 0 && (
+                  <span className="flex items-center gap-1 text-neon-blue">
+                    <Star weight="fill" className="h-3.5 w-3.5" /> {product.rating}{" "}
+                    <span className="text-muted-foreground">({product.ratingCount})</span>
+                  </span>
+                )}
+                {product.sold > 0 && (
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <Package className="h-3.5 w-3.5" /> {product.sold}+ {t("sold")}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -188,13 +192,17 @@ export default async function ProductPage({ params }: Props) {
               <p className="mb-5 text-sm text-muted-foreground">{product.tagline}</p>
 
               <div className="mono-label mb-5 flex items-center gap-4">
-                <span className="flex items-center gap-1 text-neon-blue">
-                  <Star weight="fill" className="h-3.5 w-3.5" /> {product.rating}{" "}
-                  <span className="text-muted-foreground">({product.ratingCount})</span>
-                </span>
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <Package className="h-3.5 w-3.5" /> {product.sold} {t("sold")}
-                </span>
+                {product.ratingCount > 0 && (
+                  <span className="flex items-center gap-1 text-neon-blue">
+                    <Star weight="fill" className="h-3.5 w-3.5" /> {product.rating}{" "}
+                    <span className="text-muted-foreground">({product.ratingCount})</span>
+                  </span>
+                )}
+                {product.sold > 0 && (
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <Package className="h-3.5 w-3.5" /> {product.sold}+ {t("sold")}
+                  </span>
+                )}
               </div>
 
               <div className="mb-6 flex items-baseline gap-3">

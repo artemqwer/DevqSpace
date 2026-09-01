@@ -785,15 +785,79 @@ export type MiniAppOverview = {
   products: MiniAppProduct[];
 };
 
-// Товари, які бачить відвідувач. Фільтр саме тут, а не на кожній сторінці:
-// інакше чернетка рано чи пізно вилізе там, де про неї забули.
+// Реальні продажі й рейтинг по товарах. Продажі — оплачені замовлення плюс
+// офлайнові, які адмін вніс руками; рейтинг — з опублікованих відгуків.
+//
+// ponytail: скан усіх замовлень, кеш 60 с. При тисячах замовлень знадобиться
+// лічильник у Redis; на теперішньому обсязі це зайва складність.
+type ProductStat = { sold: number; rating: number; ratingCount: number };
+
+async function computeProductStats(): Promise<Record<string, ProductStat>> {
+  const cached = await getCache<Record<string, ProductStat>>("productStats");
+  if (cached) return cached;
+
+  const [orders, reviews] = await Promise.all([getAllOrders(), getAllReviews()]);
+
+  const paid = new Map<string, number>();
+  for (const o of orders) {
+    if (o.type !== "product" || !o.paid || !o.productSlug) continue;
+    paid.set(o.productSlug, (paid.get(o.productSlug) ?? 0) + 1);
+  }
+
+  const sums = new Map<string, { total: number; count: number }>();
+  for (const r of reviews) {
+    if (r.status !== "published") continue;
+    const cur = sums.get(r.productSlug) ?? { total: 0, count: 0 };
+    cur.total += r.rating;
+    cur.count += 1;
+    sums.set(r.productSlug, cur);
+  }
+
+  const out: Record<string, ProductStat> = {};
+  for (const slug of new Set([...paid.keys(), ...sums.keys()])) {
+    const s = sums.get(slug);
+    out[slug] = {
+      sold: paid.get(slug) ?? 0,
+      rating: s ? Math.round((s.total / s.count) * 10) / 10 : 0,
+      ratingCount: s?.count ?? 0,
+    };
+  }
+
+  await setCache("productStats", out, 60);
+  return out;
+}
+
+// Товари, які бачить відвідувач. Фільтр і підстановка справжніх чисел саме
+// тут, а не на кожній сторінці: інакше чернетка чи вигадана цифра рано чи
+// пізно вилізуть там, де про них забули.
+//
+// Нуль означає «не показуємо»: продажі округлюються вниз до кратного 5, тож
+// менше за 5 дає 0, а рейтингу без жодного відгуку не існує. «0 продано» на
+// картці шкодить більше, ніж відсутність цифри.
 export async function getPublicProducts(): Promise<Product[]> {
-  return (await getAllProducts()).filter((p) => !p.hidden);
+  const [products, stats] = await Promise.all([
+    getAllProducts(),
+    computeProductStats(),
+  ]);
+
+  return products
+    .filter((p) => !p.hidden)
+    .map((p) => {
+      const s = stats[p.slug];
+      const realSold = (s?.sold ?? 0) + (p.offlineSold ?? 0);
+      return {
+        ...p,
+        sold: roundCounter(realSold),
+        rating: s?.rating ?? 0,
+        ratingCount: s?.ratingCount ?? 0,
+      };
+    });
 }
 
 export async function getMiniAppOverview(): Promise<MiniAppOverview> {
   const [products, ranking, orders, totalViews] = await Promise.all([
-    getPublicProducts(),
+    // Аналітика власника: чернетки теж показуємо, це його дані.
+    getAllProducts(),
     getViewsRanking(10000),
     getAllOrders(),
     getTotalViews(),

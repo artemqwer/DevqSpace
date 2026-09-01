@@ -1,7 +1,18 @@
 import { getSession } from "@/lib/session";
-import { updateReview, deleteReview, type ReviewStatus } from "@/lib/store";
+import {
+  getAllReviews,
+  updateReview,
+  deleteReview,
+  type ReviewStatus,
+} from "@/lib/store";
 
 const STATUSES: ReviewStatus[] = ["pending", "published", "hidden"];
+
+export async function GET() {
+  if (!(await getSession()))
+    return Response.json({ ok: false }, { status: 401 });
+  return Response.json({ ok: true, reviews: await getAllReviews() });
+}
 
 export async function PATCH(req: Request) {
   if (!(await getSession()))

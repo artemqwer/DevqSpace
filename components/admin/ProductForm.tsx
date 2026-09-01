@@ -62,6 +62,8 @@ export default function ProductForm({
     stack: product?.stack.join(", ") ?? "",
     features: product?.features.join("\n") ?? "",
     whatsIncluded: product?.whatsIncluded.join("\n") ?? "",
+    // Не редагуються, але тримаємо в стані, щоб не обнулити збережене:
+    // публічно ці поля вже не показуються, рахуються справжні.
     sold: String(product?.sold ?? 0),
     rating: String(product?.rating ?? 5),
     ratingCount: String(product?.ratingCount ?? 0),
@@ -398,7 +400,7 @@ export default function ProductForm({
         />
       </Field>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Ціна $">
           <input
             type="number"
@@ -407,32 +409,28 @@ export default function ProductForm({
             className={inputCls}
           />
         </Field>
-        <Field label="Продано">
+        <Field
+          label="Продажі поза сайтом"
+          hint="чесний облік того, що продали в Telegram чи напряму"
+        >
           <input
             type="number"
-            value={f.sold}
-            onChange={(e) => set("sold", e.target.value)}
-            className={inputCls}
-          />
-        </Field>
-        <Field label="Рейтинг">
-          <input
-            type="number"
-            step="0.1"
-            value={f.rating}
-            onChange={(e) => set("rating", e.target.value)}
-            className={inputCls}
-          />
-        </Field>
-        <Field label="К-сть відгуків">
-          <input
-            type="number"
-            value={f.ratingCount}
-            onChange={(e) => set("ratingCount", e.target.value)}
+            min={0}
+            value={f.offlineSold}
+            onChange={(e) => set("offlineSold", e.target.value)}
             className={inputCls}
           />
         </Field>
       </div>
+
+      {/* Продано й рейтинг більше не вводяться руками: продажі рахуються
+          з оплачених замовлень, рейтинг — з опублікованих відгуків. */}
+      <p className="flex items-start gap-2 rounded-lg border border-white/10 bg-surface2/40 px-3 py-2 text-xs text-gray-500">
+        <i className="ph-bold ph-info mt-0.5 text-neon-blue" />
+        Продано й рейтинг рахуються самі — з оплачених замовлень і
+        опублікованих відгуків. На сайті показуються від 5 продажів і від
+        одного відгуку, нуль не показується взагалі.
+      </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Доставка">
@@ -509,15 +507,6 @@ export default function ProductForm({
               onChange={(e) => set("license", e.target.value)}
               className={inputCls}
               placeholder="1 проєкт, з правом модифікації"
-            />
-          </Field>
-          <Field label="Продажі поза сайтом" hint="чесний облік, не накрутка">
-            <input
-              type="number"
-              min={0}
-              value={f.offlineSold}
-              onChange={(e) => set("offlineSold", e.target.value)}
-              className={inputCls}
             />
           </Field>
         </div>

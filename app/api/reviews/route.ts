@@ -37,7 +37,9 @@ export async function POST(req: Request) {
 
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  const allowed = await rateLimit(`review:${ip}`, 5, 60 * 10);
+  // 10, а не 5: людина, яка двічі отримала «текст закороткий», не має
+  // впертись у блокування через власні одруківки.
+  const allowed = await rateLimit(`review:${ip}`, 10, 60 * 10);
   if (!allowed) {
     return Response.json(
       { ok: false, error: "Забагато спроб. Спробуйте за 10 хвилин." },

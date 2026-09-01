@@ -409,8 +409,11 @@ function DetailSheet({
               <span className={ACCENT[detail.product.accent] ?? "text-white"}>
                 ${detail.product.price}
               </span>
-              <span>⭐ {detail.product.rating} ({fmt(detail.product.ratingCount)})</span>
-              <span>📦 {fmt(detail.product.sold)} продано</span>
+              {detail.product.ratingCount > 0 && (
+                <span>
+                  ⭐ {detail.product.rating} ({fmt(detail.product.ratingCount)})
+                </span>
+              )}
             </div>
 
             {/* Тренд переглядів 14 днів */}

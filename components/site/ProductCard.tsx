@@ -41,11 +41,25 @@ export function ProductCard({ product }: { product: Product }) {
           {product.tagline}
         </p>
 
+        {/* Нуль означає «показувати нічого»: рейтингу без відгуків не існує,
+            а «0 продано» на новому магазині відлякує сильніше, ніж мовчання.
+            Замість цифр — чесне «Новинка». */}
         <div className="mt-3 flex items-center gap-3 text-xs">
-          <span className="inline-flex items-center gap-1 text-foreground">
-            <Star weight="fill" className="h-3.5 w-3.5 text-neon-blue" /> {product.rating}
-          </span>
-          <span className="text-muted-foreground">{product.sold} {t("sold")}</span>
+          {product.ratingCount > 0 && (
+            <span className="inline-flex items-center gap-1 text-foreground">
+              <Star weight="fill" className="h-3.5 w-3.5 text-neon-blue" />{" "}
+              {product.rating}
+            </span>
+          )}
+          {product.sold > 0 ? (
+            <span className="text-muted-foreground">
+              {product.sold}+ {t("sold")}
+            </span>
+          ) : (
+            product.ratingCount === 0 && (
+              <span className="text-muted-foreground">{t("fresh")}</span>
+            )
+          )}
         </div>
 
         <div className="mt-4 flex items-end justify-between border-t border-border pt-4">

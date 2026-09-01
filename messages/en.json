@@ -168,7 +168,8 @@
     "price": "Price",
     "demo": "Try the demo",
     "license": "Licence",
-    "repoIncluded": "Private repository access"
+    "repoIncluded": "Private repository access",
+    "fresh": "New"
   },
   "custom": {
     "eyebrow": "// custom development",
