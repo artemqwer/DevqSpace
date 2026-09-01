@@ -36,7 +36,6 @@ export default function ProductForm({
 
   const [uploading, setUploading] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
-  const [uploadingTemplate, setUploadingTemplate] = useState(false);
   const [envFields, setEnvFields] = useState<EnvField[]>(
     product?.envFields ?? [],
   );
@@ -46,13 +45,16 @@ export default function ProductForm({
     image: product?.image ?? "",
     fileUrl: product?.fileUrl ?? "",
     fileName: product?.fileName ?? "",
-    sourceTemplatePath: product?.sourceTemplatePath ?? "",
-    templateName: product?.templateName ?? "",
     category: product?.category ?? "telegram-bots",
     accent: product?.accent ?? "blue",
     badge: product?.badge ?? "NEW",
     tagline: product?.tagline ?? "",
     description: product?.description ?? "",
+    title_en: product?.title_en ?? "",
+    tagline_en: product?.tagline_en ?? "",
+    description_en: product?.description_en ?? "",
+    features_en: product?.features_en?.join("\n") ?? "",
+    whatsIncluded_en: product?.whatsIncluded_en?.join("\n") ?? "",
     price: String(product?.price ?? 0),
     delivery: product?.delivery ?? "1 день",
     warranty: product?.warranty ?? "3 міс. саппорту",
@@ -119,37 +121,6 @@ export default function ProductForm({
       setError("Помилка завантаження файлу");
     } finally {
       setUploadingFile(false);
-    }
-  };
-
-  // Чистий шаблон проєкту: з нього після оплати збирається персональний архів
-  // з .env клієнта.
-  const onUploadTemplate = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingTemplate(true);
-    setError(null);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("kind", "template");
-      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-      const data = (await res.json()) as {
-        ok: boolean;
-        url?: string;
-        name?: string;
-        error?: string;
-      };
-      if (data.ok && data.url) {
-        set("sourceTemplatePath", data.url);
-        set("templateName", data.name || file.name);
-      } else {
-        setError(data.error || "Не вдалося завантажити шаблон");
-      }
-    } catch {
-      setError("Помилка завантаження шаблону");
-    } finally {
-      setUploadingTemplate(false);
     }
   };
 
@@ -290,64 +261,10 @@ export default function ProductForm({
         </div>
       </Field>
 
-      {/* Clean project template (dynamic packaging) */}
-      <Field
-        label="Шаблон проєкту (ZIP)"
-        hint="чистий код без node_modules — з нього збирається персональний архів"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 shrink-0 rounded-lg border border-white/10 bg-surface2 flex items-center justify-center">
-            <i
-              className={`ph text-2xl ${f.sourceTemplatePath ? "ph-package text-neon-purple" : "ph-file-dashed text-gray-600"}`}
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            {f.sourceTemplatePath ? (
-              <div className="text-xs font-mono text-gray-300 truncate">
-                {f.templateName || "шаблон завантажено"}
-              </div>
-            ) : (
-              <div className="text-xs font-mono text-gray-600">
-                Немає шаблону — видається звичайний файл товару
-              </div>
-            )}
-            <div className="flex items-center gap-2 mt-1.5">
-              <label className="cursor-pointer inline-flex items-center gap-2 text-xs font-mono px-3 py-2 rounded-lg bg-surface2 border border-white/10 text-gray-300 hover:border-neon-blue/40 transition-colors">
-                {uploadingTemplate ? (
-                  <i className="ph-bold ph-circle-notch animate-spin" />
-                ) : (
-                  <i className="ph-bold ph-upload-simple" />
-                )}
-                {f.sourceTemplatePath ? "Замінити" : "Завантажити шаблон"}
-                <input
-                  type="file"
-                  accept=".zip,application/zip,application/x-zip-compressed,application/octet-stream"
-                  onChange={onUploadTemplate}
-                  disabled={uploadingTemplate}
-                  className="hidden"
-                />
-              </label>
-              {f.sourceTemplatePath && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    set("sourceTemplatePath", "");
-                    set("templateName", "");
-                  }}
-                  className="text-xs font-mono text-gray-500 hover:text-neon-pink transition-colors"
-                >
-                  прибрати
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </Field>
-
       {/* .env fields the customer fills in at checkout */}
       <Field
         label="Поля .env для клієнта"
-        hint="працює разом із шаблоном вище"
+        hint="підставляються у .env усередині архіву товару"
       >
         <EnvFieldsEditor fields={envFields} onChange={setEnvFields} />
       </Field>
@@ -506,6 +423,28 @@ export default function ProductForm({
           placeholder={"Повний вихідний код\nІнструкція\n1 рік саппорту"}
         />
       </Field>
+
+      {/* English (optional) — фолбек на базові поля, якщо порожньо */}
+      <div className="rounded-xl border border-white/10 bg-surface2/40 p-4 space-y-4">
+        <div className="text-xs font-mono text-gray-400 uppercase tracking-wider">
+          🇬🇧 English (опційно — порожнє = показуємо базове)
+        </div>
+        <Field label="Title (EN)">
+          <input value={f.title_en} onChange={(e) => set("title_en", e.target.value)} className={inputCls} />
+        </Field>
+        <Field label="Tagline (EN)">
+          <input value={f.tagline_en} onChange={(e) => set("tagline_en", e.target.value)} className={inputCls} />
+        </Field>
+        <Field label="Description (EN)">
+          <textarea value={f.description_en} onChange={(e) => set("description_en", e.target.value)} rows={3} className={inputCls + " resize-y"} />
+        </Field>
+        <Field label="Features (EN)" hint="кожна з нового рядка">
+          <textarea value={f.features_en} onChange={(e) => set("features_en", e.target.value)} rows={4} className={inputCls + " resize-y font-mono text-xs"} />
+        </Field>
+        <Field label="What's included (EN)" hint="кожне з нового рядка">
+          <textarea value={f.whatsIncluded_en} onChange={(e) => set("whatsIncluded_en", e.target.value)} rows={3} className={inputCls + " resize-y font-mono text-xs"} />
+        </Field>
+      </div>
 
       {error && (
         <div className="text-sm text-neon-pink font-mono flex items-center gap-2">

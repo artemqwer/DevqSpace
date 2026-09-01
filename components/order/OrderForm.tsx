@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
+import { useTranslations } from "next-intl";
 import { ACCENT_BUTTON, type Product } from "@/lib/products";
 import type { EnvValues } from "@/lib/envFields";
 import ProductThumb from "@/components/ProductThumb";
@@ -22,6 +23,7 @@ export default function OrderForm({
   jarAmountUah?: number;
   botUsername?: string | null;
 }) {
+  const to = useTranslations("orderForm");
   const router = useRouter();
   const [name, setName] = useState("");
   const [contactMethod, setContactMethod] = useState<
@@ -54,7 +56,7 @@ export default function OrderForm({
   const handleJar = async () => {
     setError(null);
     if (!name.trim() || !contact.trim()) {
-      setError("Заповніть ім'я та контакт — щоб ми надіслали вам товар");
+      setError(to("errNameContact"));
       return;
     }
     setJarPaying(true);
@@ -69,7 +71,7 @@ export default function OrderForm({
           contact: contact.trim(),
           message: message.trim(),
           company,
-          envData: envValues,
+          envValues,
         }),
       });
       const data = (await res.json()) as {
@@ -80,7 +82,7 @@ export default function OrderForm({
         error?: string;
       };
       if (!data.ok || !data.jarUrl || !data.orderId) {
-        setError(data.error || "Не вдалося створити оплату");
+        setError(data.error || to("errCreate"));
         setJarPaying(false);
         return;
       }
@@ -90,7 +92,7 @@ export default function OrderForm({
         amountUah: data.amountUah ?? jarAmountUah,
       });
     } catch {
-      setError("Помилка мережі");
+      setError(to("errNet"));
     } finally {
       setJarPaying(false);
     }
@@ -99,7 +101,7 @@ export default function OrderForm({
   const handlePay = async () => {
     setError(null);
     if (!name.trim() || !contact.trim()) {
-      setError("Заповніть ім'я та контакт — щоб ми надіслали вам товар");
+      setError(to("errNameContact"));
       return;
     }
     setPaying(true);
@@ -114,7 +116,7 @@ export default function OrderForm({
           contact: contact.trim(),
           message: message.trim(),
           company,
-          envData: envValues,
+          envValues,
         }),
       });
       const data = (await res.json()) as {
@@ -123,13 +125,13 @@ export default function OrderForm({
         error?: string;
       };
       if (!data.ok || !data.url) {
-        setError(data.error || "Не вдалося створити оплату");
+        setError(data.error || to("errCreate"));
         setPaying(false);
         return;
       }
       window.location.href = data.url;
     } catch {
-      setError("Помилка мережі");
+      setError(to("errNet"));
       setPaying(false);
     }
   };
@@ -139,7 +141,7 @@ export default function OrderForm({
     setError(null);
 
     if (!name.trim() || !contact.trim()) {
-      setError("Заповніть ім'я та контакт");
+      setError(to("errNameContact2"));
       return;
     }
 
@@ -156,7 +158,7 @@ export default function OrderForm({
           contact: contact.trim(),
           message: message.trim(),
           company,
-          envData: envValues,
+          envValues,
         }),
       });
       const data = (await res.json()) as {
@@ -165,14 +167,14 @@ export default function OrderForm({
         error?: string;
       };
       if (!data.ok) {
-        setError(data.error || "Не вдалося відправити");
+        setError(data.error || to("errSend"));
         setSubmitting(false);
         return;
       }
       const o = data.orderId ? `&o=${data.orderId}` : "";
       router.push(`/order/success?p=${product.slug}${o}`);
     } catch {
-      setError("Помилка мережі");
+      setError(to("errNet"));
       setSubmitting(false);
     }
   };
@@ -186,7 +188,7 @@ export default function OrderForm({
             <i className="ph-fill ph-credit-card text-neon-green text-2xl" />
           </div>
           <h2 className="text-xl font-display font-bold text-white mb-1">
-            Замовлення створено
+            {to("jarCreated")}
           </h2>
           <p className="text-xs font-mono text-gray-500 mb-5">
             #{jarInfo.orderId}
@@ -194,13 +196,13 @@ export default function OrderForm({
 
           <div className="bg-surface2 rounded-xl p-4 mb-4 text-left space-y-3">
             <div className="flex items-baseline justify-between">
-              <span className="text-sm text-gray-400">До сплати:</span>
+              <span className="text-sm text-gray-400">{to("toPay")}</span>
               <span className="text-2xl font-display font-bold text-white">
                 {jarInfo.amountUah} грн
               </span>
             </div>
             <div className="text-xs text-gray-500 font-mono">
-              ≈ ${product.price} · картка будь-якого банку
+              ≈ ${product.price} · {to("jarSub")}
             </div>
           </div>
 
@@ -211,7 +213,7 @@ export default function OrderForm({
             className="w-full flex items-center justify-center gap-2 bg-neon-green text-black font-display font-bold rounded-xl px-6 py-4 active:scale-[0.98] transition-transform mb-4"
           >
             <i className="ph-bold ph-credit-card text-lg" />
-            Перейти до оплати на банку
+            {to("goPay")}
           </a>
 
           <div className="text-left text-sm text-gray-400 space-y-2 mb-2">
@@ -227,7 +229,7 @@ export default function OrderForm({
             </p>
             <p className="flex items-start gap-2">
               <i className="ph-bold ph-number-circle-three text-neon-green mt-0.5" />
-              Після оплати надішлемо товар на{" "}
+              {to("step3")}{" "}
               <b className="text-white">{contact}</b>
             </p>
           </div>
@@ -240,12 +242,12 @@ export default function OrderForm({
               className="mt-4 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-neon-blue to-neon-purple text-black font-display font-bold rounded-xl px-6 py-3.5 active:scale-[0.98] transition-transform"
             >
               <i className="ph-fill ph-telegram-logo text-lg" />
-              Підключити Telegram для отримання файлу
+              {to("tgConnect")}
             </a>
           )}
 
           <p className="text-[11px] font-mono text-gray-600 mt-4">
-            Підтверджуємо оплату вручну — зазвичай протягом 1–2 годин.
+            {to("manualNote")}
           </p>
         </div>
       </div>
@@ -286,36 +288,36 @@ export default function OrderForm({
           onChange={(e) => setCompany(e.target.value)}
           className="absolute -left-[9999px] w-px h-px opacity-0"
         />
-        <Field label="Як до вас звертатися?" required>
+        <Field label={to("nameLabel")} required>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Артем"
+            placeholder={to("namePh")}
             required
             className={ORDER_INPUT_CLS}
           />
         </Field>
 
-        <Field label="Як зв'язатися" required>
+        <Field label={to("contactLabel")} required>
           <div className="grid grid-cols-3 gap-2 mb-3">
             <ContactTab
               active={contactMethod === "telegram"}
               onClick={() => setContactMethod("telegram")}
               icon="ph-telegram-logo"
-              label="Telegram"
+              label={to("telegram")}
             />
             <ContactTab
               active={contactMethod === "email"}
               onClick={() => setContactMethod("email")}
               icon="ph-envelope-simple"
-              label="Email"
+              label={to("email")}
             />
             <ContactTab
               active={contactMethod === "phone"}
               onClick={() => setContactMethod("phone")}
               icon="ph-phone"
-              label="Телефон"
+              label={to("phone")}
             />
           </div>
           <input
@@ -334,12 +336,12 @@ export default function OrderForm({
           />
         </Field>
 
-        <Field label="Деталі замовлення (необов'язково)">
+        <Field label={to("detailsLabel")}>
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={5}
-            placeholder="Які зміни / інтеграції / коментарі..."
+            placeholder={to("detailsPh")}
             className="w-full bg-surface2 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue/50 transition-colors font-mono text-sm resize-none"
           />
         </Field>
@@ -368,12 +370,12 @@ export default function OrderForm({
             {jarPaying ? (
               <>
                 <i className="ph-bold ph-circle-notch animate-spin" />
-                Створюємо...
+                {to("creating")}
               </>
             ) : (
               <>
                 <i className="ph-bold ph-credit-card text-lg" />
-                Сплатити карткою{jarAmountUah ? ` · ${jarAmountUah} грн` : ""}
+                {to("payCard")}{jarAmountUah ? ` · ${jarAmountUah} ₴` : ""}
               </>
             )}
           </button>
@@ -389,12 +391,12 @@ export default function OrderForm({
             {paying ? (
               <>
                 <i className="ph-bold ph-circle-notch animate-spin" />
-                Створюємо інвойс...
+                {to("creatingInv")}
               </>
             ) : (
               <>
                 <i className="ph-bold ph-currency-circle-dollar text-lg" />
-                Сплатити криптою · ${product.price}
+                {to("payCrypto")} · ${product.price}
               </>
             )}
           </button>
@@ -414,22 +416,22 @@ export default function OrderForm({
           {submitting ? (
             <>
               <i className="ph-bold ph-circle-notch animate-spin" />
-              Відправляємо...
+              {to("sending")}
             </>
           ) : (
             <>
               <i className="ph-bold ph-paper-plane-tilt" />
-              {cryptoEnabled ? "Або залишити заявку" : "Надіслати заявку"}
+              {cryptoEnabled ? to("submitOr") : to("submit")}
             </>
           )}
         </button>
 
         <p className="text-xs text-gray-500 font-mono text-center">
           {envFields.length > 0 && !envValid
-            ? "Щоб оплатити — заповніть налаштування вище. Не розібрались? Залиште заявку, допоможемо."
+            ? to("noteConfig")
             : cryptoEnabled || jarEnabled
-              ? "Оплата карткою чи криптою. Або просто залиште заявку."
-              : "Відповімо в Telegram протягом 2 годин у робочий час"}
+              ? to("noteBoth")
+              : to("noteReq")}
         </p>
       </form>
 
@@ -437,7 +439,7 @@ export default function OrderForm({
       <aside className="hidden lg:block lg:sticky lg:top-28 lg:self-start">
         <div className="rounded-2xl border border-white/10 bg-surface/50 backdrop-blur p-5 md:p-6">
           <div className="text-[10px] font-mono text-neon-blue tracking-widest uppercase mb-3">
-            {"// ВАШЕ ЗАМОВЛЕННЯ"}
+            {to("summaryTitle")}
           </div>
 
           <div className="flex gap-3 mb-5">
@@ -457,14 +459,14 @@ export default function OrderForm({
           </div>
 
           <div className="space-y-2 py-4 border-y border-white/5 text-sm">
-            <SummaryRow label="Доставка" value={product.delivery} />
-            <SummaryRow label="Гарантія" value={product.warranty} />
-            <SummaryRow label="Сорс-код" value="Включено" />
-            <SummaryRow label="Апдейти" value="Безкоштовно" />
+            <SummaryRow label={to("sumDelivery")} value={product.delivery} />
+            <SummaryRow label={to("sumWarranty")} value={product.warranty} />
+            <SummaryRow label={to("sumSource")} value={to("sumSourceV")} />
+            <SummaryRow label={to("sumUpdates")} value={to("sumUpdatesV")} />
           </div>
 
           <div className="flex items-baseline justify-between pt-4">
-            <span className="text-gray-400 font-mono text-sm">Разом</span>
+            <span className="text-gray-400 font-mono text-sm">{to("total")}</span>
             <span className="text-3xl font-display font-bold text-white">
               ${product.price}
             </span>
@@ -474,7 +476,7 @@ export default function OrderForm({
             href={`/catalog/${product.slug}`}
             className="mt-4 inline-flex items-center gap-1 text-xs font-mono text-gray-500 hover:text-white transition-colors"
           >
-            <i className="ph-bold ph-arrow-left" /> повернутись до товару
+            <i className="ph-bold ph-arrow-left" /> {to("back")}
           </Link>
         </div>
       </aside>

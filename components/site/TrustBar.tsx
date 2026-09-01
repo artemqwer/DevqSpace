@@ -1,13 +1,14 @@
 import { UsersThree, ShieldCheck, Code, CreditCard } from "@phosphor-icons/react/dist/ssr";
-
-const items = [
-  { icon: UsersThree, value: "320+", label: "клієнтів" },
-  { icon: ShieldCheck, value: "Гарантія 1 рік", label: "на кожен продукт" },
-  { icon: Code, value: "Повний сорс-код", label: "без прив’язок" },
-  { icon: CreditCard, value: "Крипта / картка", label: "безпечна оплата" },
-];
+import { useTranslations } from "next-intl";
 
 export function TrustBar() {
+  const t = useTranslations("trust");
+  const items = [
+    { icon: UsersThree, value: "320+", label: t("clients") },
+    { icon: ShieldCheck, value: t("warrantyV"), label: t("warrantyL") },
+    { icon: Code, value: t("sourceV"), label: t("sourceL") },
+    { icon: CreditCard, value: t("payV"), label: t("payL") },
+  ];
   return (
     <section aria-label="Довіра та гарантії" className="border-y border-border bg-surface/40">
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-px px-4 md:grid-cols-4 md:px-6">

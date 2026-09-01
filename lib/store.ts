@@ -46,6 +46,9 @@ export type StoredOrder = {
   errorMessage?: string; // причина FAILED, для адмінки
   packageUrl?: string; // згенерований персональний архів
   packageName?: string;
+  // Замовлення, створені до злиття гілок, тримали персональний архів тут.
+  // Читаємо для сумісності, нові пишемо тільки в packageUrl.
+  deliverFileUrl?: string;
 };
 
 // Статус збірки й видачі персонального архіву. Доповнює старі delivered /

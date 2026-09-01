@@ -2,27 +2,22 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 const TYPES = [
-  { id: "tg-bot", label: "Telegram бот", icon: "ph-telegram-logo" },
-  { id: "web", label: "Веб-сайт / SaaS", icon: "ph-browsers" },
-  { id: "mobile", label: "Мобільний додаток", icon: "ph-device-mobile" },
-  { id: "automation", label: "Автоматизація", icon: "ph-lightning" },
-  { id: "ai", label: "AI рішення", icon: "ph-robot" },
-  { id: "other", label: "Інше", icon: "ph-question" },
-];
+  { id: "tg-bot", tk: "t1", icon: "ph-telegram-logo" },
+  { id: "web", tk: "t2", icon: "ph-browsers" },
+  { id: "mobile", tk: "t3", icon: "ph-device-mobile" },
+  { id: "automation", tk: "t4", icon: "ph-lightning" },
+  { id: "ai", tk: "t5", icon: "ph-robot" },
+  { id: "other", tk: "t6", icon: "ph-question" },
+] as const;
 
-const BUDGETS = [
-  "до $500",
-  "$500 – $2,000",
-  "$2,000 – $5,000",
-  "$5,000+",
-  "Поки не знаю",
-];
-
-const DEADLINES = ["1 тиждень", "2–4 тижні", "1–2 місяці", "Гнучко"];
+const BUDGETS = ["bud1", "bud2", "bud3", "bud4", "bud5"] as const;
+const DEADLINES = ["d1", "d2", "d3", "d4"] as const;
 
 export default function CustomForm() {
+  const tr = useTranslations("customForm");
   const router = useRouter();
   const [customType, setCustomType] = useState("");
   const [budget, setBudget] = useState("");
@@ -42,15 +37,15 @@ export default function CustomForm() {
     setError(null);
 
     if (!customType) {
-      setError("Оберіть тип проекту");
+      setError(tr("errType"));
       return;
     }
     if (!name.trim() || !contact.trim()) {
-      setError("Заповніть ім'я та контакт");
+      setError(tr("errContact"));
       return;
     }
     if (!message.trim()) {
-      setError("Опишіть задачу хоча б у двох реченнях");
+      setError(tr("errBrief"));
       return;
     }
 
@@ -61,9 +56,9 @@ export default function CustomForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "custom",
-          customType: TYPES.find((t) => t.id === customType)?.label ?? customType,
-          budget,
-          deadline,
+          customType: TYPES.find((x) => x.id === customType) ? tr(TYPES.find((x) => x.id === customType)!.tk) : customType,
+          budget: budget ? tr(budget) : "",
+          deadline: deadline ? tr(deadline) : "",
           name: name.trim(),
           contactMethod,
           contact: contact.trim(),
@@ -73,13 +68,13 @@ export default function CustomForm() {
       });
       const data = (await res.json()) as { ok: boolean; error?: string };
       if (!data.ok) {
-        setError(data.error || "Не вдалося відправити");
+        setError(data.error || tr("errSend"));
         setSubmitting(false);
         return;
       }
       router.push("/order/success?custom=1");
     } catch {
-      setError("Помилка мережі");
+      setError(tr("errNet"));
       setSubmitting(false);
     }
   };
@@ -99,7 +94,7 @@ export default function CustomForm() {
       />
       {/* Type */}
       <section>
-        <SectionLabel n="01" title="Що потрібно зробити" required />
+        <SectionLabel n="01" title={tr("sec1")} required />
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
           {TYPES.map((t) => {
             const active = customType === t.id;
@@ -118,7 +113,7 @@ export default function CustomForm() {
                   className={`ph ${t.icon} text-lg md:text-xl shrink-0 ${active ? "text-neon-blue" : ""}`}
                 />
                 <span className="text-xs md:text-sm font-medium truncate">
-                  {t.label}
+                  {tr(t.tk)}
                 </span>
               </button>
             );
@@ -128,7 +123,7 @@ export default function CustomForm() {
 
       {/* Budget */}
       <section>
-        <SectionLabel n="02" title="Бюджет" />
+        <SectionLabel n="02" title={tr("sec2")} />
         <div className="flex flex-wrap gap-2">
           {BUDGETS.map((b) => {
             const active = budget === b;
@@ -143,7 +138,7 @@ export default function CustomForm() {
                     : "bg-surface2 border-white/10 text-gray-400 hover:border-white/20"
                 }`}
               >
-                {b}
+                {tr(b)}
               </button>
             );
           })}
@@ -152,7 +147,7 @@ export default function CustomForm() {
 
       {/* Deadline */}
       <section>
-        <SectionLabel n="03" title="Дедлайн" />
+        <SectionLabel n="03" title={tr("sec3")} />
         <div className="flex flex-wrap gap-2">
           {DEADLINES.map((d) => {
             const active = deadline === d;
@@ -167,7 +162,7 @@ export default function CustomForm() {
                     : "bg-surface2 border-white/10 text-gray-400 hover:border-white/20"
                 }`}
               >
-                {d}
+                {tr(d)}
               </button>
             );
           })}
@@ -176,25 +171,25 @@ export default function CustomForm() {
 
       {/* Brief */}
       <section>
-        <SectionLabel n="04" title="Опишіть задачу" required />
+        <SectionLabel n="04" title={tr("sec4")} required />
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={6}
-          placeholder="Що має робити продукт, які інтеграції потрібні, чи є приклади / референси..."
+          placeholder={tr("briefPh")}
           className="w-full bg-surface2 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue/50 transition-colors font-mono text-sm resize-y"
         />
       </section>
 
       {/* Contact */}
       <section>
-        <SectionLabel n="05" title="Куди писати" required />
+        <SectionLabel n="05" title={tr("sec5")} required />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Ім'я"
+            placeholder={tr("namePh")}
             required
             className="bg-surface2 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue/50 transition-colors font-mono text-sm"
           />
@@ -218,19 +213,19 @@ export default function CustomForm() {
             active={contactMethod === "telegram"}
             onClick={() => setContactMethod("telegram")}
             icon="ph-telegram-logo"
-            label="Telegram"
+            label={tr("telegram")}
           />
           <ContactTab
             active={contactMethod === "email"}
             onClick={() => setContactMethod("email")}
             icon="ph-envelope-simple"
-            label="Email"
+            label={tr("email")}
           />
           <ContactTab
             active={contactMethod === "phone"}
             onClick={() => setContactMethod("phone")}
             icon="ph-phone"
-            label="Телефон"
+            label={tr("phone")}
           />
         </div>
       </section>
@@ -249,18 +244,18 @@ export default function CustomForm() {
         {submitting ? (
           <>
             <i className="ph-bold ph-circle-notch animate-spin" />
-            Відправляємо...
+            {tr("sending")}
           </>
         ) : (
           <>
             <i className="ph-bold ph-paper-plane-tilt" />
-            Надіслати бриф
+            {tr("submit")}
           </>
         )}
       </button>
 
       <p className="text-xs text-gray-500 font-mono text-center">
-        Безкоштовний брифінг 30 хв · Відповімо протягом 2 годин
+        {tr("note")}
       </p>
     </form>
   );

@@ -48,7 +48,7 @@ export async function deliverOrder(
   // Вмикається лише коли товар має і поля .env, і шаблон, а клієнт лишив
   // значення. Інакше нижче йде звичайна статична видача product.fileUrl.
   const dynamicMode = Boolean(
-    product.envFields?.length && product.sourceTemplatePath && order.envData,
+    product.envFields?.length && product.fileUrl && order.envData,
   );
 
   let fileUrl = product.fileUrl;

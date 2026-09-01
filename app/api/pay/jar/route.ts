@@ -10,8 +10,9 @@ type Body = {
   contact?: string;
   message?: string;
   company?: string; // honeypot
-  envData?: Record<string, string>;
+  envValues?: Record<string, string>;
 };
+
 
 export async function POST(req: Request) {
   if (!jarEnabled()) {
@@ -75,7 +76,7 @@ export async function POST(req: Request) {
   const amountUah = await usdToUah(product.price);
 
   // Ті самі перевірки .env, що й у крипто-оплаті.
-  const env = await prepareEnvData(product, body.envData);
+  const env = await prepareEnvData(product, body.envValues);
   if (!env.ok) {
     return Response.json({ ok: false, error: env.error }, { status: 400 });
   }

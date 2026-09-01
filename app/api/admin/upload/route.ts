@@ -2,8 +2,8 @@ import { getSession } from "@/lib/session";
 import { blobEnabled, putObject } from "@/lib/blob";
 
 // kind: "image" — картинка товару
-//       "file"  — готовий ZIP, який видається клієнту як є
-//       "template" — чистий шаблон проєкту, з якого збирається персональний ZIP
+//       "file"  — ZIP товару; якщо в товару є поля .env, з нього ж
+//                 збирається персональна копія після оплати
 
 export async function POST(req: Request) {
   if (!(await getSession())) {
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     return Response.json({ ok: false, error: "Немає файлу" }, { status: 400 });
   }
 
-  const isArchive = kind === "file" || kind === "template";
+  const isArchive = kind === "file";
   const maxBytes = isArchive ? 200 * 1024 * 1024 : 5 * 1024 * 1024;
   if (file.size > maxBytes) {
     return Response.json(
@@ -49,11 +49,9 @@ export async function POST(req: Request) {
     // Непередбачуваний шлях (додатковий захист файлу-товару).
     const rnd = Math.random().toString(36).slice(2, 10);
     const path =
-      kind === "template"
-        ? `templates/${Date.now()}-${rnd}.${ext}`
-        : kind === "file"
-          ? `files/${Date.now()}-${rnd}.${ext}`
-          : `products/${Date.now()}.${ext}`;
+      kind === "file"
+        ? `files/${Date.now()}-${rnd}.${ext}`
+        : `products/${Date.now()}.${ext}`;
     const blob = await putObject(
       path,
       file,

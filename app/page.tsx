@@ -10,12 +10,18 @@ import { FinalCta } from "@/components/site/FinalCta";
 import { Footer } from "@/components/site/Footer";
 import { MobileNav } from "@/components/site/MobileNav";
 import { getAllProducts } from "@/lib/store";
+import { localizeProduct } from "@/lib/products";
+import { getLocale } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  const locale = await getLocale();
   const all = await getAllProducts();
-  const top = [...all].sort((a, b) => b.sold - a.sold).slice(0, 8);
+  const top = [...all]
+    .sort((a, b) => b.sold - a.sold)
+    .slice(0, 8)
+    .map((p) => localizeProduct(p, locale));
 
   return (
     <div className="min-h-screen bg-background">

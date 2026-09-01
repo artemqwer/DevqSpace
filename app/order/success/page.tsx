@@ -4,6 +4,7 @@ import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
 import { getOrder } from "@/lib/store";
 import { tgGetBotUsername } from "@/lib/telegram";
+import { getTranslations } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export default async function OrderSuccessPage({
   const showTgConnect =
     order?.contactMethod === "telegram" && !order.tgChatId;
   const botUsername = showTgConnect ? await tgGetBotUsername() : null;
+  const t = await getTranslations("success");
 
   return (
     <div className="min-h-screen bg-background">
@@ -33,24 +35,22 @@ export default async function OrderSuccessPage({
           <i className="ph-fill ph-check text-4xl text-neon-green md:text-5xl" />
         </div>
 
-        <span className="mono-label text-neon-green">{"// заявку отримано"}</span>
+        <span className="mono-label text-neon-green">{t("eyebrow")}</span>
         <h1 className="mb-4 mt-2 font-display text-3xl font-bold text-foreground md:text-5xl">
-          Заявку <span className="text-gradient">прийнято</span>
+          {t("headA")} <span className="text-gradient">{t("headB")}</span>
         </h1>
         <p className="mx-auto mb-8 max-w-xl text-base leading-relaxed text-muted-foreground md:mb-10 md:text-lg">
-          Ми отримали ваше замовлення. Зв’яжемося з вами у Telegram протягом 2
-          годин у робочий час (10:00 – 22:00 за Києвом).
+          {t("sub")}
         </p>
 
         {showTgConnect && botUsername && sp.o && (
           <div className="mb-8 rounded-2xl border border-neon-blue/30 bg-neon-blue/5 p-5 text-left md:p-6">
             <div className="flex items-center gap-2 font-display text-sm font-bold text-foreground">
               <i className="ph-fill ph-telegram-logo text-neon-blue" />
-              Отримати файл у Telegram
+              {t("tgTitle")}
             </div>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Щоб ми надіслали архів прямо в Telegram після оплати — підключіть
-              бота (натисніть «Start»). Це прив’яже ваше замовлення.
+              {t("tgText")}
             </p>
             <a
               href={`https://t.me/${botUsername}?start=ord_${sp.o}`}
@@ -58,7 +58,7 @@ export default async function OrderSuccessPage({
               rel="noreferrer"
               className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-neon-blue to-neon-purple px-6 py-3 text-sm font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5"
             >
-              <i className="ph-fill ph-telegram-logo" /> Підключити Telegram
+              <i className="ph-fill ph-telegram-logo" /> {t("tgBtn")}
             </a>
           </div>
         )}
@@ -66,13 +66,13 @@ export default async function OrderSuccessPage({
         <div className="mb-8 rounded-2xl border border-border bg-surface/50 p-5 text-left backdrop-blur md:mb-10 md:p-6">
           <h2 className="mb-4 flex items-center gap-2 font-display text-sm font-bold text-foreground">
             <i className="ph-fill ph-clipboard-text text-neon-blue" />
-            Що далі?
+            {t("whatNext")}
           </h2>
           <ol className="space-y-3">
-            <Step n="01" title="Уточнюємо деталі" text="Якщо потрібно — задамо кілька питань про вашу задачу." />
-            <Step n="02" title="Виставляємо рахунок" text="Отримаєте інвойс з реквізитами (картка / крипта)." />
-            <Step n="03" title="Миттєва доставка" text="Після оплати — архів коду та інвайт на репозиторій." />
-            <Step n="04" title="Саппорт і апдейти" text="Допомагаємо з налаштуванням, фіксимо баги, додаємо фічі." />
+            <Step n="01" title={t("s1t")} text={t("s1d")} />
+            <Step n="02" title={t("s2t")} text={t("s2d")} />
+            <Step n="03" title={t("s3t")} text={t("s3d")} />
+            <Step n="04" title={t("s4t")} text={t("s4d")} />
           </ol>
         </div>
 
@@ -81,13 +81,13 @@ export default async function OrderSuccessPage({
             href="/catalog"
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-surface-2/40 px-6 py-3 font-medium text-foreground transition-colors hover:border-neon-blue/50"
           >
-            <i className="ph-bold ph-arrow-left" /> До каталогу
+            <i className="ph-bold ph-arrow-left" /> {t("toCatalog")}
           </Link>
           <a
             href="https://t.me/"
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-neon-blue to-neon-purple px-6 py-3 font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5"
           >
-            <i className="ph-fill ph-telegram-logo" /> Написати в Telegram
+            <i className="ph-fill ph-telegram-logo" /> {t("writeTg")}
           </a>
         </div>
       </main>

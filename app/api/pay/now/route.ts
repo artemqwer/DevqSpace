@@ -15,8 +15,9 @@ type Body = {
   contact?: string;
   message?: string;
   company?: string; // honeypot
-  envData?: Record<string, string>;
+  envValues?: Record<string, string>;
 };
+
 
 export async function POST(req: Request) {
   if (!nowPaymentsEnabled()) {
@@ -80,7 +81,7 @@ export async function POST(req: Request) {
 
   // Поля .env перевіряються заново на сервері (включно з getMe для токенів) —
   // те, що форма їх уже показала зеленими, нічого не гарантує.
-  const env = await prepareEnvData(product, body.envData);
+  const env = await prepareEnvData(product, body.envValues);
   if (!env.ok) {
     return Response.json({ ok: false, error: env.error }, { status: 400 });
   }

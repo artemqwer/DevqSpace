@@ -4,8 +4,9 @@ import { prepareEnvData } from "@/lib/orderEnv";
 
 type OrderBody = Partial<OrderPayload> & {
   company?: string;
-  envData?: Record<string, string>;
+  envValues?: Record<string, string>;
 };
+
 
 export async function POST(req: Request) {
   let body: OrderBody;
@@ -75,7 +76,7 @@ export async function POST(req: Request) {
     // Заявка без оплати — м'який режим: клієнт міг не розібратися в
     // налаштуваннях, і це нормальний сценарій («оформимо підтримкою»).
     // Заявку приймаємо, а адміну показуємо, чого бракує.
-    const env = await prepareEnvData(product, body.envData, "lenient");
+    const env = await prepareEnvData(product, body.envValues, "lenient");
     if (!env.ok) {
       return Response.json({ ok: false, error: env.error }, { status: 400 });
     }

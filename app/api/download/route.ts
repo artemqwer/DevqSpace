@@ -28,9 +28,10 @@ export async function GET(req: Request) {
   }
 
   const product = await getProductBySlug(order.productSlug);
-  if (!product?.fileUrl) {
+  const url = order.deliverFileUrl ?? product?.fileUrl;
+  if (!url) {
     return new Response("Файл недоступний", { status: 404 });
   }
 
-  return Response.redirect(product.fileUrl, 302);
+  return Response.redirect(url, 302);
 }

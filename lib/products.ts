@@ -47,12 +47,16 @@ export type Product = {
   image?: string; // URL реального зображення; якщо є — показується замість градієнта
   fileUrl?: string; // URL ZIP-архіву товару (Vercel Blob) — видається після оплати
   fileName?: string; // оригінальна назва файлу для видачі
-  // Динамічна упаковка. Вмикається лише коли задані ОБИДВА поля: тоді після
-  // оплати збирається персональний архів з .env клієнта. Інакше працює
-  // звичайна статична видача fileUrl.
+  // Англійські варіанти (опційно). Порожні → фолбек на базові поля.
+  title_en?: string;
+  tagline_en?: string;
+  description_en?: string;
+  features_en?: string[];
+  whatsIncluded_en?: string[];
+  // Конфіг перед покупкою: покупець вводить значення, які підставляються
+  // в .env усередині архіву. Порожньо → кроку конфігурації нема, товар
+  // видається як звичайний ZIP.
   envFields?: EnvField[];
-  sourceTemplatePath?: string; // URL чистого ZIP-шаблону у сховищі
-  templateName?: string; // оригінальна назва шаблону (для адмінки)
   price: number;
   currency: "USD";
   delivery: string;
@@ -64,6 +68,21 @@ export type Product = {
   rating: number;
   ratingCount: number;
 };
+
+// Повертає товар із підставленими EN-полями для locale="en" (фолбек на базові).
+export function localizeProduct(p: Product, locale: string): Product {
+  if (locale !== "en") return p;
+  return {
+    ...p,
+    title: p.title_en || p.title,
+    tagline: p.tagline_en || p.tagline,
+    description: p.description_en || p.description,
+    features: p.features_en?.length ? p.features_en : p.features,
+    whatsIncluded: p.whatsIncluded_en?.length
+      ? p.whatsIncluded_en
+      : p.whatsIncluded,
+  };
+}
 
 export const CATEGORIES: Category[] = [
   {

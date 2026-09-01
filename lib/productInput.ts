@@ -203,10 +203,16 @@ export function buildProduct(body: Record<string, unknown>): Product | null {
     image: String(body.image ?? "").trim() || undefined,
     fileUrl: String(body.fileUrl ?? "").trim() || undefined,
     fileName: String(body.fileName ?? "").trim() || undefined,
+    title_en: String(body.title_en ?? "").trim() || undefined,
+    tagline_en: String(body.tagline_en ?? "").trim() || undefined,
+    description_en: String(body.description_en ?? "").trim() || undefined,
+    features_en: toLines(body.features_en).length
+      ? toLines(body.features_en)
+      : undefined,
+    whatsIncluded_en: toLines(body.whatsIncluded_en).length
+      ? toLines(body.whatsIncluded_en)
+      : undefined,
     envFields: normalizeEnvFields(body.envFields),
-    sourceTemplatePath:
-      String(body.sourceTemplatePath ?? "").trim() || undefined,
-    templateName: String(body.templateName ?? "").trim() || undefined,
     price,
     currency: "USD",
     delivery: String(body.delivery ?? "").trim() || "1 день",
