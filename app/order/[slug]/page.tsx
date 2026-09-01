@@ -9,6 +9,7 @@ import { localizeProduct } from "@/lib/products";
 import { getLocale, getTranslations } from "next-intl/server";
 import { tgGetBotUsername } from "@/lib/telegram";
 import { nowPaymentsEnabled } from "@/lib/nowpayments";
+import { wayForPayEnabled } from "@/lib/wayforpay";
 import { jarEnabled, usdToUah } from "@/lib/monojar";
 
 export const dynamic = "force-dynamic";
@@ -29,8 +30,9 @@ export default async function OrderPage({ params }: Props) {
   if (!raw) notFound();
 
   const jarOn = jarEnabled();
-  const [jarAmountUah, botUsername, locale] = await Promise.all([
-    jarOn ? usdToUah(raw.price) : Promise.resolve(0),
+  const wfpOn = wayForPayEnabled();
+  const [amountUah, botUsername, locale] = await Promise.all([
+    jarOn || wfpOn ? usdToUah(raw.price) : Promise.resolve(0),
     tgGetBotUsername(),
     getLocale(),
   ]);
@@ -73,9 +75,11 @@ export default async function OrderPage({ params }: Props) {
 
         <OrderForm
           product={product}
+          wfpEnabled={wfpOn}
+          wfpAmountUah={amountUah}
           cryptoEnabled={nowPaymentsEnabled()}
           jarEnabled={jarOn}
-          jarAmountUah={jarAmountUah}
+          jarAmountUah={amountUah}
           botUsername={botUsername}
         />
       </main>
