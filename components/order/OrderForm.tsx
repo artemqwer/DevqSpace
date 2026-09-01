@@ -10,14 +10,53 @@ import ProductThumb from "@/components/ProductThumb";
 import EnvFieldsForm from "./EnvFieldsForm";
 import { ORDER_INPUT_CLS } from "./styles";
 
+// WayForPay pay-widget.js вішає конструктор у window.Wayforpay.
+declare global {
+  interface Window {
+    Wayforpay?: new () => {
+      run: (
+        params: Record<string, unknown>,
+        approved: () => void,
+        declined: () => void,
+        pending: () => void,
+      ) => void;
+    };
+  }
+}
+
+const WFP_SCRIPT = "https://secure.wayforpay.com/server/pay-widget.js";
+
+function loadWfpWidget(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (window.Wayforpay) return resolve();
+    const existing = document.getElementById("wfp-widget-script");
+    if (existing) {
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () => reject(new Error("wfp")));
+      return;
+    }
+    const s = document.createElement("script");
+    s.id = "wfp-widget-script";
+    s.src = WFP_SCRIPT;
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("wfp"));
+    document.body.appendChild(s);
+  });
+}
+
 export default function OrderForm({
   product,
+  wfpEnabled = false,
+  wfpAmountUah = 0,
   cryptoEnabled = false,
   jarEnabled = false,
   jarAmountUah = 0,
   botUsername,
 }: {
   product: Product;
+  wfpEnabled?: boolean;
+  wfpAmountUah?: number;
   cryptoEnabled?: boolean;
   jarEnabled?: boolean;
   jarAmountUah?: number;
@@ -45,6 +84,7 @@ export default function OrderForm({
   const onEnvValidity = useCallback((v: boolean) => setEnvValid(v), []);
   const [submitting, setSubmitting] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [wfpPaying, setWfpPaying] = useState(false);
   const [jarPaying, setJarPaying] = useState(false);
   const [jarInfo, setJarInfo] = useState<{
     orderId: string;
@@ -52,6 +92,64 @@ export default function OrderForm({
     amountUah: number;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const handleWfp = async () => {
+    setError(null);
+    if (!name.trim() || !contact.trim()) {
+      setError(to("errNameContact"));
+      return;
+    }
+    setWfpPaying(true);
+    try {
+      const res = await fetch("/api/pay/wfp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productSlug: product.slug,
+          name: name.trim(),
+          contactMethod,
+          contact: contact.trim(),
+          message: message.trim(),
+          company,
+          envValues,
+        }),
+      });
+      const data = (await res.json()) as {
+        ok: boolean;
+        params?: Record<string, unknown>;
+        orderId?: string;
+        error?: string;
+      };
+      if (!data.ok || !data.params) {
+        setError(data.error || to("errCreate"));
+        setWfpPaying(false);
+        return;
+      }
+      await loadWfpWidget();
+      const Ctor = window.Wayforpay;
+      if (!Ctor) {
+        setError(to("errNet"));
+        setWfpPaying(false);
+        return;
+      }
+      const success = () =>
+        router.push(
+          `/order/success?p=${product.slug}${data.orderId ? `&o=${data.orderId}` : ""}`,
+        );
+      new Ctor().run(
+        data.params,
+        success, // approved
+        () => setWfpPaying(false), // declined
+        success, // pending — заявка створена, видача піде по callback
+      );
+      // Модалка відкрита. Якщо юзер закриє її без оплати — callback не
+      // прийде, тому просто знімаємо спінер із кнопки.
+      setWfpPaying(false);
+    } catch {
+      setError(to("errNet"));
+      setWfpPaying(false);
+    }
+  };
 
   const handleJar = async () => {
     setError(null);
@@ -360,11 +458,32 @@ export default function OrderForm({
           </div>
         )}
 
+        {wfpEnabled && (
+          <button
+            type="button"
+            onClick={handleWfp}
+            disabled={wfpPaying || paying || jarPaying || submitting || !envValid}
+            className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-blue to-neon-purple text-white shadow-[0_10px_30px_-10px_rgba(80,120,255,0.6)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {wfpPaying ? (
+              <>
+                <i className="ph-bold ph-circle-notch animate-spin" />
+                {to("creating")}
+              </>
+            ) : (
+              <>
+                <i className="ph-fill ph-credit-card text-lg" />
+                {to("payCard")}{wfpAmountUah ? ` · ${wfpAmountUah} ₴` : ""}
+              </>
+            )}
+          </button>
+        )}
+
         {jarEnabled && (
           <button
             type="button"
             onClick={handleJar}
-            disabled={jarPaying || paying || submitting || !envValid}
+            disabled={jarPaying || paying || wfpPaying || submitting || !envValid}
             className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-white text-black shadow-[0_10px_30px_-10px_rgba(255,255,255,0.3)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {jarPaying ? (
@@ -385,7 +504,7 @@ export default function OrderForm({
           <button
             type="button"
             onClick={handlePay}
-            disabled={paying || jarPaying || submitting || !envValid}
+            disabled={paying || jarPaying || wfpPaying || submitting || !envValid}
             className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-green to-neon-blue text-black shadow-[0_10px_30px_-10px_rgba(0,255,102,0.5)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {paying ? (
@@ -406,9 +525,9 @@ export default function OrderForm({
           type="submit"
           // Свідомо БЕЗ envValid: якщо клієнт не розібрався в налаштуваннях,
           // він має змогу просто залишити заявку — оформимо підтримкою.
-          disabled={submitting || paying || jarPaying}
+          disabled={submitting || paying || jarPaying || wfpPaying}
           className={
-            cryptoEnabled || jarEnabled
+            cryptoEnabled || jarEnabled || wfpEnabled
               ? "w-full flex items-center justify-center gap-2 font-display font-medium rounded-xl px-6 py-3.5 bg-surface2 border border-white/10 text-white hover:border-neon-blue/50 active:scale-[0.98] transition-all disabled:opacity-60"
               : `w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed ${ACCENT_BUTTON[product.accent]}`
           }
@@ -421,7 +540,7 @@ export default function OrderForm({
           ) : (
             <>
               <i className="ph-bold ph-paper-plane-tilt" />
-              {cryptoEnabled ? to("submitOr") : to("submit")}
+              {cryptoEnabled || jarEnabled || wfpEnabled ? to("submitOr") : to("submit")}
             </>
           )}
         </button>
@@ -429,7 +548,7 @@ export default function OrderForm({
         <p className="text-xs text-gray-500 font-mono text-center">
           {envFields.length > 0 && !envValid
             ? to("noteConfig")
-            : cryptoEnabled || jarEnabled
+            : cryptoEnabled || jarEnabled || wfpEnabled
               ? to("noteBoth")
               : to("noteReq")}
         </p>
