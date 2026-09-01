@@ -125,7 +125,7 @@ export default function Hero() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[10px] font-mono text-neon-blue tracking-widest uppercase mb-0.5">
-                    // featured
+                    {"// featured"}
                   </div>
                   <div className="text-sm font-display font-bold text-white leading-tight truncate">
                     AI Support Bot з GPT-4

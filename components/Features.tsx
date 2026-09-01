@@ -40,7 +40,7 @@ export default function Features() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="mb-6 md:mb-12">
           <div className="text-[10px] md:text-xs font-mono text-neon-blue tracking-widest uppercase mb-2">
-            // Що ви отримаєте
+            {"// Що ви отримаєте"}
           </div>
           <h2 className="text-2xl md:text-4xl font-display font-bold text-white">
             Не просто код

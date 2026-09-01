@@ -23,7 +23,7 @@ export default async function EditProductPage({ params }: Props) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="text-[10px] md:text-xs font-mono text-neon-blue tracking-widest uppercase mb-1">
-            // EDIT
+            {"// EDIT"}
           </div>
           <h1 className="text-2xl md:text-3xl font-display font-bold text-white">
             {product.title}

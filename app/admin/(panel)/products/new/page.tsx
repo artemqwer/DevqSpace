@@ -14,7 +14,7 @@ export default function NewProductPage() {
       </Link>
       <div>
         <div className="text-[10px] md:text-xs font-mono text-neon-blue tracking-widest uppercase mb-1">
-          // NEW_PRODUCT
+          {"// NEW_PRODUCT"}
         </div>
         <h1 className="text-2xl md:text-3xl font-display font-bold text-white">
           Новий товар

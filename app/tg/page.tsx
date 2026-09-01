@@ -83,27 +83,8 @@ export default function MiniApp() {
   const [detail, setDetail] = useState<Detail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // 1. Підвантажуємо Telegram SDK
-  useEffect(() => {
-    const w = window as unknown as { Telegram?: { WebApp?: TG } };
-    if (w.Telegram?.WebApp) {
-      initTg(w.Telegram.WebApp);
-      return;
-    }
-    const s = document.createElement("script");
-    s.src = "https://telegram.org/js/telegram-web-app.js";
-    s.async = true;
-    s.onload = () => {
-      const web = (window as unknown as { Telegram?: { WebApp?: TG } }).Telegram
-        ?.WebApp;
-      if (web) initTg(web);
-      else setStatus("no-tg");
-    };
-    s.onerror = () => setStatus("no-tg");
-    document.body.appendChild(s);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  // Оголошено до ефекту, який його викликає: підйом функції працює в
+  // рантаймі, але лінтер справедливо не любить використання до оголошення.
   function initTg(web: TG) {
     try {
       web.ready();
@@ -121,6 +102,31 @@ export default function MiniApp() {
     }
     setInitData(id);
   }
+
+  // 1. Підвантажуємо Telegram SDK
+  useEffect(() => {
+    const w = window as unknown as { Telegram?: { WebApp?: TG } };
+    if (w.Telegram?.WebApp) {
+      // SDK уже в сторінці. initTg виставляє стан, а синхронний setState у
+      // тілі ефекту дає зайвий каскадний рендер одразу після першого
+      // малювання — відкладаємо на мікротаск, щоб шлях був такий самий, як
+      // у гілці з onload нижче.
+      const web = w.Telegram.WebApp;
+      queueMicrotask(() => initTg(web));
+      return;
+    }
+    const s = document.createElement("script");
+    s.src = "https://telegram.org/js/telegram-web-app.js";
+    s.async = true;
+    s.onload = () => {
+      const web = (window as unknown as { Telegram?: { WebApp?: TG } }).Telegram
+        ?.WebApp;
+      if (web) initTg(web);
+      else setStatus("no-tg");
+    };
+    s.onerror = () => setStatus("no-tg");
+    document.body.appendChild(s);
+  }, []);
 
   // 2. Вантажимо overview
   useEffect(() => {

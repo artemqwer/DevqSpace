@@ -29,7 +29,7 @@ export default function CustomCTA() {
             <div>
               <div className="inline-flex items-center border border-neon-pink/30 bg-neon-pink/10 rounded-full px-3 py-1 mb-4">
                 <span className="text-neon-pink text-[10px] md:text-xs font-bold tracking-widest uppercase">
-                  // CUSTOM_DEV
+                  {"// CUSTOM_DEV"}
                 </span>
               </div>
 

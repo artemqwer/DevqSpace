@@ -56,7 +56,7 @@ export default function AdminLoginPage() {
           className="glass border border-white/10 rounded-2xl p-6 space-y-4"
         >
           <div className="text-[10px] font-mono text-neon-blue tracking-widest uppercase">
-            // SECURE_LOGIN
+            {"// SECURE_LOGIN"}
           </div>
           <h1 className="text-xl font-display font-bold text-white">
             Вхід в адмінку

@@ -25,7 +25,7 @@ export default async function DashboardPage() {
     <div className="space-y-6 md:space-y-8">
       <div>
         <div className="text-[10px] md:text-xs font-mono text-neon-blue tracking-widest uppercase mb-1">
-          // DASHBOARD
+          {"// DASHBOARD"}
         </div>
         <h1 className="text-2xl md:text-3xl font-display font-bold text-white">
           Огляд

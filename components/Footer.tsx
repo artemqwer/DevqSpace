@@ -36,7 +36,7 @@ export default function Footer() {
             <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-neon-blue/20 blur-3xl" />
             <div className="relative">
               <div className="text-[10px] font-mono text-neon-green tracking-widest uppercase mb-2">
-                // SYSTEM_MSG
+                {"// SYSTEM_MSG"}
               </div>
               <h3 className="text-base font-display font-bold text-white mb-1">
                 Будь у курсі релізів

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type Category = {
   icon: string;
   number: string;
@@ -81,19 +83,19 @@ export default function Categories() {
               Оберіть категорію
             </p>
           </div>
-          <a
+          <Link
             href="/catalog"
             className="text-neon-blue font-mono text-[11px] md:text-sm flex items-center hover:text-white transition-colors group shrink-0"
           >
             [ Всі ]
             <i className="ph-bold ph-caret-right ml-1 md:ml-2 group-hover:translate-x-1 transition-transform" />
-          </a>
+          </Link>
         </div>
 
         {/* Mobile: 2x2 grid */}
         <div className="md:hidden grid grid-cols-2 gap-3 px-4">
           {CATEGORIES.map((c) => (
-            <a
+            <Link
               key={c.number}
               href={c.href}
               className={`relative rounded-2xl p-4 bg-surface border ${ACCENT_BORDER[c.accent]} overflow-hidden`}
@@ -129,14 +131,14 @@ export default function Categories() {
                 {c.count}
                 <i className="ph-bold ph-arrow-right text-[10px]" />
               </div>
-            </a>
+            </Link>
           ))}
         </div>
 
         {/* Desktop: grid */}
         <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-4">
           {CATEGORIES.map((c) => (
-            <a
+            <Link
               key={c.number}
               href={c.href}
               className="neon-card rounded-xl p-6 group"
@@ -162,7 +164,7 @@ export default function Categories() {
               <div className={`text-xs font-mono ${ACCENT_TEXT[c.accent]}`}>
                 {c.count} &rarr;
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       </div>
