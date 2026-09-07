@@ -269,13 +269,51 @@ async function ensureSeeded(): Promise<void> {
     return;
   }
   const count = await redis.scard(K.productSlugs);
-  if (count && count > 0) return;
-  const pipe = redis.pipeline();
-  for (const p of SEED_PRODUCTS) {
-    pipe.set(K.product(p.slug), p);
-    pipe.sadd(K.productSlugs, p.slug);
+  if (!count || count === 0) {
+    const pipe = redis.pipeline();
+    for (const p of SEED_PRODUCTS) {
+      pipe.set(K.product(p.slug), p);
+      pipe.sadd(K.productSlugs, p.slug);
+    }
+    await pipe.exec();
+    return; // свіжий сід уже містить demoScript
   }
-  await pipe.exec();
+  // Каталог уже засіяний — одноразовий бекфіл demoScript на наявні товари.
+  // Нічого не перезаписує: додає сценарій лише туди, де його ще нема.
+  const done = await redis.get("seed:demoScripts:v1");
+  if (!done) {
+    await backfillDemoScripts();
+    await redis.set("seed:demoScripts:v1", 1);
+  }
+}
+
+// Додає demoScript із сіду до наявних товарів, у яких його ще немає.
+// Ідемпотентно; решту полів товару не чіпає. Повертає, скільки оновлено.
+export async function backfillDemoScripts(): Promise<number> {
+  const seeded = SEED_PRODUCTS.filter((p) => p.demoScript?.length);
+  let n = 0;
+  const redis = getRedis();
+  if (!redis) {
+    const m = mem();
+    for (const s of seeded) {
+      const cur = m.products.get(s.slug);
+      if (cur && !cur.demoScript?.length) {
+        cur.demoScript = s.demoScript;
+        n++;
+      }
+    }
+    if (n) touch();
+    return n;
+  }
+  for (const s of seeded) {
+    const cur = await redis.get<Product>(K.product(s.slug));
+    if (cur && !cur.demoScript?.length) {
+      cur.demoScript = s.demoScript;
+      await redis.set(K.product(s.slug), cur);
+      n++;
+    }
+  }
+  return n;
 }
 
 // =====================================================================
