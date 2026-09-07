@@ -1,6 +1,7 @@
 import type {
   Accent,
   CategoryId,
+  DemoStep,
   EnvField,
   EnvFieldType,
   Product,
@@ -79,6 +80,32 @@ export function normalizeEnvKey(v: unknown): string {
 
 // Приводить довільний вхід (форма адмінки, JSON бота) до валідного списку
 // полів. Некоректні рядки відкидаються, дублі по ключу — теж.
+export const MAX_DEMO_STEPS = 30;
+export const MAX_DEMO_BUTTONS = 8;
+
+// Приводить сценарій демо-бота до валідного вигляду: обрізає довжини, чистить
+// порожнє, лишає лише кроки з тригером і відповіддю.
+export function normalizeDemoScript(v: unknown): DemoStep[] {
+  if (!Array.isArray(v)) return [];
+  const out: DemoStep[] = [];
+  for (const raw of v) {
+    if (!raw || typeof raw !== "object") continue;
+    const r = raw as Record<string, unknown>;
+    const trigger = String(r.trigger ?? "").trim().slice(0, 64);
+    const reply = String(r.reply ?? "").trim().slice(0, 2000);
+    if (!trigger || !reply) continue;
+    const buttons = Array.isArray(r.buttons)
+      ? r.buttons
+          .map((b) => String(b ?? "").trim().slice(0, 64))
+          .filter(Boolean)
+          .slice(0, MAX_DEMO_BUTTONS)
+      : [];
+    out.push(buttons.length ? { trigger, reply, buttons } : { trigger, reply });
+    if (out.length >= MAX_DEMO_STEPS) break;
+  }
+  return out;
+}
+
 export function normalizeEnvFields(v: unknown): EnvField[] {
   if (!Array.isArray(v)) return [];
   const seen = new Set<string>();
@@ -226,6 +253,9 @@ export function buildProduct(body: Record<string, unknown>): Product | null {
       ? toLines(body.whatsIncluded_en)
       : undefined,
     envFields: normalizeEnvFields(body.envFields),
+    demoScript: normalizeDemoScript(body.demoScript).length
+      ? normalizeDemoScript(body.demoScript)
+      : undefined,
     price,
     currency: "USD",
     delivery: String(body.delivery ?? "").trim() || "1 день",

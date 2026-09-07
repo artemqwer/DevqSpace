@@ -34,6 +34,16 @@ export type EnvField = {
   defaultValue?: string;
 };
 
+// Крок демо-емулятора бота. trigger — що «надсилає» юзер (/start або текст
+// кнопки), reply — відповідь бота, buttons — інлайн-кнопки під нею (кожна
+// кнопка = trigger іншого кроку). Крок із trigger "/start" (або перший) —
+// вхідна точка чату.
+export type DemoStep = {
+  trigger: string;
+  reply: string;
+  buttons?: string[];
+};
+
 export type Product = {
   slug: string;
   category: CategoryId;
@@ -57,6 +67,9 @@ export type Product = {
   // в .env усередині архіву. Порожньо → кроку конфігурації нема, товар
   // видається як звичайний ZIP.
   envFields?: EnvField[];
+  // Демо-емулятор: сценарій «спробуй бота» прямо на сторінці товару.
+  // Порожньо → блок демо не показується.
+  demoScript?: DemoStep[];
   price: number;
   currency: "USD";
   delivery: string;

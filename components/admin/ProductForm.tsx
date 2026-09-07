@@ -2,8 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import type { EnvField, Product } from "@/lib/products";
+import type { DemoStep, EnvField, Product } from "@/lib/products";
 import EnvFieldsEditor from "./EnvFieldsEditor";
+import DemoScriptEditor from "./DemoScriptEditor";
 
 const CATEGORIES = [
   { id: "telegram-bots", label: "Telegram боти" },
@@ -39,6 +40,9 @@ export default function ProductForm({
   const [dragOver, setDragOver] = useState(false);
   const [envFields, setEnvFields] = useState<EnvField[]>(
     product?.envFields ?? [],
+  );
+  const [demoScript, setDemoScript] = useState<DemoStep[]>(
+    product?.demoScript ?? [],
   );
   const [f, setF] = useState({
     title: product?.title ?? "",
@@ -170,7 +174,7 @@ export default function ProductForm({
     const res = await fetch("/api/admin/products", {
       method: mode === "create" ? "POST" : "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...f, price: Number(f.price), hidden, envFields }),
+      body: JSON.stringify({ ...f, price: Number(f.price), hidden, envFields, demoScript }),
     });
     const data = (await res.json()) as { ok: boolean; error?: string };
     if (!data.ok) {
@@ -325,6 +329,14 @@ export default function ProductForm({
         hint="підставляються у .env усередині архіву товару"
       >
         <EnvFieldsEditor fields={envFields} onChange={setEnvFields} />
+      </Field>
+
+      {/* Демо-емулятор бота на сторінці товару */}
+      <Field
+        label="Демо бота (емулятор)"
+        hint="сценарій «спробуй перед покупкою»: команда/кнопка → відповідь бота"
+      >
+        <DemoScriptEditor steps={demoScript} onChange={setDemoScript} />
       </Field>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -31,6 +31,7 @@ import {
 import { getLocale, getTranslations } from "next-intl/server";
 import { SupportTgLink } from "@/components/site/SupportTgLink";
 import { Reviews } from "@/components/site/Reviews";
+import { BotDemo } from "@/components/site/BotDemo";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,7 @@ export default async function ProductPage({ params }: Props) {
   const locale = await getLocale();
   const t = await getTranslations("product");
   const tc = await getTranslations("cat");
+  const td = await getTranslations("demo");
   const product = localizeProduct(raw, locale);
   const category = CATEGORIES.find((c) => c.id === product.category);
   const all = await getPublicProducts();
@@ -139,6 +141,18 @@ export default async function ProductPage({ params }: Props) {
                 {product.description}
               </p>
             </Section>
+
+            {/* Демо-емулятор бота */}
+            {product.demoScript && product.demoScript.length > 0 && (
+              <Section title={td("title")}>
+                <p className="mb-3 text-sm text-muted-foreground">{td("hint")}</p>
+                <BotDemo
+                  steps={product.demoScript}
+                  botName={product.title}
+                  accentHex={product.thumbColor}
+                />
+              </Section>
+            )}
 
             {/* Features */}
             <Section title={t("featuresTitle")} hasContent={product.features.length > 0}>

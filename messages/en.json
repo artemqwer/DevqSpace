@@ -1,4 +1,12 @@
 {
+  "demo": {
+    "title": "Try the bot",
+    "hint": "Live demo right here — tap commands and buttons like in Telegram. This is an emulator: the real bot works the same after purchase.",
+    "noMatch": "I don’t get it 🤔 Use the buttons or type /start",
+    "restart": "Restart",
+    "placeholder": "Type a message…",
+    "send": "Send"
+  },
   "nav": {
     "catalog": "Catalog",
     "categories": "Categories",
