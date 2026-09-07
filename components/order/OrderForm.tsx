@@ -11,7 +11,7 @@ import ProductThumb from "@/components/ProductThumb";
 import EnvFieldsForm from "./EnvFieldsForm";
 import { ORDER_INPUT_CLS } from "./styles";
 
-// WayForPay pay-widget.js вішає конструктор у window.Wayforpay.
+// Зовнішні скрипти платіжок вішають глобали у window.
 declare global {
   interface Window {
     Wayforpay?: new () => {
@@ -22,32 +22,53 @@ declare global {
         pending: () => void,
       ) => void;
     };
+    createLemonSqueezy?: () => void;
+    LemonSqueezy?: {
+      Setup?: (opts: { eventHandler?: (e: { event?: string }) => void }) => void;
+      Url?: { Open?: (url: string) => void; Close?: () => void };
+    };
   }
 }
 
-const WFP_SCRIPT = "https://secure.wayforpay.com/server/pay-widget.js";
-
-function loadWfpWidget(): Promise<void> {
+// Вантажить зовнішній скрипт один раз (ідемпотентно за id).
+function loadScript(id: string, src: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (window.Wayforpay) return resolve();
-    const existing = document.getElementById("wfp-widget-script");
+    const existing = document.getElementById(id);
     if (existing) {
+      if (existing.getAttribute("data-loaded")) return resolve();
       existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", () => reject(new Error("wfp")));
+      existing.addEventListener("error", () => reject(new Error(id)));
       return;
     }
     const s = document.createElement("script");
-    s.id = "wfp-widget-script";
-    s.src = WFP_SCRIPT;
+    s.id = id;
+    s.src = src;
     s.async = true;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error("wfp"));
+    s.onload = () => {
+      s.setAttribute("data-loaded", "1");
+      resolve();
+    };
+    s.onerror = () => reject(new Error(id));
     document.body.appendChild(s);
   });
 }
 
+const loadWfpWidget = () =>
+  window.Wayforpay
+    ? Promise.resolve()
+    : loadScript(
+        "wfp-widget-script",
+        "https://secure.wayforpay.com/server/pay-widget.js",
+      );
+
+const loadLemon = () =>
+  window.LemonSqueezy
+    ? Promise.resolve()
+    : loadScript("lemon-script", "https://assets.lemonsqueezy.com/lemon.js");
+
 export default function OrderForm({
   product,
+  lemonEnabled = false,
   wfpEnabled = false,
   wfpAmountUah = 0,
   cryptoEnabled = false,
@@ -56,6 +77,7 @@ export default function OrderForm({
   botUsername,
 }: {
   product: Product;
+  lemonEnabled?: boolean;
   wfpEnabled?: boolean;
   wfpAmountUah?: number;
   cryptoEnabled?: boolean;
@@ -85,6 +107,7 @@ export default function OrderForm({
   const onEnvValidity = useCallback((v: boolean) => setEnvValid(v), []);
   const [submitting, setSubmitting] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [lemonPaying, setLemonPaying] = useState(false);
   const [wfpPaying, setWfpPaying] = useState(false);
   const [jarPaying, setJarPaying] = useState(false);
   const [jarInfo, setJarInfo] = useState<{
@@ -101,6 +124,65 @@ export default function OrderForm({
       ? to(contactErrorKey(contactMethod, contactCheck.reason))
       : null;
   const contactOk = contactCheck.ok;
+
+  const handleLemon = async () => {
+    setError(null);
+    if (!name.trim() || !contactOk) {
+      setError(contactError ?? to("errNameContact"));
+      return;
+    }
+    setLemonPaying(true);
+    try {
+      const res = await fetch("/api/pay/lemon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productSlug: product.slug,
+          name: name.trim(),
+          contactMethod,
+          contact: contact.trim(),
+          message: message.trim(),
+          company,
+          envValues,
+        }),
+      });
+      const data = (await res.json()) as {
+        ok: boolean;
+        url?: string;
+        orderId?: string;
+        error?: string;
+      };
+      if (!data.ok || !data.url) {
+        setError(data.error || to("errCreate"));
+        setLemonPaying(false);
+        return;
+      }
+      const success = () =>
+        router.push(
+          `/order/success?p=${product.slug}${data.orderId ? `&o=${data.orderId}` : ""}`,
+        );
+      try {
+        await loadLemon();
+        window.createLemonSqueezy?.();
+        window.LemonSqueezy?.Setup?.({
+          eventHandler: (e) => {
+            if (e?.event === "Checkout.Success") success();
+          },
+        });
+        if (window.LemonSqueezy?.Url?.Open) {
+          window.LemonSqueezy.Url.Open(data.url);
+        } else {
+          window.location.href = data.url; // фолбек, якщо оверлей не завантажився
+        }
+      } catch {
+        window.location.href = data.url; // фолбек на hosted-сторінку
+      }
+      setLemonPaying(false);
+    } catch {
+      setError(to("errNet"));
+      setLemonPaying(false);
+    }
+  };
 
   const handleWfp = async () => {
     setError(null);
@@ -464,7 +546,7 @@ export default function OrderForm({
           values={envValues}
           onChange={setEnvValues}
           onValidityChange={onEnvValidity}
-          disabled={submitting || paying || jarPaying}
+          disabled={submitting || paying || jarPaying || wfpPaying || lemonPaying}
         />
 
         {error && (
@@ -473,11 +555,32 @@ export default function OrderForm({
           </div>
         )}
 
+        {lemonEnabled && (
+          <button
+            type="button"
+            onClick={handleLemon}
+            disabled={lemonPaying || wfpPaying || paying || jarPaying || submitting || !envValid}
+            className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-green to-neon-blue text-black shadow-[0_10px_30px_-10px_rgba(0,255,102,0.5)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {lemonPaying ? (
+              <>
+                <i className="ph-bold ph-circle-notch animate-spin" />
+                {to("creating")}
+              </>
+            ) : (
+              <>
+                <i className="ph-fill ph-credit-card text-lg" />
+                {to("payCard")} · ${product.price}
+              </>
+            )}
+          </button>
+        )}
+
         {wfpEnabled && (
           <button
             type="button"
             onClick={handleWfp}
-            disabled={wfpPaying || paying || jarPaying || submitting || !envValid}
+            disabled={lemonPaying || wfpPaying || paying || jarPaying || submitting || !envValid}
             className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-blue to-neon-purple text-white shadow-[0_10px_30px_-10px_rgba(80,120,255,0.6)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {wfpPaying ? (
@@ -498,7 +601,7 @@ export default function OrderForm({
           <button
             type="button"
             onClick={handleJar}
-            disabled={jarPaying || paying || wfpPaying || submitting || !envValid}
+            disabled={lemonPaying || jarPaying || paying || wfpPaying || submitting || !envValid}
             className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-white text-black shadow-[0_10px_30px_-10px_rgba(255,255,255,0.3)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {jarPaying ? (
@@ -519,7 +622,7 @@ export default function OrderForm({
           <button
             type="button"
             onClick={handlePay}
-            disabled={paying || jarPaying || wfpPaying || submitting || !envValid}
+            disabled={lemonPaying || paying || jarPaying || wfpPaying || submitting || !envValid}
             className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-green to-neon-blue text-black shadow-[0_10px_30px_-10px_rgba(0,255,102,0.5)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {paying ? (
@@ -540,9 +643,9 @@ export default function OrderForm({
           type="submit"
           // Свідомо БЕЗ envValid: якщо клієнт не розібрався в налаштуваннях,
           // він має змогу просто залишити заявку — оформимо підтримкою.
-          disabled={submitting || paying || jarPaying || wfpPaying}
+          disabled={submitting || paying || jarPaying || wfpPaying || lemonPaying}
           className={
-            cryptoEnabled || jarEnabled || wfpEnabled
+            cryptoEnabled || jarEnabled || wfpEnabled || lemonEnabled
               ? "w-full flex items-center justify-center gap-2 font-display font-medium rounded-xl px-6 py-3.5 bg-surface2 border border-white/10 text-white hover:border-neon-blue/50 active:scale-[0.98] transition-all disabled:opacity-60"
               : `w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed ${ACCENT_BUTTON[product.accent]}`
           }
@@ -555,7 +658,7 @@ export default function OrderForm({
           ) : (
             <>
               <i className="ph-bold ph-paper-plane-tilt" />
-              {cryptoEnabled || jarEnabled || wfpEnabled ? to("submitOr") : to("submit")}
+              {cryptoEnabled || jarEnabled || wfpEnabled || lemonEnabled ? to("submitOr") : to("submit")}
             </>
           )}
         </button>
@@ -563,7 +666,7 @@ export default function OrderForm({
         <p className="text-xs text-gray-500 font-mono text-center">
           {envFields.length > 0 && !envValid
             ? to("noteConfig")
-            : cryptoEnabled || jarEnabled || wfpEnabled
+            : cryptoEnabled || jarEnabled || wfpEnabled || lemonEnabled
               ? to("noteBoth")
               : to("noteReq")}
         </p>

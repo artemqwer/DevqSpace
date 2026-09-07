@@ -5,12 +5,13 @@ import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
 import { Footer } from "@/components/site/Footer";
 import OrderForm from "@/components/order/OrderForm";
-import { getProductBySlug } from "@/lib/store";
+import { getProductBySlug, getPaymentToggles } from "@/lib/store";
 import { localizeProduct } from "@/lib/products";
 import { getLocale, getTranslations } from "next-intl/server";
 import { tgGetBotUsername } from "@/lib/telegram";
 import { nowPaymentsEnabled } from "@/lib/nowpayments";
 import { wayForPayEnabled } from "@/lib/wayforpay";
+import { lemonEnabled } from "@/lib/lemonsqueezy";
 import { jarEnabled, usdToUah } from "@/lib/monojar";
 
 export const dynamic = "force-dynamic";
@@ -30,8 +31,12 @@ export default async function OrderPage({ params }: Props) {
   const raw = await getProductBySlug(slug);
   if (!raw) notFound();
 
-  const jarOn = jarEnabled();
-  const wfpOn = wayForPayEnabled();
+  // Метод показуємо, лише якщо він і має ключі (env), і ввімкнений в адмінці.
+  const toggles = await getPaymentToggles();
+  const jarOn = jarEnabled() && toggles.jar;
+  const wfpOn = wayForPayEnabled() && toggles.wfp;
+  const cryptoOn = nowPaymentsEnabled() && toggles.crypto;
+  const lemonOn = lemonEnabled() && toggles.lemon;
   const [amountUah, botUsername, locale] = await Promise.all([
     jarOn || wfpOn ? usdToUah(raw.price) : Promise.resolve(0),
     tgGetBotUsername(),
@@ -76,9 +81,10 @@ export default async function OrderPage({ params }: Props) {
 
         <OrderForm
           product={product}
+          lemonEnabled={lemonOn}
           wfpEnabled={wfpOn}
           wfpAmountUah={amountUah}
-          cryptoEnabled={nowPaymentsEnabled()}
+          cryptoEnabled={cryptoOn}
           jarEnabled={jarOn}
           jarAmountUah={amountUah}
           botUsername={botUsername}

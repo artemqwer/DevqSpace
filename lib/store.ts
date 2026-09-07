@@ -126,6 +126,7 @@ type MemDB = {
 const g = globalThis as unknown as {
   __nexusMem?: MemDB;
   __nexusMemTimer?: ReturnType<typeof setTimeout>;
+  __nexusPay?: PaymentToggles; // mem-фолбек налаштувань оплати (dev)
 };
 
 const DB_FILE = "db.json";
@@ -245,6 +246,7 @@ const K = {
   review: (id: string) => `review:${id}`,
   reviewIndex: "reviews:index", // sorted set за createdAt
   reviewToken: (t: string) => `reviewtoken:${t}`, // одноразовий токен -> orderId
+  paySettings: "settings:payments", // які методи оплати ввімкнені (адмінка)
 };
 
 // ---- Seeding --------------------------------------------------------
@@ -1390,4 +1392,39 @@ export async function consumeReviewToken(token: string): Promise<void> {
     return;
   }
   await redis.del(K.reviewToken(token));
+}
+
+// =====================================================================
+// Payment settings — які методи оплати ввімкнені (перемикачі в адмінці).
+// Метод реально показується лише якщо (env налаштовано) І (тумблер = on).
+// =====================================================================
+export type PaymentToggles = {
+  jar: boolean;
+  crypto: boolean;
+  wfp: boolean;
+  lemon: boolean;
+};
+const PAY_DEFAULTS: PaymentToggles = {
+  jar: true,
+  crypto: true,
+  wfp: true,
+  lemon: true,
+};
+
+export async function getPaymentToggles(): Promise<PaymentToggles> {
+  const redis = getRedis();
+  const raw = redis
+    ? await redis.get<Partial<PaymentToggles>>(K.paySettings)
+    : g.__nexusPay;
+  return { ...PAY_DEFAULTS, ...(raw ?? {}) };
+}
+
+export async function setPaymentToggles(
+  patch: Partial<PaymentToggles>,
+): Promise<PaymentToggles> {
+  const next = { ...(await getPaymentToggles()), ...patch };
+  const redis = getRedis();
+  if (!redis) g.__nexusPay = next;
+  else await redis.set(K.paySettings, next);
+  return next;
 }
