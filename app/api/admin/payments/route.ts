@@ -8,8 +8,15 @@ import { jarEnabled } from "@/lib/monojar";
 import { nowPaymentsEnabled } from "@/lib/nowpayments";
 import { wayForPayEnabled } from "@/lib/wayforpay";
 import { lemonEnabled } from "@/lib/lemonsqueezy";
+import { paddleEnabled } from "@/lib/paddle";
 
-const KEYS: (keyof PaymentToggles)[] = ["jar", "crypto", "wfp", "lemon"];
+const KEYS: (keyof PaymentToggles)[] = [
+  "jar",
+  "crypto",
+  "wfp",
+  "lemon",
+  "paddle",
+];
 
 // Які методи взагалі мають ключі в env (інакше тумблер ні на що не впливає).
 function configured() {
@@ -18,6 +25,7 @@ function configured() {
     crypto: nowPaymentsEnabled(),
     wfp: wayForPayEnabled(),
     lemon: lemonEnabled(),
+    paddle: paddleEnabled(),
   };
 }
 

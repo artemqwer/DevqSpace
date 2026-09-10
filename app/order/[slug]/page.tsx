@@ -12,6 +12,7 @@ import { tgGetBotUsername } from "@/lib/telegram";
 import { nowPaymentsEnabled } from "@/lib/nowpayments";
 import { wayForPayEnabled } from "@/lib/wayforpay";
 import { lemonEnabled } from "@/lib/lemonsqueezy";
+import { paddleEnabled, paddleClientConfig } from "@/lib/paddle";
 import { jarEnabled, usdToUah } from "@/lib/monojar";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,7 @@ export default async function OrderPage({ params }: Props) {
   const wfpOn = wayForPayEnabled() && toggles.wfp;
   const cryptoOn = nowPaymentsEnabled() && toggles.crypto;
   const lemonOn = lemonEnabled() && toggles.lemon;
+  const paddleOn = paddleEnabled() && toggles.paddle;
   const [amountUah, botUsername, locale] = await Promise.all([
     jarOn || wfpOn ? usdToUah(raw.price) : Promise.resolve(0),
     tgGetBotUsername(),
@@ -81,6 +83,8 @@ export default async function OrderPage({ params }: Props) {
 
         <OrderForm
           product={product}
+          paddleEnabled={paddleOn}
+          paddleConfig={paddleOn ? paddleClientConfig() : null}
           lemonEnabled={lemonOn}
           wfpEnabled={wfpOn}
           wfpAmountUah={amountUah}

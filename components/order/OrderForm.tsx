@@ -27,8 +27,18 @@ declare global {
       Setup?: (opts: { eventHandler?: (e: { event?: string }) => void }) => void;
       Url?: { Open?: (url: string) => void; Close?: () => void };
     };
+    Paddle?: {
+      Environment?: { set: (env: string) => void };
+      Initialize?: (opts: {
+        token: string;
+        eventCallback?: (e: { name?: string }) => void;
+      }) => void;
+      Checkout?: { open: (opts: Record<string, unknown>) => void };
+    };
   }
 }
+
+let paddleReady = false; // paddle.js ініціалізується один раз на сторінку
 
 // Вантажить зовнішній скрипт один раз (ідемпотентно за id).
 function loadScript(id: string, src: string): Promise<void> {
@@ -66,8 +76,15 @@ const loadLemon = () =>
     ? Promise.resolve()
     : loadScript("lemon-script", "https://assets.lemonsqueezy.com/lemon.js");
 
+const loadPaddle = () =>
+  window.Paddle
+    ? Promise.resolve()
+    : loadScript("paddle-script", "https://cdn.paddle.com/paddle/v2/paddle.js");
+
 export default function OrderForm({
   product,
+  paddleEnabled = false,
+  paddleConfig = null,
   lemonEnabled = false,
   wfpEnabled = false,
   wfpAmountUah = 0,
@@ -77,6 +94,8 @@ export default function OrderForm({
   botUsername,
 }: {
   product: Product;
+  paddleEnabled?: boolean;
+  paddleConfig?: { token: string; environment: string } | null;
   lemonEnabled?: boolean;
   wfpEnabled?: boolean;
   wfpAmountUah?: number;
@@ -107,6 +126,7 @@ export default function OrderForm({
   const onEnvValidity = useCallback((v: boolean) => setEnvValid(v), []);
   const [submitting, setSubmitting] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [paddlePaying, setPaddlePaying] = useState(false);
   const [lemonPaying, setLemonPaying] = useState(false);
   const [wfpPaying, setWfpPaying] = useState(false);
   const [jarPaying, setJarPaying] = useState(false);
@@ -124,6 +144,84 @@ export default function OrderForm({
       ? to(contactErrorKey(contactMethod, contactCheck.reason))
       : null;
   const contactOk = contactCheck.ok;
+
+  const handlePaddle = async () => {
+    setError(null);
+    if (!name.trim() || !contactOk) {
+      setError(contactError ?? to("errNameContact"));
+      return;
+    }
+    if (!paddleConfig) {
+      setError(to("errNet"));
+      return;
+    }
+    setPaddlePaying(true);
+    try {
+      const res = await fetch("/api/pay/paddle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productSlug: product.slug,
+          name: name.trim(),
+          contactMethod,
+          contact: contact.trim(),
+          message: message.trim(),
+          company,
+          envValues,
+        }),
+      });
+      const data = (await res.json()) as {
+        ok: boolean;
+        transactionId?: string;
+        orderId?: string;
+        email?: string;
+        error?: string;
+      };
+      if (!data.ok || !data.transactionId) {
+        setError(data.error || to("errCreate"));
+        setPaddlePaying(false);
+        return;
+      }
+      const success = () =>
+        router.push(
+          `/order/success?p=${product.slug}${data.orderId ? `&o=${data.orderId}` : ""}`,
+        );
+      try {
+        await loadPaddle();
+        const P = window.Paddle;
+        if (!P?.Checkout) {
+          setError(to("errNet"));
+          setPaddlePaying(false);
+          return;
+        }
+        if (!paddleReady) {
+          P.Environment?.set(paddleConfig.environment);
+          P.Initialize?.({
+            token: paddleConfig.token,
+            eventCallback: (e) => {
+              if (e?.name === "checkout.completed") success();
+            },
+          });
+          paddleReady = true;
+        }
+        P.Checkout.open({
+          transactionId: data.transactionId,
+          ...(data.email ? { customer: { email: data.email } } : {}),
+          settings: {
+            displayMode: "overlay",
+            theme: "dark",
+            successUrl: `${window.location.origin}/order/success?p=${product.slug}${data.orderId ? `&o=${data.orderId}` : ""}`,
+          },
+        });
+      } catch {
+        setError(to("errNet"));
+      }
+      setPaddlePaying(false);
+    } catch {
+      setError(to("errNet"));
+      setPaddlePaying(false);
+    }
+  };
 
   const handleLemon = async () => {
     setError(null);
@@ -546,7 +644,7 @@ export default function OrderForm({
           values={envValues}
           onChange={setEnvValues}
           onValidityChange={onEnvValidity}
-          disabled={submitting || paying || jarPaying || wfpPaying || lemonPaying}
+          disabled={submitting || paying || jarPaying || wfpPaying || lemonPaying || paddlePaying}
         />
 
         {error && (
@@ -555,11 +653,32 @@ export default function OrderForm({
           </div>
         )}
 
+        {paddleEnabled && (
+          <button
+            type="button"
+            onClick={handlePaddle}
+            disabled={paddlePaying || lemonPaying || wfpPaying || paying || jarPaying || submitting || !envValid}
+            className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-blue to-neon-purple text-white shadow-[0_10px_30px_-10px_rgba(80,120,255,0.6)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {paddlePaying ? (
+              <>
+                <i className="ph-bold ph-circle-notch animate-spin" />
+                {to("creating")}
+              </>
+            ) : (
+              <>
+                <i className="ph-fill ph-credit-card text-lg" />
+                {to("payCard")} · ${product.price}
+              </>
+            )}
+          </button>
+        )}
+
         {lemonEnabled && (
           <button
             type="button"
             onClick={handleLemon}
-            disabled={lemonPaying || wfpPaying || paying || jarPaying || submitting || !envValid}
+            disabled={paddlePaying || lemonPaying || wfpPaying || paying || jarPaying || submitting || !envValid}
             className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-green to-neon-blue text-black shadow-[0_10px_30px_-10px_rgba(0,255,102,0.5)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {lemonPaying ? (
@@ -580,7 +699,7 @@ export default function OrderForm({
           <button
             type="button"
             onClick={handleWfp}
-            disabled={lemonPaying || wfpPaying || paying || jarPaying || submitting || !envValid}
+            disabled={paddlePaying || lemonPaying || wfpPaying || paying || jarPaying || submitting || !envValid}
             className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-blue to-neon-purple text-white shadow-[0_10px_30px_-10px_rgba(80,120,255,0.6)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {wfpPaying ? (
@@ -601,7 +720,7 @@ export default function OrderForm({
           <button
             type="button"
             onClick={handleJar}
-            disabled={lemonPaying || jarPaying || paying || wfpPaying || submitting || !envValid}
+            disabled={paddlePaying || lemonPaying || jarPaying || paying || wfpPaying || submitting || !envValid}
             className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-white text-black shadow-[0_10px_30px_-10px_rgba(255,255,255,0.3)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {jarPaying ? (
@@ -622,7 +741,7 @@ export default function OrderForm({
           <button
             type="button"
             onClick={handlePay}
-            disabled={lemonPaying || paying || jarPaying || wfpPaying || submitting || !envValid}
+            disabled={paddlePaying || lemonPaying || paying || jarPaying || wfpPaying || submitting || !envValid}
             className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-green to-neon-blue text-black shadow-[0_10px_30px_-10px_rgba(0,255,102,0.5)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {paying ? (
@@ -643,9 +762,9 @@ export default function OrderForm({
           type="submit"
           // Свідомо БЕЗ envValid: якщо клієнт не розібрався в налаштуваннях,
           // він має змогу просто залишити заявку — оформимо підтримкою.
-          disabled={submitting || paying || jarPaying || wfpPaying || lemonPaying}
+          disabled={submitting || paying || jarPaying || wfpPaying || lemonPaying || paddlePaying}
           className={
-            cryptoEnabled || jarEnabled || wfpEnabled || lemonEnabled
+            cryptoEnabled || jarEnabled || wfpEnabled || lemonEnabled || paddleEnabled
               ? "w-full flex items-center justify-center gap-2 font-display font-medium rounded-xl px-6 py-3.5 bg-surface2 border border-white/10 text-white hover:border-neon-blue/50 active:scale-[0.98] transition-all disabled:opacity-60"
               : `w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed ${ACCENT_BUTTON[product.accent]}`
           }
@@ -658,7 +777,7 @@ export default function OrderForm({
           ) : (
             <>
               <i className="ph-bold ph-paper-plane-tilt" />
-              {cryptoEnabled || jarEnabled || wfpEnabled || lemonEnabled ? to("submitOr") : to("submit")}
+              {cryptoEnabled || jarEnabled || wfpEnabled || lemonEnabled || paddleEnabled ? to("submitOr") : to("submit")}
             </>
           )}
         </button>
@@ -666,7 +785,7 @@ export default function OrderForm({
         <p className="text-xs text-gray-500 font-mono text-center">
           {envFields.length > 0 && !envValid
             ? to("noteConfig")
-            : cryptoEnabled || jarEnabled || wfpEnabled || lemonEnabled
+            : cryptoEnabled || jarEnabled || wfpEnabled || lemonEnabled || paddleEnabled
               ? to("noteBoth")
               : to("noteReq")}
         </p>

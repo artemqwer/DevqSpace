@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 
-type Toggles = { jar: boolean; crypto: boolean; wfp: boolean; lemon: boolean };
+type Toggles = {
+  jar: boolean;
+  crypto: boolean;
+  wfp: boolean;
+  lemon: boolean;
+  paddle: boolean;
+};
 type MethodKey = keyof Toggles;
 
 const METHODS: {
@@ -13,9 +19,16 @@ const METHODS: {
   envHint: string;
 }[] = [
   {
+    key: "paddle",
+    label: "Paddle",
+    desc: "Картки / Apple Pay / Google Pay без ФОПа (MoR, виплати через Payoneer). Автовидача.",
+    icon: "ph-credit-card",
+    envHint: "PADDLE_API_KEY, PADDLE_CLIENT_TOKEN, PADDLE_WEBHOOK_SECRET",
+  },
+  {
     key: "lemon",
     label: "Lemon Squeezy",
-    desc: "Картки / Apple Pay без ФОПа (Merchant of Record). Автовидача.",
+    desc: "Картки без ФОПа (MoR). Увага: не виплачує в Україну.",
     icon: "ph-lemon",
     envHint: "LEMON_API_KEY, LEMON_STORE_ID, LEMON_VARIANT_ID",
   },

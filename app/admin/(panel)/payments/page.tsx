@@ -3,6 +3,7 @@ import { jarEnabled } from "@/lib/monojar";
 import { nowPaymentsEnabled } from "@/lib/nowpayments";
 import { wayForPayEnabled } from "@/lib/wayforpay";
 import { lemonEnabled } from "@/lib/lemonsqueezy";
+import { paddleEnabled } from "@/lib/paddle";
 import PaymentSettings from "@/components/admin/PaymentSettings";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,7 @@ export default async function AdminPaymentsPage() {
     crypto: nowPaymentsEnabled(),
     wfp: wayForPayEnabled(),
     lemon: lemonEnabled(),
+    paddle: paddleEnabled(),
   };
 
   return (
