@@ -26,22 +26,22 @@ const jetBrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://devq.space"),
   title: {
-    default: "DevqSpace — цифрова студія: готові продукти та розробка під ключ",
+    default: "DevqSpace — Digital Studio: Ready-Made Products & Custom Development",
     template: "%s | DevqSpace",
   },
   description:
-    "DevqSpace — студія цифрових продуктів. Готові Telegram-боти, веб-додатки, скрипти, Web3-рішення та шаблони з повним сорс-кодом. Або кастомна розробка під ключ із гарантією на рік.",
+    "DevqSpace — a digital product studio. Ready-made Telegram bots, web apps, scripts, Web3 solutions and templates with full source code. Or custom turnkey development with a one-year warranty.",
   keywords: [
-    "Telegram боти",
-    "веб-додатки",
+    "Telegram bots",
+    "web apps",
     "SaaS",
     "Web3",
-    "смарт-контракти",
-    "скрипти автоматизації",
-    "готові рішення",
-    "розробка під ключ",
-    "цифрові продукти",
-    "сорс-код",
+    "smart contracts",
+    "automation scripts",
+    "ready-made solutions",
+    "turnkey development",
+    "digital products",
+    "source code",
     "DevqSpace",
     "devq.space",
   ],
@@ -57,18 +57,18 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    locale: "uk_UA",
+    locale: "en_US",
     url: "https://devq.space",
     siteName: "DevqSpace",
-    title: "DevqSpace — готові цифрові продукти та розробка під ключ",
+    title: "DevqSpace — Ready-Made Digital Products & Custom Development",
     description:
-      "Telegram-боти, веб-додатки, Web3 і шаблони з повним сорс-кодом. Гарантія 1 рік, оплата картою чи криптою.",
+      "Telegram bots, web apps, Web3 and templates with full source code. 1-year warranty, pay by card or crypto.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "DevqSpace — готові цифрові продукти та розробка під ключ",
+    title: "DevqSpace — Ready-Made Digital Products & Custom Development",
     description:
-      "Telegram-боти, веб-додатки, Web3 і шаблони з сорс-кодом. Гарантія 1 рік.",
+      "Telegram bots, web apps, Web3 and templates with source code. 1-year warranty.",
   },
   category: "technology",
 };
