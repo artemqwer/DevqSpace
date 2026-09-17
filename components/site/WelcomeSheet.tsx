@@ -27,9 +27,10 @@ export function WelcomeSheet() {
   );
   const [dismissed, setDismissed] = useState(false);
 
-  // Рендериться з кореневого layout, тобто і над адмінкою. Адміну вибір мови
-  // й cookie-згода не потрібні — вони перекривають панель.
-  const isAdmin = usePathname()?.startsWith("/admin") ?? false;
+  // Рендериться з кореневого layout. Адмінці та інтерактивним демо (/demo)
+  // вибір мови й cookie-згода не потрібні — вони перекривають робочу область.
+  const pathname = usePathname() ?? "";
+  const isExempt = pathname.startsWith("/admin") || pathname.startsWith("/demo");
 
   function choose(lang: "uk" | "en") {
     localStorage.setItem(KEY, JSON.stringify({ lang, consent: true, ts: Date.now() }));
@@ -38,7 +39,7 @@ export function WelcomeSheet() {
     if (lang !== "uk") location.reload();
   }
 
-  if (seen || dismissed || isAdmin) return null;
+  if (seen || dismissed || isExempt) return null;
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 p-3 backdrop-blur-sm sm:items-center">

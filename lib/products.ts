@@ -978,7 +978,8 @@ export const PRODUCTS: Product[] = [
     ],
     sold: 41,
     rating: 4.9,
-    ratingCount: 18,
+    ratingCount: 17,
+    demoUrl: "/demo/token-presale",
   },
   {
     slug: "nft-mint-dapp",
@@ -1071,6 +1072,7 @@ export const PRODUCTS: Product[] = [
     sold: 33,
     rating: 4.7,
     ratingCount: 14,
+    demoUrl: "/demo/solana-sniper",
   },
   {
     slug: "dex-swap-ui",
@@ -1099,6 +1101,7 @@ export const PRODUCTS: Product[] = [
     sold: 24,
     rating: 4.8,
     ratingCount: 9,
+    demoUrl: "/demo/dex-swap-ui",
   },
 
   // === ШАБЛОНИ / UI-КІТИ ===

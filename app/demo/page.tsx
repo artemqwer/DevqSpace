@@ -84,8 +84,8 @@ const DEMOS: DemoItem[] = [
     features: ["Калькулятор вартості розробки", "Вітрина кейсів", "Відгуки клієнтів", "Швидкий бриф"],
   },
   {
-    slug: "react-crm-starter",
-    title: "React CRM Starter",
+    slug: "mini-crm-agency",
+    title: "Mini CRM Agency",
     tagline: "Компактна CRM-система для малого бізнесу з канбан-дошкою та аналітикою",
     category: "Web / SaaS",
     accent: "blue",
@@ -94,7 +94,27 @@ const DEMOS: DemoItem[] = [
     features: ["Канбан-дошка лідів", "Статуси угод", "Метрики виручки", "Пошук по контактах"],
   },
   {
-    slug: "email-templates",
+    slug: "landing-builder",
+    title: "Landing Page Builder",
+    tagline: "Візуальний блоковий конструктор лендінгів з миттєвим прев'ю та кодом",
+    category: "Web / SaaS",
+    accent: "purple",
+    price: 49,
+    stack: ["Next.js 15", "Tailwind CSS", "Block Engine"],
+    features: ["Блоки Hero, Features, Pricing", "Зміна кольорової гами", "Живий попередній перегляд", "Експорт HTML/Tailwind"],
+  },
+  {
+    slug: "bot-constructor",
+    title: "Bot Flow Constructor",
+    tagline: "Візуальний граф налаштування сценаріїв Telegram-ботів без програмування",
+    category: "Web / SaaS",
+    accent: "blue",
+    price: 59,
+    stack: ["React Flow", "TypeScript", "Tailwind CSS"],
+    features: ["Візуальний граф вузлів", "Налаштування тригерів і кнопок", "Інтерактивний тестовий чат", "Експорт структури"],
+  },
+  {
+    slug: "email-pack",
     title: "Responsive Email Pack",
     tagline: "12 сучасних адаптивних транзакційних та маркетингових email-шаблонів",
     category: "Шаблони / UI",
@@ -104,34 +124,34 @@ const DEMOS: DemoItem[] = [
     features: ["12 унікальних шаблонів", "Темна та світла теми", "Тестовано у 30+ клієнтах", "Легка кастомізація"],
   },
   {
-    slug: "solana-sniper-bot",
+    slug: "solana-sniper",
     title: "Solana Sniper Terminal",
     tagline: "Інтерфейс високошвидкісного моніторингу ліквідності Raydium та Pump.fun",
     category: "Web3 / Смарт-контракти",
     accent: "green",
-    price: 99,
+    price: 120,
     stack: ["TypeScript", "Solana Web3", "Jito Bundles", "WebSocket"],
-    features: ["Журнал транзакцій наживо", "Детектор нових пулів", "Аналіз ліквідності", "Моніторинг комісій"],
+    features: ["Журнал транзакцій наживо", "Детектор нових пулів", "Аналіз ліквідності", "Моніторинг комісій Jito"],
   },
   {
-    slug: "solana-launchpad-ui",
-    title: "Solana Launchpad UI",
-    tagline: "Платформа запуску токенів, збору коштів та голосувань спільноти",
+    slug: "token-presale",
+    title: "ERC-20 Token + Presale",
+    tagline: "Платформа запуску токенів, пресейлу з вестингом та вайтлістом",
     category: "Web3 / Смарт-контракти",
     accent: "purple",
-    price: 69,
-    stack: ["Next.js", "Solana SPL", "Tailwind CSS"],
-    features: ["Створення пулів запуску", "Прогрес-бари краудсейлу", "Голосування токенами", "Інтеграція гаманців"],
+    price: 149,
+    stack: ["Solidity", "Next.js", "Hardhat", "Wagmi"],
+    features: ["Форма депозиту ETH/USDT", "Прогрес-бар раундів", "Вестинг та клейм токенів", "Перевірка вайтліста"],
   },
   {
-    slug: "nextjs-solana-starter",
-    title: "Next.js Solana dApp Starter",
-    tagline: "Повний стартовий каркас для децентралізованих додатків у екосистемі Solana",
+    slug: "dex-swap-ui",
+    title: "DEX Swap Interface",
+    tagline: "Готовий термінал обміну токенів на базі Uniswap SDK",
     category: "Web3 / Смарт-контракти",
     accent: "blue",
-    price: 39,
-    stack: ["Next.js 15", "Anchor", "Wallet Adapter", "Tailwind"],
-    features: ["Wallet Multi-Button", "Підписання транзакцій", "Баланс SOL / SPL", "Чиста архітектура"],
+    price: 89,
+    stack: ["Next.js", "Uniswap SDK", "Wagmi", "Viem"],
+    features: ["Своп токенів у 1 клік", "Розрахунок slippage & fee", "Підключення гаманців", "Графік курсу валют"],
   },
 ];
 
@@ -180,7 +200,7 @@ export default function DemosHubPage() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon-green opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-neon-green"></span>
             </span>
-            LIVE DEMO HUB · 11 ІНТЕРАКТИВНИХ СТЕНДІВ
+            LIVE DEMO HUB · {DEMOS.length} ІНТЕРАКТИВНИХ СТЕНДІВ
           </div>
           <h1 className="font-display text-3xl font-bold tracking-tight text-white md:text-5xl lg:text-6xl leading-[1.08]">
             Спробуйте продукти <span className="text-gradient">наживо</span> перед покупкою
