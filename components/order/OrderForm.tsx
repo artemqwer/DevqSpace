@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ACCENT_BUTTON, type Product } from "@/lib/products";
 import type { EnvValues } from "@/lib/envFields";
@@ -144,6 +144,93 @@ export default function OrderForm({
       ? to(contactErrorKey(contactMethod, contactCheck.reason))
       : null;
   const contactOk = contactCheck.ok;
+
+  type PaymentMethodId = "paddle" | "lemon" | "wfp" | "jar" | "crypto";
+
+  const availableMethods = useMemo(() => {
+    const list: {
+      id: PaymentMethodId;
+      name: string;
+      desc?: string;
+      icon: string;
+      badge?: string;
+      amountFormatted: string;
+    }[] = [];
+
+    if (paddleEnabled) {
+      list.push({
+        id: "paddle",
+        name: to("methodCard"),
+        desc: "Visa / Mastercard",
+        icon: "ph-credit-card",
+        badge: "USD",
+        amountFormatted: `$${product.price}`,
+      });
+    } else if (lemonEnabled) {
+      list.push({
+        id: "lemon",
+        name: to("methodCard"),
+        desc: "Visa / Mastercard",
+        icon: "ph-credit-card",
+        badge: "USD",
+        amountFormatted: `$${product.price}`,
+      });
+    }
+
+    if (wfpEnabled) {
+      list.push({
+        id: "wfp",
+        name: to("methodCard"),
+        desc: "WayForPay",
+        icon: "ph-credit-card",
+        badge: "UAH",
+        amountFormatted: wfpAmountUah ? `${wfpAmountUah} ₴` : `$${product.price}`,
+      });
+    }
+
+    if (jarEnabled) {
+      list.push({
+        id: "jar",
+        name: to("methodJar"),
+        desc: "Переказ на банку",
+        icon: "ph-bank",
+        badge: "UAH",
+        amountFormatted: jarAmountUah ? `${jarAmountUah} ₴` : `$${product.price}`,
+      });
+    }
+
+    if (cryptoEnabled) {
+      list.push({
+        id: "crypto",
+        name: to("methodCrypto"),
+        desc: "USDT, BTC, TON, ETH",
+        icon: "ph-currency-circle-dollar",
+        badge: "Crypto",
+        amountFormatted: `$${product.price}`,
+      });
+    }
+
+    return list;
+  }, [
+    paddleEnabled,
+    lemonEnabled,
+    wfpEnabled,
+    wfpAmountUah,
+    jarEnabled,
+    jarAmountUah,
+    cryptoEnabled,
+    product.price,
+    to,
+  ]);
+
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodId>(() => {
+    if (paddleEnabled) return "paddle";
+    if (lemonEnabled) return "lemon";
+    if (wfpEnabled) return "wfp";
+    if (jarEnabled) return "jar";
+    if (cryptoEnabled) return "crypto";
+    return "crypto";
+  });
 
   const handlePaddle = async () => {
     setError(null);
@@ -653,109 +740,118 @@ export default function OrderForm({
           </div>
         )}
 
-        {paddleEnabled && (
-          <button
-            type="button"
-            onClick={handlePaddle}
-            disabled={paddlePaying || lemonPaying || wfpPaying || paying || jarPaying || submitting || !envValid}
-            className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-blue to-neon-purple text-white shadow-[0_10px_30px_-10px_rgba(80,120,255,0.6)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {paddlePaying ? (
-              <>
-                <i className="ph-bold ph-circle-notch animate-spin" />
-                {to("creating")}
-              </>
-            ) : (
-              <>
-                <i className="ph-fill ph-credit-card text-lg" />
-                {to("payCard")} · ${product.price}
-              </>
-            )}
-          </button>
-        )}
+        {availableMethods.length > 0 && (
+          <div className="space-y-3 pt-2">
+            <label className="block text-xs font-mono text-gray-400 uppercase tracking-wider">
+              {to("paymentMethod")}
+            </label>
+            <div
+              className={`grid gap-2.5 ${availableMethods.length > 1 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}
+            >
+              {availableMethods.map((m) => {
+                const isSelected = selectedMethod === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    disabled={submitting || paddlePaying || lemonPaying || wfpPaying || jarPaying || paying}
+                    onClick={() => setSelectedMethod(m.id)}
+                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all text-left ${
+                      isSelected
+                        ? "border-neon-blue bg-neon-blue/10 text-white shadow-[0_0_20px_rgba(80,120,255,0.2)]"
+                        : "border-white/10 bg-surface2/60 text-gray-300 hover:border-white/20 hover:bg-surface2"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0 ${
+                          isSelected
+                            ? "bg-neon-blue/20 text-neon-blue"
+                            : "bg-surface border border-white/5 text-gray-400"
+                        }`}
+                      >
+                        <i className={`ph-bold ${m.icon}`} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-white flex items-center gap-1.5 truncate">
+                          {m.name}
+                          {m.badge && (
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/10 text-gray-400 shrink-0">
+                              {m.badge}
+                            </span>
+                          )}
+                        </div>
+                        {m.desc && (
+                          <div className="text-xs text-gray-400 font-mono truncate mt-0.5">
+                            {m.desc}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0 ml-2">
+                      <div className="text-xs font-mono font-bold text-white">
+                        {m.amountFormatted}
+                      </div>
+                      <div
+                        className={`mt-1 w-4 h-4 ml-auto rounded-full border flex items-center justify-center transition-colors ${
+                          isSelected
+                            ? "border-neon-blue bg-neon-blue"
+                            : "border-white/20"
+                        }`}
+                      >
+                        {isSelected && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-surface" />
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
 
-        {lemonEnabled && (
-          <button
-            type="button"
-            onClick={handleLemon}
-            disabled={paddlePaying || lemonPaying || wfpPaying || paying || jarPaying || submitting || !envValid}
-            className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-green to-neon-blue text-black shadow-[0_10px_30px_-10px_rgba(0,255,102,0.5)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {lemonPaying ? (
-              <>
-                <i className="ph-bold ph-circle-notch animate-spin" />
-                {to("creating")}
-              </>
-            ) : (
-              <>
-                <i className="ph-fill ph-credit-card text-lg" />
-                {to("payCard")} · ${product.price}
-              </>
-            )}
-          </button>
-        )}
-
-        {wfpEnabled && (
-          <button
-            type="button"
-            onClick={handleWfp}
-            disabled={paddlePaying || lemonPaying || wfpPaying || paying || jarPaying || submitting || !envValid}
-            className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-blue to-neon-purple text-white shadow-[0_10px_30px_-10px_rgba(80,120,255,0.6)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {wfpPaying ? (
-              <>
-                <i className="ph-bold ph-circle-notch animate-spin" />
-                {to("creating")}
-              </>
-            ) : (
-              <>
-                <i className="ph-fill ph-credit-card text-lg" />
-                {to("payCard")}{wfpAmountUah ? ` · ${wfpAmountUah} ₴` : ""}
-              </>
-            )}
-          </button>
-        )}
-
-        {jarEnabled && (
-          <button
-            type="button"
-            onClick={handleJar}
-            disabled={paddlePaying || lemonPaying || jarPaying || paying || wfpPaying || submitting || !envValid}
-            className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-white text-black shadow-[0_10px_30px_-10px_rgba(255,255,255,0.3)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {jarPaying ? (
-              <>
-                <i className="ph-bold ph-circle-notch animate-spin" />
-                {to("creating")}
-              </>
-            ) : (
-              <>
-                <i className="ph-bold ph-credit-card text-lg" />
-                {to("payCard")}{jarAmountUah ? ` · ${jarAmountUah} ₴` : ""}
-              </>
-            )}
-          </button>
-        )}
-
-        {cryptoEnabled && (
-          <button
-            type="button"
-            onClick={handlePay}
-            disabled={paddlePaying || lemonPaying || paying || jarPaying || wfpPaying || submitting || !envValid}
-            className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-green to-neon-blue text-black shadow-[0_10px_30px_-10px_rgba(0,255,102,0.5)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {paying ? (
-              <>
-                <i className="ph-bold ph-circle-notch animate-spin" />
-                {to("creatingInv")}
-              </>
-            ) : (
-              <>
-                <i className="ph-bold ph-currency-circle-dollar text-lg" />
-                {to("payCrypto")} · ${product.price}
-              </>
-            )}
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (selectedMethod === "paddle") handlePaddle();
+                else if (selectedMethod === "lemon") handleLemon();
+                else if (selectedMethod === "wfp") handleWfp();
+                else if (selectedMethod === "jar") handleJar();
+                else if (selectedMethod === "crypto") handlePay();
+              }}
+              disabled={
+                submitting ||
+                paddlePaying ||
+                lemonPaying ||
+                wfpPaying ||
+                jarPaying ||
+                paying ||
+                !envValid
+              }
+              className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-blue to-neon-purple text-white shadow-[0_10px_30px_-10px_rgba(80,120,255,0.6)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+            >
+              {paddlePaying || lemonPaying || wfpPaying || jarPaying || paying ? (
+                <>
+                  <i className="ph-bold ph-circle-notch animate-spin text-lg" />
+                  {selectedMethod === "crypto" ? to("creatingInv") : to("creating")}
+                </>
+              ) : (
+                <>
+                  <i
+                    className={`ph-fill ${
+                      selectedMethod === "crypto"
+                        ? "ph-currency-circle-dollar"
+                        : selectedMethod === "jar"
+                          ? "ph-bank"
+                          : "ph-credit-card"
+                    } text-lg`}
+                  />
+                  {to("payAction")} ·{" "}
+                  {availableMethods.find((m) => m.id === selectedMethod)?.amountFormatted ??
+                    `$${product.price}`}
+                </>
+              )}
+            </button>
+          </div>
         )}
 
         <button
@@ -764,7 +860,7 @@ export default function OrderForm({
           // він має змогу просто залишити заявку — оформимо підтримкою.
           disabled={submitting || paying || jarPaying || wfpPaying || lemonPaying || paddlePaying}
           className={
-            cryptoEnabled || jarEnabled || wfpEnabled || lemonEnabled || paddleEnabled
+            availableMethods.length > 0
               ? "w-full flex items-center justify-center gap-2 font-display font-medium rounded-xl px-6 py-3.5 bg-surface2 border border-white/10 text-white hover:border-neon-blue/50 active:scale-[0.98] transition-all disabled:opacity-60"
               : `w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed ${ACCENT_BUTTON[product.accent]}`
           }
@@ -777,7 +873,7 @@ export default function OrderForm({
           ) : (
             <>
               <i className="ph-bold ph-paper-plane-tilt" />
-              {cryptoEnabled || jarEnabled || wfpEnabled || lemonEnabled || paddleEnabled ? to("submitOr") : to("submit")}
+              {availableMethods.length > 0 ? to("submitOr") : to("submit")}
             </>
           )}
         </button>
@@ -785,7 +881,7 @@ export default function OrderForm({
         <p className="text-xs text-gray-500 font-mono text-center">
           {envFields.length > 0 && !envValid
             ? to("noteConfig")
-            : cryptoEnabled || jarEnabled || wfpEnabled || lemonEnabled || paddleEnabled
+            : availableMethods.length > 0
               ? to("noteBoth")
               : to("noteReq")}
         </p>
