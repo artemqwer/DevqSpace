@@ -14,6 +14,7 @@ import { wayForPayEnabled } from "@/lib/wayforpay";
 import { lemonEnabled } from "@/lib/lemonsqueezy";
 import { paddleEnabled, paddleClientConfig } from "@/lib/paddle";
 import { jarEnabled, usdToUah } from "@/lib/monojar";
+import { BackButton } from "@/components/site/BackButton";
 
 export const dynamic = "force-dynamic";
 
@@ -52,24 +53,28 @@ export default async function OrderPage({ params }: Props) {
       <div className="grid-bg grid-fade pointer-events-none fixed inset-0 z-0" aria-hidden />
       <Navbar />
       <main className="relative mx-auto max-w-6xl px-4 pb-28 pt-24 md:px-8 md:pb-24 md:pt-32">
-        <nav className="mono-label mb-6 flex items-center gap-2 text-muted-foreground">
-          <Link href="/" className="transition-colors hover:text-foreground">
-            home
-          </Link>
-          <span>/</span>
-          <Link href="/catalog" className="transition-colors hover:text-foreground">
-            catalog
-          </Link>
-          <span>/</span>
-          <Link
-            href={`/catalog/${product.slug}`}
-            className="truncate transition-colors hover:text-foreground"
-          >
-            {product.slug}
-          </Link>
-          <span>/</span>
-          <span className="text-foreground/70">order</span>
-        </nav>
+        {/* Navigation & Breadcrumbs */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <BackButton fallbackHref={`/catalog/${product.slug}`} label={to("back")} />
+          <nav className="mono-label flex items-center gap-2 overflow-x-auto text-muted-foreground">
+            <Link href="/" className="shrink-0 transition-colors hover:text-foreground">
+              home
+            </Link>
+            <span className="shrink-0">/</span>
+            <Link href="/catalog" className="shrink-0 transition-colors hover:text-foreground">
+              catalog
+            </Link>
+            <span className="shrink-0">/</span>
+            <Link
+              href={`/catalog/${product.slug}`}
+              className="shrink-0 truncate transition-colors hover:text-foreground"
+            >
+              {product.slug}
+            </Link>
+            <span className="shrink-0">/</span>
+            <span className="shrink-0 text-foreground/70">order</span>
+          </nav>
+        </div>
 
         <div className="mb-6 flex flex-col gap-2 md:mb-10">
           <span className="mono-label text-neon-blue">{to("eyebrow")}</span>

@@ -4,7 +4,7 @@ import type { Product } from "./products";
 import type { StoredOrder } from "./store";
 import { getObject, putObject } from "./blob";
 import { decryptJson } from "./crypto";
-import { renderEnvFile, type EnvValues } from "./envFields";
+import { renderEnvFile, quoteIfNeeded, type EnvValues } from "./envFields";
 
 // Збирає персональний архів: бере ZIP товару, підставляє значення клієнта
 // в .env усередині нього і заливає копію у сховище.
@@ -67,18 +67,19 @@ function commonRoot(paths: string[]): string {
 // Без регулярок навмисно: ключі вже нормалізовані до [A-Z_][A-Z0-9_]* у
 // normalizeEnvFields, екранувати нема чого, а рядковий розбір читабельніший.
 function setEnvLine(content: string, key: string, value: string): string {
+  const quoted = quoteIfNeeded(value);
   const lines = content.split("\n");
   for (let i = 0; i < lines.length; i++) {
     let body = lines[i].trim();
     if (body.startsWith("#")) body = body.slice(1).trim();
     const eq = body.indexOf("=");
     if (eq > 0 && body.slice(0, eq).trim() === key) {
-      lines[i] = `${key}=${value}`;
+      lines[i] = `${key}=${quoted}`;
       return lines.join("\n");
     }
   }
   const tail = content.endsWith("\n") || content === "" ? "" : "\n";
-  return `${content}${tail}${key}=${value}\n`;
+  return `${content}${tail}${key}=${quoted}\n`;
 }
 
 export async function packageOrder(

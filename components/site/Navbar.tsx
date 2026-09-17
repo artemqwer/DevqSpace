@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { MagnifyingGlass, Globe, ArrowRight } from "@phosphor-icons/react";
+import { usePathname, useRouter } from "next/navigation";
+import { MagnifyingGlass, Globe, ArrowRight, ArrowLeft } from "@phosphor-icons/react";
 import { useTranslations, useLocale } from "next-intl";
 import { Wordmark } from "./Wordmark";
 
@@ -22,6 +22,7 @@ function switchLocale(current: string) {
 
 export function Navbar() {
   const t = useTranslations("nav");
+  const router = useRouter();
   const locale = useLocale();
   const pathname = usePathname() ?? "/";
   const [scrolled, setScrolled] = useState(false);
@@ -62,11 +63,38 @@ export function Navbar() {
         className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6"
         aria-label="Головна навігація"
       >
-        <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="DevqSpace" className="h-12 w-auto" />
-          <Wordmark className="text-lg" />
-        </Link>
+        <div className="flex items-center gap-2">
+          {pathname !== "/" &&
+            !pathname.startsWith("/catalog/") &&
+            !pathname.startsWith("/order/") && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    const sameOrigin =
+                      document.referrer &&
+                      new URL(document.referrer, window.location.href).origin ===
+                        window.location.origin;
+                    if (sameOrigin && window.history.length > 1) {
+                      router.back();
+                      return;
+                    }
+                  }
+                  router.push("/");
+                }}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface-2/60 text-muted-foreground transition-all hover:border-neon-blue/50 hover:bg-surface-2 hover:text-foreground active:scale-[0.95]"
+                title={t("back")}
+                aria-label={t("back")}
+              >
+                <ArrowLeft className="h-4 w-4 text-neon-blue" />
+              </button>
+            )}
+          <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="DevqSpace" className="h-12 w-auto" />
+            <Wordmark className="text-lg" />
+          </Link>
+        </div>
 
         <ul className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => (

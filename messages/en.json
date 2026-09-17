@@ -13,7 +13,8 @@
     "cases": "Cases",
     "about": "About",
     "custom": "Custom build",
-    "search": "Search"
+    "search": "Search",
+    "back": "Back"
   },
   "hero": {
     "status": "// MARKETPLACE READY",
@@ -155,6 +156,7 @@
     "ctaBtn": "Order custom"
   },
   "product": {
+    "back": "Back to catalog",
     "verified": "Verified",
     "sold": "sold",
     "descTitle": "Description",
@@ -230,6 +232,7 @@
     "contactBadPhone": "That number looks wrong. Example: +380 67 123 45 67"
   },
   "order": {
+    "back": "Back to product",
     "eyebrow": "// order",
     "headA": "Leave a",
     "headB": "request",

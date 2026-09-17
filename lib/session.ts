@@ -4,11 +4,20 @@ import { cookies } from "next/headers";
 
 export const ADMIN_COOKIE = "nexus_admin";
 
-const secretValue =
-  process.env.ADMIN_SESSION_SECRET ??
-  process.env.ADMIN_PASSWORD ??
-  "dev-insecure-secret-change-me";
-const key = new TextEncoder().encode(secretValue);
+function getSecretValue(): string {
+  const secret = process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "ADMIN_SESSION_SECRET or ADMIN_PASSWORD must be configured in production",
+      );
+    }
+    return "dev-insecure-secret-change-me";
+  }
+  return secret;
+}
+
+const key = new TextEncoder().encode(getSecretValue());
 
 const MAX_AGE = 7 * 24 * 60 * 60; // 7 днів у секундах
 

@@ -26,7 +26,7 @@ export default async function AdminProductsPage() {
           </h1>
         </div>
         <div className="shrink-0 flex items-center gap-2">
-          <ReseedButton />
+          {process.env.NODE_ENV !== "production" && <ReseedButton />}
           <Link
             href="/admin/products/new"
             className="flex items-center gap-2 bg-neon-blue text-black text-xs md:text-sm font-display font-bold px-4 py-2.5 rounded-lg active:scale-[0.98] transition-transform"

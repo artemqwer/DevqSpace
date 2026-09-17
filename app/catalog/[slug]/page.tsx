@@ -32,6 +32,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { SupportTgLink } from "@/components/site/SupportTgLink";
 import { Reviews } from "@/components/site/Reviews";
 import { BotDemo } from "@/components/site/BotDemo";
+import { BackButton } from "@/components/site/BackButton";
 
 export const dynamic = "force-dynamic";
 
@@ -72,18 +73,21 @@ export default async function ProductPage({ params }: Props) {
       <Navbar />
 
       <main className="relative mx-auto max-w-7xl px-4 pb-40 pt-24 md:px-8 md:pb-24 md:pt-32">
-        {/* Breadcrumbs */}
-        <nav className="mono-label mb-5 flex items-center gap-2 overflow-x-auto text-muted-foreground">
-          <Link href="/" className="shrink-0 transition-colors hover:text-foreground">
-            home
-          </Link>
-          <span className="shrink-0">/</span>
-          <Link href="/catalog" className="shrink-0 transition-colors hover:text-foreground">
-            catalog
-          </Link>
-          <span className="shrink-0">/</span>
-          <span className="truncate text-foreground/70">{product.slug}</span>
-        </nav>
+        {/* Navigation & Breadcrumbs */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <BackButton fallbackHref="/catalog" label={t("back")} />
+          <nav className="mono-label flex items-center gap-2 overflow-x-auto text-muted-foreground">
+            <Link href="/" className="shrink-0 transition-colors hover:text-foreground">
+              home
+            </Link>
+            <span className="shrink-0">/</span>
+            <Link href="/catalog" className="shrink-0 transition-colors hover:text-foreground">
+              catalog
+            </Link>
+            <span className="shrink-0">/</span>
+            <span className="truncate text-foreground/70">{product.slug}</span>
+          </nav>
+        </div>
 
         <div className="grid grid-cols-1 gap-6 md:gap-10 lg:grid-cols-[1.2fr_1fr]">
           {/* Left — visual + description */}
@@ -319,9 +323,9 @@ export default async function ProductPage({ params }: Props) {
         )}
       </main>
 
-      {/* Mobile sticky CTA bar */}
+      {/* Mobile / Tablet sticky CTA bar */}
       <div
-        className="fixed inset-x-0 bottom-16 z-40 px-3 pb-2 lg:hidden"
+        className="fixed inset-x-0 bottom-16 md:bottom-3 md:max-w-lg md:mx-auto z-40 px-3 pb-2 lg:hidden"
         style={{ paddingBottom: "max(env(safe-area-inset-bottom), 8px)" }}
       >
         <div className="glass flex items-center gap-2 rounded-2xl border border-border p-2 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)]">

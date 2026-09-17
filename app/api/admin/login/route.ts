@@ -1,6 +1,20 @@
 import { createSession, verifyPassword } from "@/lib/session";
+import { rateLimit } from "@/lib/store";
 
 export async function POST(req: Request) {
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown";
+
+  const allowed = await rateLimit(`adminlogin:${ip}`, 5, 300);
+  if (!allowed) {
+    return Response.json(
+      { ok: false, error: "Забагато спроб входу. Зачекайте 5 хвилин." },
+      { status: 429 },
+    );
+  }
+
   let body: { password?: string };
   try {
     body = (await req.json()) as { password?: string };

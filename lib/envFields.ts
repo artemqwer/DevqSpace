@@ -81,7 +81,7 @@ export function requiredFilled(fields: EnvField[], values: EnvValues): boolean {
 }
 
 // Значення, які треба брати в лапки: пробіли, #, лапки, службові символи.
-function quoteIfNeeded(value: string): string {
+export function quoteIfNeeded(value: string): string {
   if (!/[\s#"'$`\\]/.test(value)) return value;
   return `"${value.replace(/(["\\$`])/g, "\\$1")}"`;
 }
