@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DevqSpace — Звіт по розробці та стратегічний план</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07080d;
+      --surface: #0e1018;
+      --surface-card: #131622;
+      --surface-hover: #1b1e2e;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.16);
+      --neon-blue: #00f0ff;
+      --neon-purple: #b98cff;
+      --neon-green: #00ff66;
+      --neon-pink: #ff007a;
+      --text: #f0f2f8;
+      --text-muted: #8b92a5;
+      --text-dim: #5a6072;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 240, 255, 0.12), transparent),
+        radial-gradient(ellipse 60% 40% at 90% 40%, rgba(185, 140, 255, 0.08), transparent),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+      padding: 32px 20px 80px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    header {
+      border: 1px solid var(--border-strong);
+      background: rgba(14, 16, 24, 0.7);
+      backdrop-filter: blur(16px);
+      border-radius: 24px;
+      padding: 36px 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.7);
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple), var(--neon-green));
+    }
+    .tagline-row {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;
+    }
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(0, 255, 102, 0.1); border: 1px solid rgba(0, 255, 102, 0.3);
+      color: var(--neon-green); font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 999px;
+    }
+    .status-dot {
+      width: 8px; height: 8px; background: var(--neon-green); border-radius: 50%;
+      box-shadow: 0 0 10px var(--neon-green);
+    }
+    .timestamp { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); }
+    h1 {
+      font-family: 'Outfit', sans-serif; font-size: 38px; font-weight: 900;
+      letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 12px;
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, var(--neon-blue) 0%, #fff 50%, var(--neon-purple) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .subtitle { font-size: 16px; color: var(--text-muted); max-width: 840px; line-height: 1.6; }
+    .kpi-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px; margin-bottom: 32px;
+    }
+    .kpi-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 18px; padding: 22px; transition: all 0.2s ease;
+    }
+    .kpi-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+    .kpi-card.highlight {
+      border-color: rgba(0, 240, 255, 0.4);
+      background: linear-gradient(180deg, rgba(0, 240, 255, 0.05) 0%, var(--surface) 100%);
+    }
+    .kpi-label {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+    }
+    .kpi-val { font-family: 'Outfit', sans-serif; font-size: 34px; font-weight: 800; line-height: 1; margin-bottom: 6px; }
+    .kpi-val.green { color: var(--neon-green); }
+    .kpi-val.blue { color: var(--neon-blue); }
+    .kpi-val.purple { color: var(--neon-purple); }
+    .kpi-desc { font-size: 13px; color: var(--text-muted); }
+    .tabs-nav {
+      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px;
+      margin-bottom: 24px; border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text-muted); font-family: 'Outfit', sans-serif;
+      font-size: 14px; font-weight: 700; padding: 10px 20px;
+      border-radius: 12px; cursor: pointer; white-space: nowrap; transition: all 0.2s ease;
+    }
+    .tab-btn:hover { color: #fff; border-color: var(--border-strong); }
+    .tab-btn.active {
+      background: rgba(0, 240, 255, 0.12); border-color: var(--neon-blue);
+      color: var(--neon-blue); box-shadow: 0 0 20px rgba(0, 240, 255, 0.15);
+    }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 30px; margin-bottom: 24px;
+    }
+    .card-title {
+      font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 800;
+      color: #fff; margin-bottom: 8px; display: flex; align-items: center; gap: 12px;
+    }
+    .card-desc { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+    .demos-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px;
+    }
+    .demo-box {
+      background: var(--surface-card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 22px; display: flex; flex-direction: column;
+      justify-content: space-between; transition: all 0.2s ease;
+    }
+    .demo-box:hover {
+      border-color: rgba(0, 255, 102, 0.4); transform: translateY(-3px);
+      box-shadow: 0 15px 35px -10px rgba(0, 255, 102, 0.15);
+    }
+    .demo-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .demo-tag {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 3px 8px;
+      border-radius: 6px; background: rgba(255,255,255,0.06); color: var(--text-muted);
+    }
+    .demo-price { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800; color: #fff; }
+    .demo-name { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .demo-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px; }
+    .demo-tech { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+    .tech-pill {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px; background: rgba(0,0,0,0.4);
+      border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; color: #a0a6b8;
+    }
+    .demo-actions { display: flex; gap: 8px; }
+    .btn-demo {
+      flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      background: var(--neon-green); color: #000; font-family: 'Outfit', sans-serif;
+      font-size: 13px; font-weight: 800; text-decoration: none; padding: 10px 14px;
+      border-radius: 10px; transition: all 0.15s ease;
+    }
+    .btn-demo:hover { filter: brightness(1.15); transform: scale(1.02); }
+    .btn-card {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--surface-hover); border: 1px solid var(--border);
+      color: var(--text); font-size: 13px; font-weight: 600; text-decoration: none;
+      padding: 10px 14px; border-radius: 10px; transition: all 0.15s ease;
+    }
+    .btn-card:hover { border-color: var(--neon-blue); color: var(--neon-blue); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+    th {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase;
+      color: var(--text-muted); border-bottom: 1px solid var(--border-strong); padding: 12px 14px;
+    }
+    td { padding: 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .badge-ok {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(0, 255, 102, 0.1); color: var(--neon-green);
+      border: 1px solid rgba(0, 255, 102, 0.3); padding: 2px 8px; border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;
+    }
+    .badge-demo {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(0, 240, 255, 0.1); color: var(--neon-blue);
+      border: 1px solid rgba(0, 240, 255, 0.3); padding: 2px 8px; border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;
+    }
+    .script-box {
+      background: #08090f; border: 1px solid var(--border-strong);
+      border-radius: 14px; padding: 20px; margin-bottom: 20px;
+    }
+    .script-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .script-title { font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 700; color: var(--neon-blue); }
+    .btn-copy {
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      color: var(--text-muted); padding: 5px 12px; border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; cursor: pointer;
+    }
+    .btn-copy:hover { color: #fff; border-color: var(--neon-blue); }
+    .script-content {
+      font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.7;
+      color: #d1d5e3; white-space: pre-wrap; word-break: break-word;
+    }
+    .tier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 16px; }
+    .tier-card { background: var(--surface-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; position: relative; }
+    .tier-card.featured {
+      border-color: var(--neon-blue);
+      background: linear-gradient(180deg, rgba(0, 240, 255, 0.08) 0%, var(--surface-card) 100%);
+    }
+    .tier-name { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .tier-cost { font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 900; color: var(--neon-green); margin-bottom: 12px; }
+    .tier-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+    footer {
+      text-align: center; margin-top: 48px; padding-top: 24px;
+      border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; color: var(--text-dim);
+    }
+    footer a { color: var(--neon-blue); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="tagline-row">
+        <div class="status-badge"><span class="status-dot"></span> ПОВНИЙ РЕЛІЗ · ВСІ 34 ТОВАРИ ГОТОВІ ДО ПРОДАЖУ</div>
+        <div class="timestamp">DevqSpace v2.4 · 17.09.2026</div>
+      </div>
+      <h1>Звіт про виконану роботу <span class="gradient-text">&amp; Стратегічний план</span></h1>
+      <p class="subtitle">
+        Детальний огляд оновлень платформи для засновників та партнерів: готовність 100% асортименту (0 фантомів), інтерактивні демо-стенди, апсели на чекауті, розширені платіжні шлюзи та покроковий маркетинговий план запуску.
+      </p>
+    </header>
+
+    <div class="kpi-grid">
+      <div class="kpi-card highlight">
+        <div class="kpi-label">Реальний інвентар</div>
+        <div class="kpi-val green">34 / 34</div>
+        <div class="kpi-desc">100% товарів прив'язані до ZIP-архівів у Vercel Blob (0 порожніх карток).</div>
+      </div>
+      <div class="kpi-card highlight">
+        <div class="kpi-label">Інтерактивні Live Demos</div>
+        <div class="kpi-val blue">11 стендів</div>
+        <div class="kpi-desc">Живі веб-додатки та шаблони з емулятором Desktop/Tablet/Mobile.</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Новий середній чек (Апсели)</div>
+        <div class="kpi-val purple">+$39 / +$15</div>
+        <div class="kpi-desc">Встановлення під ключ (+$39) або керований VPS-хостинг (+$15/міс).</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Платіжні канали</div>
+        <div class="kpi-val">5 методів</div>
+        <div class="kpi-desc">Картки (UAH / USD), Криптовалюта (USDT/TON), Monobank-банка, Paddle.</div>
+      </div>
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('tab-overview')">1. Головні досягнення</button>
+      <button class="tab-btn" onclick="switchTab('tab-demos')">2. Де знайти Live Demos (11)</button>
+      <button class="tab-btn" onclick="switchTab('tab-upsell')">3. Апсели та Монетизація</button>
+      <button class="tab-btn" onclick="switchTab('tab-catalog')">4. Реєстр 34 продуктів</button>
+      <button class="tab-btn" onclick="switchTab('tab-outreach')">5. Аутріч блогерів &amp; Трафік</button>
+      <button class="tab-btn" onclick="switchTab('tab-finance')">6. Фінанси 50/50</button>
+    </div>
+
+    <!-- TAB 1 -->
+    <div id="tab-overview" class="tab-pane active">
+      <div class="card">
+        <h2 class="card-title">🚀 Що конкретно реалізовано за дану сесію</h2>
+        <p class="card-desc">Ключові технічні, продуктові та юридичні оновлення платформи.</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+          <div style="background: var(--surface-card); border: 1px solid var(--border); padding: 18px; border-radius: 14px;">
+            <div style="font-weight: 700; color: var(--neon-green); margin-bottom: 6px;">📦 100% Реальний каталог (34 товари)</div>
+            <div style="font-size: 13px; color: var(--text-muted);">Повністю ліквідовано продаж «фантомів». Усі 34 позиції мають справжні ZIP-архіви, протестовані на розгортання, з інструкціями README та підстановкою .env при купівлі.</div>
+          </div>
+          <div style="background: var(--surface-card); border: 1px solid var(--border); padding: 18px; border-radius: 14px;">
+            <div style="font-weight: 700; color: var(--neon-blue); margin-bottom: 6px;">🎮 Повноцінний Live Demo Hub</div>
+            <div style="font-size: 13px; color: var(--text-muted);">Створено окремий розділ <a href="https://www.devq.space/demo" target="_blank" style="color:var(--neon-blue);">/demo</a> та прямі стенди для всіх Web/SaaS і шаблонів. Тепер клієнт клацає реальний інтерфейс перед оплатою.</div>
+          </div>
+          <div style="background: var(--surface-card); border: 1px solid var(--border); padding: 18px; border-radius: 14px;">
+            <div style="font-weight: 700; color: var(--neon-purple); margin-bottom: 6px;">💰 Двигун послуг на чекауті (Апсели)</div>
+            <div style="font-size: 13px; color: var(--text-muted);">Клієнт може докупити послугу встановлення (+ $39) або щомісячний VPS (+ $15/міс). Вартість динамічно перераховується у картках, банці Монобанку та крипті.</div>
+          </div>
+          <div style="background: var(--surface-card); border: 1px solid var(--border); padding: 18px; border-radius: 14px;">
+            <div style="font-weight: 700; color: #fff; margin-bottom: 6px;">🛡️ Захист від 429 та межі підтримки</div>
+            <div style="font-size: 13px; color: var(--text-muted);">Адмінка підтримує авторизацію через x-admin-key (масові завантаження без блокувань). В оферті та на картках чітко розмежовано: фікс багів = безкоштовно; нові фічі = платно.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2 -->
+    <div id="tab-demos" class="tab-pane">
+      <div class="card">
+        <h2 class="card-title">🎮 Де знайти Live Demos та як їх відкрити</h2>
+        <p class="card-desc">Ми інтегрували посилання на інтерактивні стенди у 4 ключові точки сайту:</p>
+        <div style="background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 14px; padding: 16px; margin-bottom: 24px; font-size: 13.5px;">
+          <b>Точки входу на живому сайті:</b><br>
+          1. <b>Головне меню сайту (Header):</b> Кнопка <b>«Live Демо»</b> у навігації веде на єдиний хаб <a href="https://www.devq.space/demo" target="_blank" style="color:var(--neon-blue); font-weight:700;">/demo</a>.<br>
+          2. <b>Каталог товарів (/catalog):</b> Кожна картка товару з демо має зелений бейдж <b>«Live Demo»</b> та окрему кнопку <b>«Demo»</b>.<br>
+          3. <b>Сторінка товару (/catalog/[slug]):</b> Великий промо-банер над описом товару + кнопка у правому блоці замовлення + кнопка у мобільній плашці.<br>
+          4. <b>Прямий URL:</b> Будь-яке демо доступне за адресою <code style="color:var(--neon-green)">/demo/{slug}</code>.
+        </div>
+
+        <div class="demos-grid">
+          <div class="demo-box">
+            <div>
+              <div class="demo-header"><span class="demo-tag">Web / SaaS</span><span class="demo-price">$49</span></div>
+              <div class="demo-name">CyberDash Admin Panel</div>
+              <div class="demo-desc">Кіберпанк дашборд моніторингу нод, серверної телеметрії та аналітики мережі.</div>
+              <div class="demo-tech"><span class="tech-pill">Next.js 15</span><span class="tech-pill">Tailwind</span><span class="tech-pill">Recharts</span></div>
+            </div>
+            <div class="demo-actions"><a href="https://www.devq.space/demo/cyberdash-admin" target="_blank" class="btn-demo">Запустити Live Demo</a></div>
+          </div>
+          <div class="demo-box">
+            <div>
+              <div class="demo-header"><span class="demo-tag">Шаблони / UI</span><span class="demo-price">$39</span></div>
+              <div class="demo-name">SaaS Multi-Archetype Kit</div>
+              <div class="demo-desc">5 конверсійних SaaS-архетипів: AI, DevTools, FinTech, Marketing, Workspace.</div>
+              <div class="demo-tech"><span class="tech-pill">Next.js 15</span><span class="tech-pill">Framer Motion</span></div>
+            </div>
+            <div class="demo-actions"><a href="https://www.devq.space/demo/saas-landing-kit" target="_blank" class="btn-demo">Запустити Live Demo</a></div>
+          </div>
+          <div class="demo-box">
+            <div>
+              <div class="demo-header"><span class="demo-tag">Web3</span><span class="demo-price">$45</span></div>
+              <div class="demo-name">Crypto Presale &amp; Staking</div>
+              <div class="demo-desc">Темний Web3-лендинг із таймером раундів, токеномікою та модалкою гаманців.</div>
+              <div class="demo-tech"><span class="tech-pill">Web3.js</span><span class="tech-pill">Next.js</span></div>
+            </div>
+            <div class="demo-actions"><a href="https://www.devq.space/demo/crypto-landing" target="_blank" class="btn-demo">Запустити Live Demo</a></div>
+          </div>
+          <div class="demo-box">
+            <div>
+              <div class="demo-header"><span class="demo-tag">Шаблони / UI</span><span class="demo-price">$49</span></div>
+              <div class="demo-name">E-Commerce NextStore</div>
+              <div class="demo-desc">Сучасна вітрина товарів з кошиком, фільтрами та Stripe Checkout.</div>
+              <div class="demo-tech"><span class="tech-pill">Stripe API</span><span class="tech-pill">Prisma SQLite</span></div>
+            </div>
+            <div class="demo-actions"><a href="https://www.devq.space/demo/ecommerce-template" target="_blank" class="btn-demo">Запустити Live Demo</a></div>
+          </div>
+          <div class="demo-box">
+            <div>
+              <div class="demo-header"><span class="demo-tag">Шаблони / UI</span><span class="demo-price">$29</span></div>
+              <div class="demo-name">Portfolio Pro Studio</div>
+              <div class="demo-desc">Мінімалістичне портфоліо для дизайнерів та студій з модалками кейсів.</div>
+              <div class="demo-tech"><span class="tech-pill">Sanity CMS</span><span class="tech-pill">Tailwind</span></div>
+            </div>
+            <div class="demo-actions"><a href="https://www.devq.space/demo/portfolio-pro" target="_blank" class="btn-demo">Запустити Live Demo</a></div>
+          </div>
+          <div class="demo-box">
+            <div>
+              <div class="demo-header"><span class="demo-tag">Шаблони / UI</span><span class="demo-price">$45</span></div>
+              <div class="demo-name">Creative Agency Showcase</div>
+              <div class="demo-desc">Агенційне портфоліо з інтерактивним калькулятором бюджету проєкту.</div>
+              <div class="demo-tech"><span class="tech-pill">Budget Calc</span><span class="tech-pill">Next.js</span></div>
+            </div>
+            <div class="demo-actions"><a href="https://www.devq.space/demo/agency-template" target="_blank" class="btn-demo">Запустити Live Demo</a></div>
+          </div>
+          <div class="demo-box">
+            <div>
+              <div class="demo-header"><span class="demo-tag">Web / SaaS</span><span class="demo-price">$49</span></div>
+              <div class="demo-name">React CRM Starter</div>
+              <div class="demo-desc">Компактна CRM з інтерактивною канбан-дошкою угод та аналітикою лідів.</div>
+              <div class="demo-tech"><span class="tech-pill">React 19</span><span class="tech-pill">Kanban UI</span></div>
+            </div>
+            <div class="demo-actions"><a href="https://www.devq.space/demo/react-crm-starter" target="_blank" class="btn-demo">Запустити Live Demo</a></div>
+          </div>
+          <div class="demo-box">
+            <div>
+              <div class="demo-header"><span class="demo-tag">Шаблони / UI</span><span class="demo-price">$25</span></div>
+              <div class="demo-name">Responsive Email Pack</div>
+              <div class="demo-desc">12 адаптивних HTML/MJML email-шаблонів (транзакційні та промо).</div>
+              <div class="demo-tech"><span class="tech-pill">MJML</span><span class="tech-pill">Dark/Light</span></div>
+            </div>
+            <div class="demo-actions"><a href="https://www.devq.space/demo/email-templates" target="_blank" class="btn-demo">Запустити Live Demo</a></div>
+          </div>
+          <div class="demo-box">
+            <div>
+              <div class="demo-header"><span class="demo-tag">Web3</span><span class="demo-price">$99</span></div>
+              <div class="demo-name">Solana Sniper Terminal</div>
+              <div class="demo-desc">Термінал відстеження ліквідності Raydium та Pump.fun наживо через WS.</div>
+              <div class="demo-tech"><span class="tech-pill">Solana Web3</span><span class="tech-pill">Jito Bundles</span></div>
+            </div>
+            <div class="demo-actions"><a href="https://www.devq.space/demo/solana-sniper-bot" target="_blank" class="btn-demo">Запустити Live Demo</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3 -->
+    <div id="tab-upsell" class="tab-pane">
+      <div class="card">
+        <h2 class="card-title">💎 Нова модель заробітку: 3 тарифи поставки товару</h2>
+        <p class="card-desc">Тепер при замовленні будь-якого продукту покупець обирає формат поставки:</p>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <div class="tier-name">1. Лише вихідний код</div>
+            <div class="tier-cost">Базова ціна</div>
+            <div class="tier-desc">Клієнт отримує чистий персональний ZIP-архів із підставленими .env ключами та інструкцією для самостійного деплою. Наша підтримка консультує по запуску.</div>
+          </div>
+          <div class="tier-card featured">
+            <div class="tier-name">2. Встановлення під ключ</div>
+            <div class="tier-cost">+ $39 до суми</div>
+            <div class="tier-desc">Наш черговий інженер підключається до VPS/сервера клієнта, налаштовує оточення, деплоїть бота чи веб-додаток і передає повністю робоче рішення.</div>
+          </div>
+          <div class="tier-card">
+            <div class="tier-name">3. Керований VPS хостинг</div>
+            <div class="tier-cost">+ $15 / міс</div>
+            <div class="tier-desc">Ми розгортаємо продукт на наших хмарних потужностях. Моніторинг 24/7, перезапуск при збоях, захист від DDoS, автоматичні бекапи.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4 -->
+    <div id="tab-catalog" class="tab-pane">
+      <div class="card">
+        <h2 class="card-title">📦 Повний реєстр продуктів платформи (34 позиції)</h2>
+        <p class="card-desc">Всі товари знаходяться в продажу і мають робочі архіви у хмарі Vercel Blob (Без архіву: 0).</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Продукт</th><th>Категорія</th><th>Стек</th><th>Ціна</th><th>Архів</th><th>Live Demo</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><b>CyberDash Admin</b></td><td>Web / SaaS</td><td>Next.js 15, Tailwind, Recharts</td><td>$49</td><td><span class="badge-ok">✓ Завантажено</span></td><td><span class="badge-demo">Live Demo</span></td></tr>
+              <tr><td><b>SaaS Landing Kit</b></td><td>Шаблони / UI</td><td>Next.js 15, Framer Motion</td><td>$39</td><td><span class="badge-ok">✓ Завантажено</span></td><td><span class="badge-demo">Live Demo</span></td></tr>
+              <tr><td><b>Crypto Presale Landing</b></td><td>Web3</td><td>Next.js, Web3.js, Lucide</td><td>$45</td><td><span class="badge-ok">✓ Завантажено</span></td><td><span class="badge-demo">Live Demo</span></td></tr>
+              <tr><td><b>E-Commerce NextStore</b></td><td>Шаблони / UI</td><td>Next.js 15, Stripe, Prisma</td><td>$49</td><td><span class="badge-ok">✓ Завантажено</span></td><td><span class="badge-demo">Live Demo</span></td></tr>
+              <tr><td><b>Portfolio Pro Studio</b></td><td>Шаблони / UI</td><td>Next.js 15, Sanity CMS</td><td>$29</td><td><span class="badge-ok">✓ Завантажено</span></td><td><span class="badge-demo">Live Demo</span></td></tr>
+              <tr><td><b>Creative Agency Showcase</b></td><td>Шаблони / UI</td><td>Next.js 15, Tailwind</td><td>$45</td><td><span class="badge-ok">✓ Завантажено</span></td><td><span class="badge-demo">Live Demo</span></td></tr>
+              <tr><td><b>React CRM Starter</b></td><td>Web / SaaS</td><td>React 19, TS, Kanban</td><td>$49</td><td><span class="badge-ok">✓ Завантажено</span></td><td><span class="badge-demo">Live Demo</span></td></tr>
+              <tr><td><b>Responsive Email Pack</b></td><td>Шаблони / UI</td><td>HTML5, MJML, Tailwind</td><td>$25</td><td><span class="badge-ok">✓ Завантажено</span></td><td><span class="badge-demo">Live Demo</span></td></tr>
+              <tr><td><b>Solana Sniper Bot</b></td><td>Web3</td><td>TypeScript, Jito, WS</td><td>$99</td><td><span class="badge-ok">✓ Завантажено</span></td><td><span class="badge-demo">Live Demo</span></td></tr>
+              <tr><td><b>Telegram Shop Bot</b></td><td>Telegram боти</td><td>Python, Aiogram 3, SQLite</td><td>$49</td><td><span class="badge-ok">✓ Завантажено</span></td><td><span class="badge-ok">TG Emulator</span></td></tr>
+              <tr><td><b>AI Content Assistant Bot</b></td><td>Telegram боти</td><td>Python, OpenAI, Aiogram</td><td>$59</td><td><span class="badge-ok">✓ Завантажено</span></td><td><span class="badge-ok">TG Emulator</span></td></tr>
+              <tr><td><b>+23 інших рішень</b></td><td>Усі категорії</td><td>Node.js, React Native, Python</td><td>$25-$99</td><td><span class="badge-ok">✓ Завантажено</span></td><td><span class="badge-ok">Готово</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5 -->
+    <div id="tab-outreach" class="tab-pane">
+      <div class="card">
+        <h2 class="card-title">📢 Маркетинговий план &amp; Готові скрипти для блогерів</h2>
+        <p class="card-desc">Скопіюйте ці повідомлення та відправляйте адмінам Telegram-каналів і IT-блогерам:</p>
+        <div class="script-box">
+          <div class="script-header">
+            <div class="script-title">Скрипт 1: Пропозиція огляду / Бартер (Найвищий шанс згоди)</div>
+            <button class="btn-copy" onclick="copyText('s1')">Скопіювати</button>
+          </div>
+          <div id="s1" class="script-content">Привіт, [Ім'я або назва каналу]! 
+
+Слідкую за твоїм каналом, дуже крутий контент для нашої IT-спільноти. 
+Ми з командою запустили DevqSpace (https://www.devq.space) — український маркетплейс готових цифрових рішень: Telegram-ботів, CRM, AI-модулів та мікро-SaaS з миттєвим деплоєм та відкритим кодом.
+
+Хочемо запропонувати взаємну колаборацію: ми даємо тобі безкоштовний повний доступ до будь-якого нашого продукту (для особистого використання, автоматизації твого каналу або бізнесу), а ти зробиш чесний огляд чи короткий пост про нас у себе на каналі. 
+
+Також можемо надати промокод зі знижкою 15% ексклюзивно для твоїх підписників. 
+Як дивишся на такий формат?</div>
+        </div>
+
+        <div class="script-box">
+          <div class="script-header">
+            <div class="script-title">Скрипт 2: Партнерська комісія 30% (Для каналів про фріланс/арбітраж)</div>
+            <button class="btn-copy" onclick="copyText('s2')">Скопіювати</button>
+          </div>
+          <div id="s2" class="script-content">Привіт, [Ім'я]!
+
+Бачу у тебе дуже активна та цільова аудиторія підприємців та розробників. 
+Ми розвиваємо платформу цифрових продуктів DevqSpace (https://www.devq.space) і хочемо запропонувати тобі довгострокове партнерство:
+
+Ми даємо тобі персональне реферальне посилання (або промокод для каналу) і платимо 30% з кожного продажу, здійсненого за твоєю рекомендацією. При середньому чеку $40-$80 це $12-$25 чистого пасивного доходу з одного замовлення (а також відсоток від подальших налаштувань).
+
+Всі замовлення фіксуються прозоро, виплати — на карту Monobank або USDT в той же день.
+Якщо цікаво протестувати — маякни, скину посилання та підготуємо готовий пост!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6 -->
+    <div id="tab-finance" class="tab-pane">
+      <div class="card">
+        <h2 class="card-title">⚖️ Регламент фінансового обліку та розподілу прибутку (50 / 50)</h2>
+        <p class="card-desc">Прозорий щотижневий взаємозалік між криптовалютою та гривневими рахунками:</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+          <div style="background: var(--surface-card); border: 1px solid var(--border); border-radius: 14px; padding: 20px;">
+            <div style="font-weight: 700; color: #fff; margin-bottom: 8px;">1. Повна синхронізація</div>
+            <p style="font-size: 13px; color: var(--text-muted);">Кожне замовлення в реальному часі відправляється в спільний Telegram-чат сповіщень та дублюється в адмінці /admin/orders із номером, сумою та обраним тарифом.</p>
+          </div>
+          <div style="background: var(--surface-card); border: 1px solid var(--border); border-radius: 14px; padding: 20px;">
+            <div style="font-weight: 700; color: var(--neon-green); margin-bottom: 8px;">2. Чистий прибуток</div>
+            <p style="font-size: 13px; color: var(--text-muted);">Чистий дохід = сума замовлення мінус комісія еквайрингу (1-2%). Додаткові $15/міс за послугу хостингу частково покривають собівартість VPS (~$4), решта — чиста маржа ($11).</p>
+          </div>
+          <div style="background: var(--surface-card); border: 1px solid var(--border); border-radius: 14px; padding: 20px;">
+            <div style="font-weight: 700; color: var(--neon-blue); margin-bottom: 8px;">3. Щонедільна звірка</div>
+            <p style="font-size: 13px; color: var(--text-muted);">Щонеділі підсумовуються надходження на банк Monobank (UAH) та криптогаманці (USDT). Проводиться взаємозалік різниці за офіційним курсом, щоб частки складали рівно 50% на 50%.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      DevqSpace &copy; 2026 · Маркетплейс готових цифрових рішень · <a href="https://www.devq.space" target="_blank">devq.space</a>
+    </footer>
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      const target = document.getElementById(tabId);
+      if (target) target.classList.add('active');
+      const clickedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('onclick').includes(tabId));
+      if (clickedBtn) clickedBtn.classList.add('active');
+    }
+    function copyText(elemId) {
+      const text = document.getElementById(elemId).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Текст скрипта скопійовано в буфер обміну!');
+      });
+    }
+  </script>
+</body>
+</html>

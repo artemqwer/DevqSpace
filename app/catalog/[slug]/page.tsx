@@ -139,6 +139,34 @@ export default async function ProductPage({ params }: Props) {
               </div>
             </div>
 
+            {/* Live Demo Showcase Banner (Web/SaaS & Templates) */}
+            {product.demoUrl && (
+              <div className="mt-5 rounded-2xl border border-neon-green/40 bg-gradient-to-r from-neon-green/15 via-surface-2/60 to-surface p-4.5 md:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-[0_0_30px_-10px_rgba(0,255,102,0.15)]">
+                <div>
+                  <div className="flex items-center gap-2 text-[11px] font-mono font-bold text-neon-green uppercase tracking-wider">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon-green opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-neon-green"></span>
+                    </span>
+                    Live Demo Online
+                  </div>
+                  <h3 className="mt-1 text-base font-display font-bold text-white">
+                    Спробуйте інтерактивне демо наживо
+                  </h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Повноцінний прев’ю-стенд з перемиканням екранів (ПК / Планшет / Мобільний)
+                  </p>
+                </div>
+                <Link
+                  href={product.demoUrl}
+                  className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-neon-green text-black px-5 py-3 text-sm font-display font-bold shadow-[0_0_20px_rgba(0,255,102,0.3)] hover:brightness-110 active:scale-95 transition-all"
+                >
+                  <Play weight="fill" className="h-4 w-4" />
+                  Відкрити Live Demo
+                </Link>
+              </div>
+            )}
+
             {/* Description */}
             <Section title={t("descTitle")}>
               <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
@@ -353,6 +381,15 @@ export default async function ProductPage({ params }: Props) {
               ${product.price}
             </div>
           </div>
+          {product.demoUrl && (
+            <Link
+              href={product.demoUrl}
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-neon-green/40 bg-neon-green/15 px-4 py-3 text-sm font-bold text-neon-green"
+            >
+              <Play weight="fill" className="h-4 w-4" />
+              Demo
+            </Link>
+          )}
           <Link
             href={`/order/${product.slug}`}
             className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-neon-blue to-neon-purple px-5 py-3 text-sm font-semibold text-primary-foreground"

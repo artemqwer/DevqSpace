@@ -285,6 +285,13 @@ async function ensureSeeded(): Promise<void> {
     await backfillDemoScripts();
     await redis.set("seed:demoScripts:v1", 1);
   }
+  // Бекфіл demoUrl: додає посилання на /demo/[slug] із сіду, якщо в Redis
+  // товар ще не має demoUrl (бо був засіяний раніше).
+  const doneUrls = await redis.get("seed:demoUrls:v1");
+  if (!doneUrls) {
+    await backfillDemoUrls();
+    await redis.set("seed:demoUrls:v1", 1);
+  }
 }
 
 // Додає demoScript із сіду до наявних товарів, у яких його ще немає.
@@ -316,6 +323,35 @@ export async function backfillDemoScripts(): Promise<number> {
   return n;
 }
 
+// Додає demoUrl із сіду до наявних товарів, у яких його ще немає.
+// Ідемпотентно; решту полів товару не чіпає. Повертає, скільки оновлено.
+export async function backfillDemoUrls(): Promise<number> {
+  const seeded = SEED_PRODUCTS.filter((p) => p.demoUrl);
+  let n = 0;
+  const redis = getRedis();
+  if (!redis) {
+    const m = mem();
+    for (const s of seeded) {
+      const cur = m.products.get(s.slug);
+      if (cur && !cur.demoUrl) {
+        cur.demoUrl = s.demoUrl;
+        n++;
+      }
+    }
+    if (n) touch();
+    return n;
+  }
+  for (const s of seeded) {
+    const cur = await redis.get<Product>(K.product(s.slug));
+    if (cur && !cur.demoUrl) {
+      cur.demoUrl = s.demoUrl;
+      await redis.set(K.product(s.slug), cur);
+      n++;
+    }
+  }
+  return n;
+}
+
 // =====================================================================
 // Products
 // =====================================================================
@@ -323,14 +359,26 @@ export async function backfillDemoScripts(): Promise<number> {
 export async function getAllProducts(): Promise<Product[]> {
   await ensureSeeded();
   const redis = getRedis();
+  let list: Product[];
   if (!redis) {
-    return [...mem().products.values()];
+    list = [...mem().products.values()];
+  } else {
+    const slugs = await redis.smembers(K.productSlugs);
+    if (!slugs.length) return [];
+    const keys = slugs.map((s) => K.product(s));
+    const rows = await redis.mget<Product[]>(...keys);
+    list = rows.filter((r): r is Product => Boolean(r));
   }
-  const slugs = await redis.smembers(K.productSlugs);
-  if (!slugs.length) return [];
-  const keys = slugs.map((s) => K.product(s));
-  const rows = await redis.mget<Product[]>(...keys);
-  return rows.filter((r): r is Product => Boolean(r));
+  for (const p of list) {
+    const seed = SEED_PRODUCTS.find((s) => s.slug === p.slug);
+    if (seed) {
+      if (seed.demoUrl && !p.demoUrl) p.demoUrl = seed.demoUrl;
+      if (seed.demoScript?.length && (!p.demoScript || p.demoScript.length === 0)) {
+        p.demoScript = seed.demoScript;
+      }
+    }
+  }
+  return list;
 }
 
 export async function getProductBySlug(
@@ -338,9 +386,16 @@ export async function getProductBySlug(
 ): Promise<Product | null> {
   await ensureSeeded();
   const redis = getRedis();
-  if (!redis) return mem().products.get(slug) ?? null;
-  const p = await redis.get<Product>(K.product(slug));
-  return p ?? null;
+  const p = redis ? await redis.get<Product>(K.product(slug)) : mem().products.get(slug);
+  if (!p) return null;
+  const seed = SEED_PRODUCTS.find((s) => s.slug === slug);
+  if (seed) {
+    if (seed.demoUrl && !p.demoUrl) p.demoUrl = seed.demoUrl;
+    if (seed.demoScript?.length && (!p.demoScript || p.demoScript.length === 0)) {
+      p.demoScript = seed.demoScript;
+    }
+  }
+  return p;
 }
 
 export async function saveProduct(product: Product): Promise<void> {

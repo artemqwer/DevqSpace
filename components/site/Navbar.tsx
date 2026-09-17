@@ -9,6 +9,7 @@ import { Wordmark } from "./Wordmark";
 
 const navLinks = [
   { key: "catalog", href: "/catalog" },
+  { key: "demos", href: "/demo" },
   { key: "categories", href: "/categories" },
   { key: "cases", href: "/cases" },
   { key: "about", href: "/about" },

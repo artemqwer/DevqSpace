@@ -22,6 +22,12 @@ export function ProductCard({ product }: { product: Product }) {
             {product.badge}
           </span>
         )}
+        {product.demoUrl && (
+          <span className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full border border-neon-green/40 bg-black/70 px-2.5 py-1 text-[0.68rem] font-bold text-neon-green backdrop-blur">
+            <span className="h-1.5 w-1.5 rounded-full bg-neon-green animate-pulse" />
+            Live Demo
+          </span>
+        )}
       </Link>
 
       <div className="flex flex-1 flex-col p-4">
@@ -66,12 +72,22 @@ export function ProductCard({ product }: { product: Product }) {
           <div className="font-display text-lg font-bold text-foreground">
             ${product.price}
           </div>
-          <Link
-            href={`/order/${product.slug}`}
-            className="rounded-lg border border-border-strong bg-surface-2 px-3.5 py-2 text-xs font-semibold text-foreground transition-colors group-hover:border-neon-blue/50 group-hover:text-neon-blue"
-          >
-            {t("buy")}
-          </Link>
+          <div className="flex items-center gap-2">
+            {product.demoUrl && (
+              <Link
+                href={product.demoUrl}
+                className="rounded-lg border border-neon-green/40 bg-neon-green/10 px-3 py-2 text-xs font-semibold text-neon-green transition-colors hover:bg-neon-green/20"
+              >
+                Demo
+              </Link>
+            )}
+            <Link
+              href={`/order/${product.slug}`}
+              className="rounded-lg border border-border-strong bg-surface-2 px-3.5 py-2 text-xs font-semibold text-foreground transition-colors group-hover:border-neon-blue/50 group-hover:text-neon-blue"
+            >
+              {t("buy")}
+            </Link>
+          </div>
         </div>
       </div>
     </article>
