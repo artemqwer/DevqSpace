@@ -290,6 +290,15 @@ export default async function ProductPage({ params }: Props) {
                 <strong className="text-foreground">{t("safeTitle")}</strong> {t("safeText")}
               </div>
             </div>
+
+            <div className="mt-3 rounded-xl border border-border bg-surface-2/30 p-3.5 text-xs text-muted-foreground">
+              <div className="mb-1 font-semibold text-foreground flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 text-neon-blue" />
+                {t("supportScopeTitle")}
+              </div>
+              <p className="leading-relaxed mb-1">{t("supportScopeIncluded")}</p>
+              <p className="text-[11px] text-muted-foreground/80">{t("supportScopeCustom")}</p>
+            </div>
           </aside>
 
           {/* Mobile details list */}
@@ -304,6 +313,15 @@ export default async function ProductPage({ params }: Props) {
               />
               <InfoRow icon={<ArrowsClockwise />} label={t("updates")} value={t("updatesV")} />
               <InfoRow icon={<Code />} label={t("source")} value={t("sourceV")} />
+            </div>
+
+            <div className="mt-3 rounded-xl border border-border bg-surface-2/30 p-3.5 text-xs text-muted-foreground">
+              <div className="mb-1 font-semibold text-foreground flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 text-neon-blue" />
+                {t("supportScopeTitle")}
+              </div>
+              <p className="leading-relaxed mb-1">{t("supportScopeIncluded")}</p>
+              <p className="text-[11px] text-muted-foreground/80">{t("supportScopeCustom")}</p>
             </div>
           </aside>
         </div>

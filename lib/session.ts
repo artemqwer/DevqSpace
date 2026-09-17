@@ -1,6 +1,6 @@
 import "server-only";
 import { SignJWT, jwtVerify } from "jose";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 export const ADMIN_COOKIE = "nexus_admin";
 
@@ -44,6 +44,28 @@ export async function destroySession(): Promise<void> {
 }
 
 export async function getSession(): Promise<boolean> {
+  // 1. Пряма автентифікація через API-ключ або пароль у заголовках (для скриптів та автоматизації)
+  try {
+    const headerList = await headers();
+    const rawAuth =
+      headerList.get("x-admin-key") ||
+      headerList.get("authorization")?.replace(/^Bearer\s+/i, "");
+    if (rawAuth) {
+      const auth = rawAuth.trim();
+      const expectedPassword = process.env.ADMIN_PASSWORD;
+      const expectedSecret = process.env.ADMIN_SESSION_SECRET;
+      if (
+        (expectedPassword && auth === expectedPassword) ||
+        (expectedSecret && auth === expectedSecret)
+      ) {
+        return true;
+      }
+    }
+  } catch {
+    // headers() може бути недоступний у деяких статичних контекстах
+  }
+
+  // 2. Автентифікація через сесійну cookie адмінки
   const cookieStore = await cookies();
   const token = cookieStore.get(ADMIN_COOKIE)?.value;
   if (!token) return false;

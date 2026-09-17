@@ -81,11 +81,11 @@
     "eyebrow": "// warranty & security",
     "title": "Buy with confidence",
     "g1t": "1-year warranty",
-    "g1d": "We fix bugs and support the product for a year after handover.",
+    "g1d": "We fix source code bugs and help with launch via README. Custom features for clients are available separately via custom dev.",
     "g2t": "Secure payment",
     "g2d": "Pay by card or crypto. Transparent invoices, no hidden fees.",
     "g3t": "Support",
-    "g3d": "Help with deployment and setup, consultations after launch.",
+    "g3d": "Consultations on initial launch and environment setup according to documentation.",
     "g4t": "Updates",
     "g4d": "Free updates of ready-made products within the current version."
   },
@@ -179,7 +179,10 @@
     "demo": "Try the demo",
     "license": "Licence",
     "repoIncluded": "Private repository access",
-    "fresh": "New"
+    "fresh": "New",
+    "supportScopeTitle": "Warranty & support scope:",
+    "supportScopeIncluded": "Setup assistance via README and bug fixes for the source code.",
+    "supportScopeCustom": "Custom features and business modifications are available via custom dev."
   },
   "custom": {
     "eyebrow": "// custom development",
@@ -401,7 +404,7 @@
       "h5": "5. Licence",
       "b5": "The Buyer receives a non-exclusive, perpetual licence to use and modify the code in their own projects. Reselling, publishing the code publicly or passing it to third parties as a standalone product is prohibited. Exclusive proprietary rights remain with the Seller.",
       "h6": "6. Warranty and support",
-      "b6": "The Seller warrants that the product works as described on its product page. The support period is stated on each product card. The warranty does not cover faults caused by the Buyer's own changes to the code, or the behaviour of third-party services (Telegram, payment systems, hosting).",
+      "b6": "The Seller warrants that the product functions as described on its product page. Support includes: consultations on initial setup via the README guide and bug fixes for the original source code during the warranty period. Support does NOT include: developing new features, modifying business logic to Buyer's individual specifications, or integrating third-party services outside product description (such work is quoted separately via devq.space/custom). Warranty is voided if the Buyer modifies source code independently or due to outages of third-party platforms (Telegram, hosting, payment gateways).",
       "h7": "7. Liability",
       "b7": "The Seller is not liable for lost profit or indirect damages related to the use of the product. The Seller's liability is limited to the amount paid for the particular product.",
       "h8": "8. Company details",
