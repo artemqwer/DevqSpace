@@ -12,6 +12,7 @@ type Body = {
   message?: string;
   company?: string; // honeypot
   envValues?: Record<string, string>;
+  customPrice?: number;
 };
 
 
@@ -60,7 +61,12 @@ export async function POST(req: Request) {
   }
 
   const message = (body.message ?? "").trim();
-  const amountUah = await usdToUah(product.price);
+  const rawCustom = typeof body.customPrice === "number" ? body.customPrice : undefined;
+  const effectivePrice =
+    rawCustom && (rawCustom === product.price || rawCustom === product.price + 39 || rawCustom === product.price + 15)
+      ? rawCustom
+      : product.price;
+  const amountUah = await usdToUah(effectivePrice);
 
   // Ті самі перевірки .env, що й у крипто-оплаті.
   const env = await prepareEnvData(product, body.envValues);
@@ -72,7 +78,7 @@ export async function POST(req: Request) {
     type: "product",
     productSlug: product.slug,
     productTitle: product.title,
-    productPrice: product.price,
+    productPrice: effectivePrice,
     name,
     contactMethod,
     contact,
@@ -88,7 +94,7 @@ export async function POST(req: Request) {
     type: "product",
     productSlug: product.slug,
     productTitle: product.title,
-    productPrice: product.price,
+    productPrice: effectivePrice,
     name,
     contactMethod,
     contact,
@@ -103,6 +109,6 @@ export async function POST(req: Request) {
     orderId: order.id,
     jarUrl: getJarUrl(order.id),
     amountUah,
-    priceUsd: product.price,
+    priceUsd: effectivePrice,
   });
 }

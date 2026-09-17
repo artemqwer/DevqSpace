@@ -11,6 +11,7 @@ type Body = {
   message?: string;
   company?: string; // honeypot
   envValues?: Record<string, string>;
+  customPrice?: number;
 };
 
 export async function POST(req: Request) {
@@ -66,6 +67,11 @@ export async function POST(req: Request) {
   }
 
   const message = (body.message ?? "").trim();
+  const rawCustom = typeof body.customPrice === "number" ? body.customPrice : undefined;
+  const effectivePrice =
+    rawCustom && (rawCustom === product.price || rawCustom === product.price + 39 || rawCustom === product.price + 15)
+      ? rawCustom
+      : product.price;
 
   const env = await prepareEnvData(product, body.envValues);
   if (!env.ok) {
@@ -76,7 +82,7 @@ export async function POST(req: Request) {
     type: "product",
     productSlug: product.slug,
     productTitle: product.title,
-    productPrice: product.price,
+    productPrice: effectivePrice,
     name,
     contactMethod,
     contact,
@@ -93,7 +99,7 @@ export async function POST(req: Request) {
   const origin = `${proto}://${host}`;
 
   const co = await createCheckout({
-    amountUsd: product.price,
+    amountUsd: effectivePrice,
     productName: `${product.title} — DevqSpace`,
     orderId: order.id,
     email: contactMethod === "email" ? contact : undefined,
@@ -108,7 +114,7 @@ export async function POST(req: Request) {
     type: "product",
     productSlug: product.slug,
     productTitle: product.title,
-    productPrice: product.price,
+    productPrice: effectivePrice,
     name,
     contactMethod,
     contact,

@@ -21,6 +21,7 @@ type Body = {
   message?: string;
   company?: string; // honeypot
   envValues?: Record<string, string>;
+  customPrice?: number;
 };
 
 export async function POST(req: Request) {
@@ -65,6 +66,11 @@ export async function POST(req: Request) {
   }
 
   const message = (body.message ?? "").trim();
+  const rawCustom = typeof body.customPrice === "number" ? body.customPrice : undefined;
+  const effectivePrice =
+    rawCustom && (rawCustom === product.price || rawCustom === product.price + 39 || rawCustom === product.price + 15)
+      ? rawCustom
+      : product.price;
 
   // Поля .env перевіряються заново на сервері (включно з getMe для токенів).
   const env = await prepareEnvData(product, body.envValues);
@@ -76,7 +82,7 @@ export async function POST(req: Request) {
     type: "product",
     productSlug: product.slug,
     productTitle: product.title,
-    productPrice: product.price,
+    productPrice: effectivePrice,
     name,
     contactMethod,
     contact,
@@ -95,7 +101,7 @@ export async function POST(req: Request) {
   const isEn = /(?:^|;\s*)NEXT_LOCALE=en\b/.test(
     req.headers.get("cookie") ?? "",
   );
-  const amountUah = await usdToUah(product.price);
+  const amountUah = await usdToUah(effectivePrice);
   const params = buildWidgetParams({
     amountUah,
     productName: `${product.title} — DevqSpace`,
@@ -116,7 +122,7 @@ export async function POST(req: Request) {
     type: "product",
     productSlug: product.slug,
     productTitle: product.title,
-    productPrice: product.price,
+    productPrice: effectivePrice,
     name,
     contactMethod,
     contact,

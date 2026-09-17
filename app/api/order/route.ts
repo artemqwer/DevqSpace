@@ -6,6 +6,7 @@ import { parseContact } from "@/lib/contact";
 type OrderBody = Partial<OrderPayload> & {
   company?: string;
   envValues?: Record<string, string>;
+  customPrice?: number;
 };
 
 
@@ -71,11 +72,17 @@ export async function POST(req: Request) {
       ? `\n\n⚠️ Налаштування заповнені не повністю:\n• ${env.warnings.join("\n• ")}`
       : "";
 
+    const rawCustom = typeof body.customPrice === "number" ? body.customPrice : undefined;
+    const effectivePrice =
+      rawCustom && (rawCustom === product.price || rawCustom === product.price + 39 || rawCustom === product.price + 15)
+        ? rawCustom
+        : product.price;
+
     payload = {
       type: "product",
       productSlug: product.slug,
       productTitle: product.title,
-      productPrice: product.price,
+      productPrice: effectivePrice,
       name,
       contactMethod,
       contact,
@@ -85,7 +92,7 @@ export async function POST(req: Request) {
       type: "product",
       productSlug: product.slug,
       productTitle: product.title,
-      productPrice: product.price,
+      productPrice: effectivePrice,
       name,
       contactMethod,
       contact,

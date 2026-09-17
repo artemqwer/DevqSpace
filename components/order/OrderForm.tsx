@@ -136,6 +136,12 @@ export default function OrderForm({
     amountUah: number;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [serviceTier, setServiceTier] = useState<"code" | "setup" | "hosting">("code");
+  const extraPrice = serviceTier === "setup" ? 39 : serviceTier === "hosting" ? 15 : 0;
+  const finalPrice = product.price + extraPrice;
+  const effectiveJarUah = Math.round(
+    finalPrice * (product.price > 0 ? jarAmountUah / product.price : 42),
+  );
   // Показуємо помилку формату лише коли в полі вже щось є — інакше червоне
   // спалахує на порожній формі, щойно людина клікнула у поле.
   const contactCheck = validateContact(contactMethod, contact);
@@ -164,7 +170,7 @@ export default function OrderForm({
         desc: "Visa / Mastercard",
         icon: "ph-credit-card",
         badge: "USD",
-        amountFormatted: `$${product.price}`,
+        amountFormatted: `$${finalPrice}`,
       });
     } else if (lemonEnabled) {
       list.push({
@@ -173,7 +179,7 @@ export default function OrderForm({
         desc: "Visa / Mastercard",
         icon: "ph-credit-card",
         badge: "USD",
-        amountFormatted: `$${product.price}`,
+        amountFormatted: `$${finalPrice}`,
       });
     }
 
@@ -181,10 +187,10 @@ export default function OrderForm({
       list.push({
         id: "wfp",
         name: to("methodCard"),
-        desc: "WayForPay",
+        desc: "Visa / Mastercard",
         icon: "ph-credit-card",
         badge: "UAH",
-        amountFormatted: wfpAmountUah ? `${wfpAmountUah} ₴` : `$${product.price}`,
+        amountFormatted: `≈ $${finalPrice}`,
       });
     }
 
@@ -192,10 +198,10 @@ export default function OrderForm({
       list.push({
         id: "jar",
         name: to("methodJar"),
-        desc: "Переказ на банку",
+        desc: "Monobank / Apple Pay",
         icon: "ph-bank",
-        badge: "UAH",
-        amountFormatted: jarAmountUah ? `${jarAmountUah} ₴` : `$${product.price}`,
+        badge: `${effectiveJarUah} грн`,
+        amountFormatted: `${effectiveJarUah} грн`,
       });
     }
 
@@ -206,7 +212,7 @@ export default function OrderForm({
         desc: "USDT, BTC, TON, ETH",
         icon: "ph-currency-circle-dollar",
         badge: "Crypto",
-        amountFormatted: `$${product.price}`,
+        amountFormatted: `$${finalPrice}`,
       });
     }
 
@@ -215,11 +221,10 @@ export default function OrderForm({
     paddleEnabled,
     lemonEnabled,
     wfpEnabled,
-    wfpAmountUah,
     jarEnabled,
-    jarAmountUah,
     cryptoEnabled,
-    product.price,
+    finalPrice,
+    effectiveJarUah,
     to,
   ]);
 
@@ -231,6 +236,16 @@ export default function OrderForm({
     if (cryptoEnabled) return "crypto";
     return "crypto";
   });
+
+  const getCombinedMessage = () => {
+    const tierNote =
+      serviceTier === "setup"
+        ? "[Послуга: Встановлення під ключ (+ $39)]"
+        : serviceTier === "hosting"
+          ? "[Послуга: Керований VPS хостинг (+ $15/міс)]"
+          : "";
+    return [message.trim(), tierNote].filter(Boolean).join("\n\n");
+  };
 
   const handlePaddle = async () => {
     setError(null);
@@ -252,7 +267,8 @@ export default function OrderForm({
           name: name.trim(),
           contactMethod,
           contact: contact.trim(),
-          message: message.trim(),
+          message: getCombinedMessage(),
+          customPrice: finalPrice,
           company,
           envValues,
         }),
@@ -326,7 +342,8 @@ export default function OrderForm({
           name: name.trim(),
           contactMethod,
           contact: contact.trim(),
-          message: message.trim(),
+          message: getCombinedMessage(),
+          customPrice: finalPrice,
           company,
           envValues,
         }),
@@ -385,7 +402,8 @@ export default function OrderForm({
           name: name.trim(),
           contactMethod,
           contact: contact.trim(),
-          message: message.trim(),
+          message: getCombinedMessage(),
+          customPrice: finalPrice,
           company,
           envValues,
         }),
@@ -443,7 +461,8 @@ export default function OrderForm({
           name: name.trim(),
           contactMethod,
           contact: contact.trim(),
-          message: message.trim(),
+          message: getCombinedMessage(),
+          customPrice: finalPrice,
           company,
           envValues,
         }),
@@ -463,7 +482,7 @@ export default function OrderForm({
       setJarInfo({
         orderId: data.orderId,
         jarUrl: data.jarUrl,
-        amountUah: data.amountUah ?? jarAmountUah,
+        amountUah: data.amountUah ?? effectiveJarUah,
       });
     } catch {
       setError(to("errNet"));
@@ -488,7 +507,8 @@ export default function OrderForm({
           name: name.trim(),
           contactMethod,
           contact: contact.trim(),
-          message: message.trim(),
+          message: getCombinedMessage(),
+          customPrice: finalPrice,
           company,
           envValues,
         }),
@@ -530,7 +550,8 @@ export default function OrderForm({
           name: name.trim(),
           contactMethod,
           contact: contact.trim(),
-          message: message.trim(),
+          message: getCombinedMessage(),
+          customPrice: finalPrice,
           company,
           envValues,
         }),
@@ -646,7 +667,7 @@ export default function OrderForm({
           </p>
         </div>
         <div className="text-xl font-display font-bold text-white shrink-0">
-          ${product.price}
+          ${finalPrice}
         </div>
       </div>
 
@@ -715,6 +736,121 @@ export default function OrderForm({
             </p>
           )}
         </Field>
+
+        <div>
+          <label className="block text-xs font-mono text-gray-400 uppercase tracking-wider mb-2">
+            {to("tierLabel")}
+          </label>
+          <div className="grid grid-cols-1 gap-2.5">
+            <button
+              type="button"
+              onClick={() => setServiceTier("code")}
+              className={`text-left p-3.5 rounded-xl border transition-all ${
+                serviceTier === "code"
+                  ? "bg-neon-blue/10 border-neon-blue/50 text-white shadow-sm"
+                  : "bg-surface2/60 border-white/10 text-gray-300 hover:border-white/20"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                      serviceTier === "code"
+                        ? "border-neon-blue bg-neon-blue"
+                        : "border-gray-500"
+                    }`}
+                  >
+                    {serviceTier === "code" && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-black" />
+                    )}
+                  </div>
+                  <i className="ph-bold ph-file-code text-neon-blue" />
+                  <span className="text-sm font-display font-bold text-white">
+                    {to("tierCode")}
+                  </span>
+                </div>
+                <span className="text-xs font-mono text-gray-400 font-bold">
+                  ${product.price}
+                </span>
+              </div>
+              <p className="mt-1.5 ml-7 text-xs text-gray-400 font-mono">
+                {to("tierCodeDesc")}
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setServiceTier("setup")}
+              className={`text-left p-3.5 rounded-xl border transition-all ${
+                serviceTier === "setup"
+                  ? "bg-neon-blue/10 border-neon-blue/50 text-white shadow-sm"
+                  : "bg-surface2/60 border-white/10 text-gray-300 hover:border-white/20"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                      serviceTier === "setup"
+                        ? "border-neon-blue bg-neon-blue"
+                        : "border-gray-500"
+                    }`}
+                  >
+                    {serviceTier === "setup" && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-black" />
+                    )}
+                  </div>
+                  <i className="ph-bold ph-wrench text-neon-green" />
+                  <span className="text-sm font-display font-bold text-white">
+                    {to("tierSetup")}
+                  </span>
+                </div>
+                <span className="text-xs font-mono text-neon-green font-bold">
+                  ${product.price + 39}
+                </span>
+              </div>
+              <p className="mt-1.5 ml-7 text-xs text-gray-400 font-mono">
+                {to("tierSetupDesc")}
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setServiceTier("hosting")}
+              className={`text-left p-3.5 rounded-xl border transition-all ${
+                serviceTier === "hosting"
+                  ? "bg-neon-blue/10 border-neon-blue/50 text-white shadow-sm"
+                  : "bg-surface2/60 border-white/10 text-gray-300 hover:border-white/20"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                      serviceTier === "hosting"
+                        ? "border-neon-blue bg-neon-blue"
+                        : "border-gray-500"
+                    }`}
+                  >
+                    {serviceTier === "hosting" && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-black" />
+                    )}
+                  </div>
+                  <i className="ph-bold ph-cloud-arrow-up text-neon-purple" />
+                  <span className="text-sm font-display font-bold text-white">
+                    {to("tierHosting")}
+                  </span>
+                </div>
+                <span className="text-xs font-mono text-neon-purple font-bold">
+                  ${product.price + 15}
+                </span>
+              </div>
+              <p className="mt-1.5 ml-7 text-xs text-gray-400 font-mono">
+                {to("tierHostingDesc")}
+              </p>
+            </button>
+          </div>
+        </div>
 
         <Field label={to("detailsLabel")}>
           <textarea
@@ -915,12 +1051,18 @@ export default function OrderForm({
             <SummaryRow label={to("sumWarranty")} value={product.warranty} />
             <SummaryRow label={to("sumSource")} value={to("sumSourceV")} />
             <SummaryRow label={to("sumUpdates")} value={to("sumUpdatesV")} />
+            {serviceTier === "setup" && (
+              <SummaryRow label={to("sumSetup")} value="+$39" />
+            )}
+            {serviceTier === "hosting" && (
+              <SummaryRow label={to("sumHosting")} value="+$15/mo" />
+            )}
           </div>
 
           <div className="flex items-baseline justify-between pt-4">
             <span className="text-gray-400 font-mono text-sm">{to("total")}</span>
             <span className="text-3xl font-display font-bold text-white">
-              ${product.price}
+              ${finalPrice}
             </span>
           </div>
 

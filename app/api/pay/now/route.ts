@@ -17,6 +17,7 @@ type Body = {
   message?: string;
   company?: string; // honeypot
   envValues?: Record<string, string>;
+  customPrice?: number;
 };
 
 
@@ -65,6 +66,11 @@ export async function POST(req: Request) {
   }
 
   const message = (body.message ?? "").trim();
+  const rawCustom = typeof body.customPrice === "number" ? body.customPrice : undefined;
+  const effectivePrice =
+    rawCustom && (rawCustom === product.price || rawCustom === product.price + 39 || rawCustom === product.price + 15)
+      ? rawCustom
+      : product.price;
 
   // Поля .env перевіряються заново на сервері (включно з getMe для токенів) —
   // те, що форма їх уже показала зеленими, нічого не гарантує.
@@ -77,7 +83,7 @@ export async function POST(req: Request) {
     type: "product",
     productSlug: product.slug,
     productTitle: product.title,
-    productPrice: product.price,
+    productPrice: effectivePrice,
     name,
     contactMethod,
     contact,
@@ -94,7 +100,7 @@ export async function POST(req: Request) {
   const origin = `${proto}://${host}`;
 
   const inv = await createInvoice({
-    amount: product.price,
+    amount: effectivePrice,
     description: `${product.title} — DevqSpace`,
     orderId: order.id,
     successUrl: `${origin}/order/success?p=${product.slug}`,
@@ -112,7 +118,7 @@ export async function POST(req: Request) {
     type: "product",
     productSlug: product.slug,
     productTitle: product.title,
-    productPrice: product.price,
+    productPrice: effectivePrice,
     name,
     contactMethod,
     contact,
