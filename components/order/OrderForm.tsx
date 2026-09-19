@@ -780,7 +780,9 @@ export default function OrderForm({
 
             <button
               type="button"
-              onClick={() => setServiceTier("setup")}
+              onClick={() =>
+                setServiceTier((prev) => (prev === "setup" ? "code" : "setup"))
+              }
               className={`text-left p-3.5 rounded-xl border transition-all ${
                 serviceTier === "setup"
                   ? "bg-neon-blue/10 border-neon-blue/50 text-white shadow-sm"
@@ -816,7 +818,9 @@ export default function OrderForm({
 
             <button
               type="button"
-              onClick={() => setServiceTier("hosting")}
+              onClick={() =>
+                setServiceTier((prev) => (prev === "hosting" ? "code" : "hosting"))
+              }
               className={`text-left p-3.5 rounded-xl border transition-all ${
                 serviceTier === "hosting"
                   ? "bg-neon-blue/10 border-neon-blue/50 text-white shadow-sm"

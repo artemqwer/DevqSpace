@@ -101,7 +101,18 @@ export default function CustomForm() {
       />
       {/* Type */}
       <section>
-        <SectionLabel n="01" title={tr("sec1")} required />
+        <div className="flex items-center justify-between mb-3 md:mb-4">
+          <SectionLabel n="01" title={tr("sec1")} required className="mb-0" />
+          {customType && (
+            <button
+              type="button"
+              onClick={() => setCustomType("")}
+              className="text-xs font-mono text-gray-400 hover:text-neon-pink transition-colors"
+            >
+              ✕ скинути
+            </button>
+          )}
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
           {TYPES.map((t) => {
             const active = customType === t.id;
@@ -109,7 +120,7 @@ export default function CustomForm() {
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setCustomType(t.id)}
+                onClick={() => setCustomType(active ? "" : t.id)}
                 className={`flex items-center gap-2 px-3 md:px-4 py-2.5 md:py-3 rounded-xl border transition-all text-left min-w-0 ${
                   active
                     ? "bg-neon-blue/10 border-neon-blue/50 text-white"
@@ -119,9 +130,10 @@ export default function CustomForm() {
                 <i
                   className={`ph ${t.icon} text-lg md:text-xl shrink-0 ${active ? "text-neon-blue" : ""}`}
                 />
-                <span className="text-xs md:text-sm font-medium truncate">
+                <span className="text-xs md:text-sm font-medium truncate flex-1">
                   {tr(t.tk)}
                 </span>
+                {active && <span className="text-xs opacity-70 text-neon-blue">✕</span>}
               </button>
             );
           })}
@@ -130,7 +142,18 @@ export default function CustomForm() {
 
       {/* Budget */}
       <section>
-        <SectionLabel n="02" title={tr("sec2")} />
+        <div className="flex items-center justify-between mb-3 md:mb-4">
+          <SectionLabel n="02" title={tr("sec2")} className="mb-0" />
+          {budget && (
+            <button
+              type="button"
+              onClick={() => setBudget("")}
+              className="text-xs font-mono text-gray-400 hover:text-neon-pink transition-colors"
+            >
+              ✕ скинути
+            </button>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
           {BUDGETS.map((b) => {
             const active = budget === b;
@@ -138,14 +161,15 @@ export default function CustomForm() {
               <button
                 key={b}
                 type="button"
-                onClick={() => setBudget(b)}
-                className={`px-4 py-2 rounded-full border text-xs font-mono transition-all ${
+                onClick={() => setBudget(active ? "" : b)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-xs font-mono transition-all ${
                   active
                     ? "bg-neon-purple/10 border-neon-purple/50 text-neon-purple"
                     : "bg-surface2 border-white/10 text-gray-400 hover:border-white/20"
                 }`}
               >
-                {tr(b)}
+                <span>{tr(b)}</span>
+                {active && <span className="text-[10px] opacity-70">✕</span>}
               </button>
             );
           })}
@@ -154,7 +178,18 @@ export default function CustomForm() {
 
       {/* Deadline */}
       <section>
-        <SectionLabel n="03" title={tr("sec3")} />
+        <div className="flex items-center justify-between mb-3 md:mb-4">
+          <SectionLabel n="03" title={tr("sec3")} className="mb-0" />
+          {deadline && (
+            <button
+              type="button"
+              onClick={() => setDeadline("")}
+              className="text-xs font-mono text-gray-400 hover:text-neon-pink transition-colors"
+            >
+              ✕ скинути
+            </button>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
           {DEADLINES.map((d) => {
             const active = deadline === d;
@@ -162,14 +197,15 @@ export default function CustomForm() {
               <button
                 key={d}
                 type="button"
-                onClick={() => setDeadline(d)}
-                className={`px-4 py-2 rounded-full border text-xs font-mono transition-all ${
+                onClick={() => setDeadline(active ? "" : d)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-xs font-mono transition-all ${
                   active
                     ? "bg-neon-green/10 border-neon-green/50 text-neon-green"
                     : "bg-surface2 border-white/10 text-gray-400 hover:border-white/20"
                 }`}
               >
-                {tr(d)}
+                <span>{tr(d)}</span>
+                {active && <span className="text-[10px] opacity-70">✕</span>}
               </button>
             );
           })}
@@ -279,14 +315,16 @@ export default function CustomForm() {
 function SectionLabel({
   n,
   title,
-  required = false,
+  required,
+  className = "mb-3 md:mb-4",
 }: {
   n: string;
   title: string;
   required?: boolean;
+  className?: string;
 }) {
   return (
-    <div className="flex items-center gap-3 mb-3 md:mb-4">
+    <div className={`flex items-center gap-3 ${className}`}>
       <span className="text-[10px] font-mono text-neon-blue tracking-widest">
         / {n}
       </span>

@@ -1,8 +1,6 @@
 import "server-only";
 import { unstable_cache, revalidateTag } from "next/cache";
 import { getSiteSettings } from "./store";
-import { tgGetBotUsername } from "./telegram";
-
 // Налаштування сайту, які адмін міняє без деплою: контакт підтримки,
 // реквізити юрособи, тумблер публікації юридичних сторінок.
 //
@@ -11,7 +9,7 @@ import { tgGetBotUsername } from "./telegram";
 // тут не скидається.
 
 export type SiteSettings = {
-  supportTelegram: string; // без @; порожньо -> фолбек на юзернейм бота
+  supportTelegram: string; // без @; за замовчуванням "devqspace"
   legalEnabled: boolean;
   entityType: string; // ФОП / ТОВ
   entityName: string;
@@ -23,7 +21,7 @@ export type SiteSettings = {
 };
 
 export const SETTINGS_DEFAULTS: SiteSettings = {
-  supportTelegram: "",
+  supportTelegram: "devqspace",
   legalEnabled: false,
   entityType: "ФОП",
   entityName: "",
@@ -67,11 +65,10 @@ export async function getSettings(): Promise<SiteSettings> {
   };
 }
 
-// Куди ведуть кнопки «Написати в Telegram». Порожнє налаштування —
-// фолбек на юзернейм бота; немає й його — посилання не показуємо взагалі,
-// краще ніякої кнопки, ніж кнопка в нікуди.
-export async function getSupportTgUrl(): Promise<string | null> {
+// Куди ведуть кнопки «Написати в Telegram». За замовчуванням веде
+// на особистий акаунт @devqspace (або значення з налаштувань).
+export async function getSupportTgUrl(): Promise<string> {
   const { supportTelegram } = await getSettings();
-  const handle = supportTelegram.replace(/^@/, "") || (await tgGetBotUsername());
-  return handle ? `https://t.me/${handle}` : null;
+  const handle = supportTelegram?.replace(/^@/, "").trim() || "devqspace";
+  return `https://t.me/${handle}`;
 }

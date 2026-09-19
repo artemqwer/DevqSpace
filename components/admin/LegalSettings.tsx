@@ -51,8 +51,8 @@ const FIELDS: {
   {
     key: "supportTelegram",
     label: "Telegram підтримки",
-    placeholder: "@devq_support",
-    hint: "Куди ведуть кнопки «Написати в Telegram». Порожньо — візьмемо юзернейм бота",
+    placeholder: "@devqspace",
+    hint: "Куди ведуть кнопки «Написати в Telegram». За замовчуванням — @devqspace",
   },
 ];
 
