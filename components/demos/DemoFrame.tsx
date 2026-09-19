@@ -3,20 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import type { Product } from "@/lib/products";
-import { CyberDashDemo } from "./CyberDashDemo";
-import { SaasKitDemo } from "./SaasKitDemo";
-import { CryptoLandingDemo } from "./CryptoLandingDemo";
-import { EcommerceDemo } from "./EcommerceDemo";
-import { PortfolioDemo } from "./PortfolioDemo";
-import { AgencyDemo } from "./AgencyDemo";
-import { CrmDemo } from "./CrmDemo";
-import { EmailPackDemo } from "./EmailPackDemo";
-import { LandingBuilderDemo } from "./LandingBuilderDemo";
-import { BotConstructorDemo } from "./BotConstructorDemo";
-import { SolanaSniperDemo } from "./SolanaSniperDemo";
-import { TokenPresaleDemo } from "./TokenPresaleDemo";
-import { DexSwapDemo } from "./DexSwapDemo";
-import { PaintBrush, Sliders, Monitor, DeviceTablet, DeviceMobile } from "@phosphor-icons/react";
+import { Monitor, DeviceTablet, DeviceMobile, ArrowSquareOut } from "@phosphor-icons/react";
 
 interface DemoFrameProps {
   product: Product;
@@ -37,64 +24,6 @@ export function DemoFrame({ product }: DemoFrameProps) {
   const [device, setDevice] = useState<DeviceMode>("desktop");
   const [accent, setAccent] = useState<AccentTheme>("cyan");
   const [customizerOpen, setCustomizerOpen] = useState(false);
-
-  const renderDemoContent = () => {
-    switch (product.slug) {
-      case "cyberdash-admin":
-      case "dashboard-ui-kit":
-        return <CyberDashDemo />;
-      case "saas-landing-kit":
-        return <SaasKitDemo />;
-      case "crypto-landing":
-        return <CryptoLandingDemo />;
-      case "ecommerce-template":
-        return <EcommerceDemo />;
-      case "portfolio-pro":
-        return <PortfolioDemo />;
-      case "agency-template":
-        return <AgencyDemo />;
-      case "mini-crm-agency":
-        return <CrmDemo product={product} />;
-      case "landing-builder":
-        return <LandingBuilderDemo product={product} />;
-      case "bot-constructor":
-        return <BotConstructorDemo product={product} />;
-      case "email-pack":
-        return <EmailPackDemo />;
-      case "solana-sniper":
-        return <SolanaSniperDemo product={product} />;
-      case "token-presale":
-        return <TokenPresaleDemo product={product} />;
-      case "dex-swap-ui":
-        return <DexSwapDemo product={product} />;
-      default:
-        return (
-          <div className="flex min-h-[600px] flex-col items-center justify-center p-8 text-center text-slate-300">
-            <div className="text-4xl mb-3">⚡</div>
-            <h2 className="text-xl font-bold text-white mb-2">{product.title}</h2>
-            <p className="text-xs text-slate-400 max-w-md mb-6">{product.description}</p>
-            <Link
-              href={`/order/${product.slug}`}
-              className="rounded-xl bg-neon-blue px-6 py-2.5 text-xs font-bold text-black"
-            >
-              Купити сорс-код (${product.price}) →
-            </Link>
-          </div>
-        );
-    }
-  };
-
-  const getDeviceStyles = () => {
-    switch (device) {
-      case "tablet":
-        return "max-w-[768px] border-x border-b border-white/10 rounded-b-2xl shadow-2xl transition-all duration-300";
-      case "mobile":
-        return "max-w-[390px] border-x border-b border-white/10 rounded-b-2xl shadow-2xl transition-all duration-300";
-      case "desktop":
-      default:
-        return "w-full transition-all duration-300";
-    }
-  };
 
   return (
     <div
@@ -164,6 +93,18 @@ export function DemoFrame({ product }: DemoFrameProps) {
               <span>Mobile (390px)</span>
             </button>
           </div>
+
+          {/* Open in New Tab Button */}
+          <a
+            href={`/demo/view/${product.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-slate-300 hover:text-white transition"
+            title="Відкрити чистий продукт у новій вкладці на весь екран"
+          >
+            <ArrowSquareOut className="h-3.5 w-3.5" />
+            <span className="text-[11px]">Нова вкладка</span>
+          </a>
 
           {/* Theme / Palette Customizer Button */}
           <div className="relative">
@@ -241,10 +182,47 @@ export function DemoFrame({ product }: DemoFrameProps) {
       </header>
 
       {/* Main Demo Workspace */}
-      <main className="flex-1 flex justify-center bg-[#050608] overflow-y-auto">
-        <div className={`${getDeviceStyles()} bg-[#0b0c10] min-h-screen flex flex-col`}>
-          {renderDemoContent()}
-        </div>
+      <main className="flex-1 flex items-start justify-center bg-[#050608] overflow-y-auto">
+        {device === "desktop" && (
+          <div className="w-full h-[calc(100vh-56px)] flex flex-col bg-[#0b0c10]">
+            <iframe
+              src={`/demo/view/${product.slug}`}
+              className="w-full h-full border-0 bg-[#06070a]"
+              title={product.title}
+            />
+          </div>
+        )}
+
+        {device === "tablet" && (
+          <div
+            className="my-6 rounded-2xl border-[8px] border-[#181c28] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] bg-[#0b0c10] overflow-hidden flex flex-col shrink-0 transition-all duration-300"
+            style={{ width: "768px", height: "min(920px, calc(100vh - 80px))" }}
+          >
+            <iframe
+              src={`/demo/view/${product.slug}`}
+              className="w-full h-full border-0 bg-[#06070a]"
+              title={product.title}
+            />
+          </div>
+        )}
+
+        {device === "mobile" && (
+          <div
+            className="my-6 rounded-[48px] border-[10px] border-[#181c28] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] bg-[#0b0c10] overflow-hidden flex flex-col relative shrink-0 transition-all duration-300"
+            style={{ width: "390px", height: "min(844px, calc(100vh - 80px))" }}
+          >
+            {/* Top Phone Speaker / Dynamic Island */}
+            <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-20 h-4 w-28 bg-black rounded-full flex items-center justify-between px-3 pointer-events-none border border-white/10 shadow-sm">
+              <div className="w-2 h-2 rounded-full bg-[#111624]" />
+              <div className="w-2.5 h-2.5 rounded-full bg-[#030712] border border-blue-900/50" />
+            </div>
+            <iframe
+              src={`/demo/view/${product.slug}`}
+              className="w-full h-full border-0 pt-3 bg-[#06070a]"
+              title={product.title}
+            />
+          </div>
+        )}
       </main>
     </div>
   );
