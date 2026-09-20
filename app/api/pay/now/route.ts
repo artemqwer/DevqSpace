@@ -12,6 +12,7 @@ import { parseContact } from "@/lib/contact";
 type Body = {
   productSlug?: string;
   name?: string;
+  email?: string;
   contactMethod?: "telegram" | "email" | "phone";
   contact?: string;
   message?: string;
@@ -51,11 +52,11 @@ export async function POST(req: Request) {
     );
   }
 
-  const parsed = parseContact(body);
+  const parsed = parseContact(body, { requireDeliveryEmail: true });
   if (!parsed.ok) {
     return Response.json({ ok: false, error: parsed.error }, { status: 400 });
   }
-  const { name, contact, contactMethod } = parsed;
+  const { name, contact, contactMethod, email } = parsed;
 
   const product = await getProductBySlug(body.productSlug ?? "");
   if (!product) {
@@ -85,6 +86,7 @@ export async function POST(req: Request) {
     productTitle: product.title,
     productPrice: effectivePrice,
     name,
+    email,
     contactMethod,
     contact,
     message,
@@ -120,6 +122,7 @@ export async function POST(req: Request) {
     productTitle: product.title,
     productPrice: effectivePrice,
     name,
+    email,
     contactMethod,
     contact,
     message: message

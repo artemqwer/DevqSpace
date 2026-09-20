@@ -6,7 +6,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ACCENT_BUTTON, type Product } from "@/lib/products";
 import type { EnvValues } from "@/lib/envFields";
-import { validateContact, contactErrorKey } from "@/lib/contact";
+import { validateContact, contactErrorKey, validateDeliveryEmail } from "@/lib/contact";
 import ProductThumb from "@/components/ProductThumb";
 import EnvFieldsForm from "./EnvFieldsForm";
 import { ORDER_INPUT_CLS } from "./styles";
@@ -107,6 +107,7 @@ export default function OrderForm({
   const to = useTranslations("orderForm");
   const router = useRouter();
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [contactMethod, setContactMethod] = useState<
     "telegram" | "email" | "phone"
   >("telegram");
@@ -142,14 +143,39 @@ export default function OrderForm({
   const effectiveJarUah = Math.round(
     finalPrice * (product.price > 0 ? jarAmountUah / product.price : 42),
   );
-  // Показуємо помилку формату лише коли в полі вже щось є — інакше червоне
-  // спалахує на порожній формі, щойно людина клікнула у поле.
+
+  // Валідація Email для доставки товару
+  const emailCheck = validateDeliveryEmail(email);
+  const emailError =
+    email.trim() && !emailCheck.ok
+      ? to("errDeliveryEmail")
+      : null;
+  const emailOk = emailCheck.ok;
+
+  // Валідація окремого контакту для зв'язку
   const contactCheck = validateContact(contactMethod, contact);
   const contactError =
     contact.trim() && !contactCheck.ok
       ? to(contactErrorKey(contactMethod, contactCheck.reason))
       : null;
   const contactOk = contactCheck.ok;
+
+  // Загальна перевірка перед будь-якою оплатою чи заявкою
+  const validateForm = () => {
+    if (!name.trim()) {
+      setError(to("errNameContact2"));
+      return false;
+    }
+    if (!emailOk) {
+      setError(to("errDeliveryEmail"));
+      return false;
+    }
+    if (!contactOk) {
+      setError(contactError ?? to("errNameContact"));
+      return false;
+    }
+    return true;
+  };
 
   type PaymentMethodId = "paddle" | "lemon" | "wfp" | "jar" | "crypto";
 
@@ -249,10 +275,7 @@ export default function OrderForm({
 
   const handlePaddle = async () => {
     setError(null);
-    if (!name.trim() || !contactOk) {
-      setError(contactError ?? to("errNameContact"));
-      return;
-    }
+    if (!validateForm()) return;
     if (!paddleConfig) {
       setError(to("errNet"));
       return;
@@ -265,6 +288,7 @@ export default function OrderForm({
         body: JSON.stringify({
           productSlug: product.slug,
           name: name.trim(),
+          email: email.trim().toLowerCase(),
           contactMethod,
           contact: contact.trim(),
           message: getCombinedMessage(),
@@ -287,7 +311,7 @@ export default function OrderForm({
       }
       const success = () =>
         router.push(
-          `/order/success?p=${product.slug}${data.orderId ? `&o=${data.orderId}` : ""}`,
+            `/order/success?p=${product.slug}${data.orderId ? `&o=${data.orderId}` : ""}`,
         );
       try {
         await loadPaddle();
@@ -309,7 +333,7 @@ export default function OrderForm({
         }
         P.Checkout.open({
           transactionId: data.transactionId,
-          ...(data.email ? { customer: { email: data.email } } : {}),
+          customer: { email: data.email || email.trim().toLowerCase() },
           settings: {
             displayMode: "overlay",
             theme: "dark",
@@ -328,10 +352,7 @@ export default function OrderForm({
 
   const handleLemon = async () => {
     setError(null);
-    if (!name.trim() || !contactOk) {
-      setError(contactError ?? to("errNameContact"));
-      return;
-    }
+    if (!validateForm()) return;
     setLemonPaying(true);
     try {
       const res = await fetch("/api/pay/lemon", {
@@ -340,6 +361,7 @@ export default function OrderForm({
         body: JSON.stringify({
           productSlug: product.slug,
           name: name.trim(),
+          email: email.trim().toLowerCase(),
           contactMethod,
           contact: contact.trim(),
           message: getCombinedMessage(),
@@ -388,10 +410,7 @@ export default function OrderForm({
 
   const handleWfp = async () => {
     setError(null);
-    if (!name.trim() || !contactOk) {
-      setError(contactError ?? to("errNameContact"));
-      return;
-    }
+    if (!validateForm()) return;
     setWfpPaying(true);
     try {
       const res = await fetch("/api/pay/wfp", {
@@ -400,6 +419,7 @@ export default function OrderForm({
         body: JSON.stringify({
           productSlug: product.slug,
           name: name.trim(),
+          email: email.trim().toLowerCase(),
           contactMethod,
           contact: contact.trim(),
           message: getCombinedMessage(),
@@ -447,10 +467,7 @@ export default function OrderForm({
 
   const handleJar = async () => {
     setError(null);
-    if (!name.trim() || !contactOk) {
-      setError(contactError ?? to("errNameContact"));
-      return;
-    }
+    if (!validateForm()) return;
     setJarPaying(true);
     try {
       const res = await fetch("/api/pay/jar", {
@@ -459,6 +476,7 @@ export default function OrderForm({
         body: JSON.stringify({
           productSlug: product.slug,
           name: name.trim(),
+          email: email.trim().toLowerCase(),
           contactMethod,
           contact: contact.trim(),
           message: getCombinedMessage(),
@@ -493,10 +511,7 @@ export default function OrderForm({
 
   const handlePay = async () => {
     setError(null);
-    if (!name.trim() || !contactOk) {
-      setError(contactError ?? to("errNameContact"));
-      return;
-    }
+    if (!validateForm()) return;
     setPaying(true);
     try {
       const res = await fetch("/api/pay/now", {
@@ -505,6 +520,7 @@ export default function OrderForm({
         body: JSON.stringify({
           productSlug: product.slug,
           name: name.trim(),
+          email: email.trim().toLowerCase(),
           contactMethod,
           contact: contact.trim(),
           message: getCombinedMessage(),
@@ -533,11 +549,7 @@ export default function OrderForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    if (!name.trim() || !contactOk) {
-      setError(contactError ?? to("errNameContact2"));
-      return;
-    }
+    if (!validateForm()) return;
 
     setSubmitting(true);
     try {
@@ -548,6 +560,7 @@ export default function OrderForm({
           type: "product",
           productSlug: product.slug,
           name: name.trim(),
+          email: email.trim().toLowerCase(),
           contactMethod,
           contact: contact.trim(),
           message: getCombinedMessage(),
@@ -624,8 +637,13 @@ export default function OrderForm({
             </p>
             <p className="flex items-start gap-2">
               <i className="ph-bold ph-number-circle-three text-neon-green mt-0.5" />
-              {to("step3")}{" "}
-              <b className="text-white">{contact}</b>
+              <span>
+                {to("step3")}{" "}
+                <b className="text-white">{email.trim().toLowerCase() || contact}</b>
+                {contactMethod === "telegram" && (
+                  <span className="text-gray-400 text-xs ml-1.5">(+ Telegram {contact})</span>
+                )}
+              </span>
             </p>
           </div>
 
@@ -694,6 +712,33 @@ export default function OrderForm({
           />
         </Field>
 
+        <Field label={to("deliveryEmailLabel")} required>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => {
+              const val = e.target.value;
+              setEmail(val);
+              if (contactMethod === "email" && (!contact || contact === email)) {
+                setContact(val);
+              }
+            }}
+            placeholder={to("deliveryEmailPh")}
+            required
+            className={`${ORDER_INPUT_CLS} ${emailError ? "border-neon-pink/60" : ""}`}
+          />
+          <p className="mt-1.5 flex items-start gap-1.5 text-xs text-gray-400">
+            <i className="ph-bold ph-info text-neon-blue mt-0.5 shrink-0" />
+            <span>{to("deliveryEmailHint")}</span>
+          </p>
+          {emailError && (
+            <p className="mt-1.5 flex items-center gap-1.5 text-xs text-neon-pink">
+              <i className="ph-bold ph-warning-circle" />
+              {emailError}
+            </p>
+          )}
+        </Field>
+
         <Field label={to("contactLabel")} required>
           <div className="grid grid-cols-3 gap-2 mb-3">
             <ContactTab
@@ -704,7 +749,10 @@ export default function OrderForm({
             />
             <ContactTab
               active={contactMethod === "email"}
-              onClick={() => setContactMethod("email")}
+              onClick={() => {
+                setContactMethod("email");
+                if (!contact && email) setContact(email);
+              }}
               icon="ph-envelope-simple"
               label={to("email")}
             />

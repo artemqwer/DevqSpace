@@ -2,10 +2,12 @@ import { paddleEnabled, createTransaction } from "@/lib/paddle";
 import { getProductBySlug, addOrder, rateLimit } from "@/lib/store";
 import { prepareEnvData } from "@/lib/orderEnv";
 import { sendOrderToTelegram, type OrderPayload } from "@/lib/telegram";
+import { parseContact } from "@/lib/contact";
 
 type Body = {
   productSlug?: string;
   name?: string;
+  email?: string;
   contactMethod?: "telegram" | "email" | "phone";
   contact?: string;
   message?: string;
@@ -44,22 +46,11 @@ export async function POST(req: Request) {
     );
   }
 
-  const name = (body.name ?? "").trim();
-  const contact = (body.contact ?? "").trim();
-  const contactMethod = body.contactMethod;
-  if (!name || !contact) {
-    return Response.json(
-      { ok: false, error: "Вкажіть ім'я та контакт для доставки" },
-      { status: 400 },
-    );
+  const parsed = parseContact(body, { requireDeliveryEmail: true });
+  if (!parsed.ok) {
+    return Response.json({ ok: false, error: parsed.error }, { status: 400 });
   }
-  if (
-    contactMethod !== "telegram" &&
-    contactMethod !== "email" &&
-    contactMethod !== "phone"
-  ) {
-    return Response.json({ ok: false, error: "Невірний контакт" }, { status: 400 });
-  }
+  const { name, contact, contactMethod, email } = parsed;
 
   const product = await getProductBySlug(body.productSlug ?? "");
   if (!product) {
@@ -84,6 +75,7 @@ export async function POST(req: Request) {
     productTitle: product.title,
     productPrice: effectivePrice,
     name,
+    email,
     contactMethod,
     contact,
     message,
@@ -108,6 +100,7 @@ export async function POST(req: Request) {
     productTitle: product.title,
     productPrice: effectivePrice,
     name,
+    email,
     contactMethod,
     contact,
     message: message
@@ -120,6 +113,6 @@ export async function POST(req: Request) {
     ok: true,
     transactionId: tx.transactionId,
     orderId: order.id,
-    email: contactMethod === "email" ? contact : undefined,
+    email: email ?? (contactMethod === "email" ? contact : undefined),
   });
 }

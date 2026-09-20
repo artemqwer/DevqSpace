@@ -288,6 +288,7 @@ export type OrderPayload = {
   deadline?: string;
   // Common contact
   name: string;
+  email?: string;
   contactMethod: "telegram" | "email" | "phone";
   contact: string;
   message: string;
@@ -323,8 +324,11 @@ export function formatOrderMessage(payload: OrderPayload): string {
   lines.push("");
   lines.push("👤 <b>Клієнт</b>");
   lines.push(`Ім'я: ${escape(payload.name)}`);
+  if (payload.email) {
+    lines.push(`✉️ <b>Email видачі:</b> ${escape(payload.email)}`);
+  }
   lines.push(
-    `${contactLabel(payload.contactMethod)}: ${escape(payload.contact)}`,
+    `💬 ${contactLabel(payload.contactMethod)}: ${escape(payload.contact)}`,
   );
 
   if (payload.message?.trim()) {

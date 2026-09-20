@@ -87,12 +87,38 @@ export function contactErrorKey(
       : "contactBadPhone";
 }
 
+export function validateDeliveryEmail(
+  raw: string | undefined | null,
+): { ok: true; email: string } | { ok: false; error: string; reason: "empty" | "format" } {
+  const value = (raw ?? "").trim().toLowerCase();
+  if (!value) {
+    return {
+      ok: false,
+      error: "Вкажіть email для отримання товару",
+      reason: "empty",
+    };
+  }
+  if (value.length > MAX_CONTACT_LEN || !EMAIL_RE.test(value)) {
+    return {
+      ok: false,
+      error: "Схоже, у пошті помилка — приклад: name@example.com",
+      reason: "format",
+    };
+  }
+  return { ok: true, email: value };
+}
+
 // Розбір і перевірка контактної частини тіла запиту. Спільна для всіх
 // чотирьох роутів, що створюють замовлення (order, pay/now, pay/jar,
-// pay/wfp) — правило має бути одне, інакше платний шлях і безкоштовний
-// розійдуться.
+// pay/wfp, pay/paddle, pay/lemon).
 export type ParsedContact =
-  | { ok: true; name: string; contactMethod: ContactMethod; contact: string }
+  | {
+      ok: true;
+      name: string;
+      email?: string;
+      contactMethod: ContactMethod;
+      contact: string;
+    }
   | { ok: false; error: string };
 
 const SERVER_ERROR: Record<string, string> = {
@@ -102,11 +128,15 @@ const SERVER_ERROR: Record<string, string> = {
   contactBadPhone: "Схоже, у номері помилка — приклад: +380 67 123 45 67",
 };
 
-export function parseContact(body: {
-  name?: string;
-  contactMethod?: unknown;
-  contact?: string;
-}): ParsedContact {
+export function parseContact(
+  body: {
+    name?: string;
+    email?: string;
+    contactMethod?: unknown;
+    contact?: string;
+  },
+  options?: { requireDeliveryEmail?: boolean },
+): ParsedContact {
   const name = (body.name ?? "").trim();
   if (!name || name.length > MAX_CONTACT_LEN) {
     return { ok: false, error: SERVER_ERROR.contactEmpty };
@@ -123,7 +153,29 @@ export function parseContact(body: {
     };
   }
 
+  let email: string | undefined;
+  if (options?.requireDeliveryEmail || body.email?.trim()) {
+    const emailCheck = validateDeliveryEmail(body.email);
+    if (!emailCheck.ok) {
+      if (body.contactMethod === "email" && check.ok) {
+        email = check.value;
+      } else {
+        return { ok: false, error: emailCheck.error };
+      }
+    } else {
+      email = emailCheck.email;
+    }
+  } else if (body.contactMethod === "email" && check.ok) {
+    email = check.value;
+  }
+
   // Далі скрізь іде вже нормалізований контакт: @user, пошта в нижньому
   // регістрі, телефон у +380… — щоб «Артем» і «артем» не були двома клієнтами.
-  return { ok: true, name, contactMethod: body.contactMethod, contact: check.value };
+  return {
+    ok: true,
+    name,
+    email,
+    contactMethod: body.contactMethod,
+    contact: check.value,
+  };
 }

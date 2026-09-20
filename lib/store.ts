@@ -24,6 +24,7 @@ export type StoredOrder = {
   budget?: string;
   deadline?: string;
   name: string;
+  email?: string; // обов'язковий для видачі товару, валідується при замовленні
   contactMethod: "telegram" | "email" | "phone";
   contact: string;
   message: string;

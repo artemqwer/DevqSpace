@@ -115,7 +115,37 @@ export async function deliverOrder(
   await setReviewToken(reviewToken, order.id);
   const reviewUrl = `${baseUrl}/review/${reviewToken}`;
 
-  // ---- Telegram ----
+  // ---- Автоматична видача: Email (гарантований) + Telegram (паралельний) ----
+  const targetEmail = (
+    order.email || (order.contactMethod === "email" ? order.contact : "")
+  ).trim().toLowerCase();
+
+  let emailSuccess = false;
+  let emailError: string | undefined;
+
+  if (targetEmail) {
+    if (emailEnabled()) {
+      const r = await sendDeliveryEmail(
+        targetEmail,
+        product.title,
+        dlUrl,
+        reviewUrl,
+      );
+      if (r.ok) {
+        emailSuccess = true;
+      } else {
+        emailError = r.error ?? "помилка Resend";
+      }
+    } else {
+      emailError = "RESEND_API_KEY не задано (локальний режим)";
+    }
+  } else {
+    emailError = "email не вказано";
+  }
+
+  let tgSuccess = false;
+  let tgNote: string | undefined;
+
   if (order.contactMethod === "telegram") {
     if (order.tgChatId) {
       // Спроба 1: надіслати сам файл документом.
@@ -125,92 +155,102 @@ export async function deliverOrder(
         `✅ <b>${esc(product.title)}</b>\nДякуємо за покупку! Ваш архів у вкладенні. Гарантія 1 рік 🚀\n\n★ Розкажете, як вам? ${reviewUrl}`,
       );
       if (ok) {
-        await markOrderDelivered(order.id, "telegram");
-        await updateOrder(order.id, { deliveryStatus: "SENT" });
-        if (admin)
-          await tgSendMessage(
-            admin,
-            `📤 Видано в Telegram: ${esc(order.name)} · ${esc(order.contact)} — ${esc(product.title)}`,
-          );
-        return { ok: true, channel: "telegram" };
+        tgSuccess = true;
+      } else {
+        // Спроба 2: файл не пішов (напр. >20 МБ для URL) — шлемо посилання в чат.
+        const linkOk = await tgSendMessage(
+          order.tgChatId,
+          `✅ <b>${esc(product.title)}</b>\nДякуємо за покупку! Завантажте архів за посиланням:\n${dlUrl}\n\n★ Розкажете, як вам? ${reviewUrl}`,
+        );
+        if (linkOk) {
+          tgSuccess = true;
+          tgNote = "надіслано посиланням";
+        } else {
+          tgNote = "помилка надсилання в Telegram";
+        }
       }
-      // Спроба 2: файл не пішов (напр. >20 МБ для URL) — шлемо посилання в чат.
-      const linkOk = await tgSendMessage(
-        order.tgChatId,
-        `✅ <b>${esc(product.title)}</b>\nДякуємо за покупку! Завантажте архів за посиланням:\n${dlUrl}\n\n★ Розкажете, як вам? ${reviewUrl}`,
-      );
-      if (linkOk) {
-        await markOrderDelivered(order.id, "telegram", "надіслано посиланням");
-        await updateOrder(order.id, { deliveryStatus: "SENT" });
-        if (admin)
-          await tgSendMessage(
-            admin,
-            `📤 Видано в Telegram (посиланням, файл великий): ${esc(order.name)} — ${esc(product.title)}`,
-          );
-        return { ok: true, channel: "telegram" };
-      }
+    } else {
+      tgNote = "клієнт не підключив Telegram";
     }
-    const note = order.tgChatId
-      ? "помилка надсилання"
-      : "клієнт не підключив Telegram";
-    await markOrderDelivered(order.id, "manual", note);
-    await updateOrder(order.id, {
-      deliveryStatus: "FAILED",
-      errorMessage: `Telegram: ${note}`,
-    });
-    if (admin)
-      await tgSendMessage(
-        admin,
-        `⚠️ Не вдалось авто-видати в Telegram (${note}).\n` +
-          `Клієнт: ${esc(order.name)} · ${esc(order.contact)}\n` +
-          `Надішліть посилання вручну:\n${dlUrl}`,
-      );
-    return { ok: false, channel: "telegram", note };
   }
 
-  // ---- Email ----
-  if (order.contactMethod === "email") {
-    let reason = "RESEND_API_KEY не задано";
-    if (emailEnabled()) {
-      const r = await sendDeliveryEmail(
-        order.contact,
-        product.title,
-        dlUrl,
-        reviewUrl,
-      );
-      if (r.ok) {
-        await markOrderDelivered(order.id, "email");
-        await updateOrder(order.id, { deliveryStatus: "SENT" });
-        if (admin)
-          await tgSendMessage(
-            admin,
-            `📧 Видано на email: ${esc(order.contact)} — ${esc(product.title)}`,
-          );
-        return { ok: true, channel: "email" };
-      }
-      reason = r.error ?? "помилка Resend";
-    }
-    await markOrderDelivered(order.id, "manual", "email не надіслано");
-    await updateOrder(order.id, {
-      deliveryStatus: "FAILED",
-      errorMessage: `Email: ${reason}`,
-    });
-    if (admin)
+  // 1. Обидва канали спрацювали
+  if (emailSuccess && tgSuccess) {
+    await markOrderDelivered(order.id, "email", "видано на email + Telegram");
+    await updateOrder(order.id, { deliveryStatus: "SENT", errorMessage: undefined });
+    if (admin) {
       await tgSendMessage(
         admin,
-        `⚠️ Email не надіслано.\n<b>Причина:</b> ${esc(reason)}\n` +
-          `Клієнт: ${esc(order.contact)}\nПосилання для ручної відправки:\n${dlUrl}`,
+        `🚀 <b>Товар видано усюди!</b>\n` +
+          `Email: ${esc(targetEmail)}\n` +
+          `Telegram: ${esc(order.contact)}\n` +
+          `Товар: <b>${esc(product.title)}</b>`,
       );
-    return { ok: false, channel: "email", note: "email fail" };
+    }
+    return { ok: true, channel: "email" };
   }
 
-  // ---- Phone / інше ----
-  await markOrderDelivered(order.id, "manual", "контакт — телефон");
-  if (admin)
+  // 2. Email успішно надіслано (основний канал доставки)
+  if (emailSuccess) {
+    const note = tgNote ? `email надіслано (${tgNote})` : undefined;
+    await markOrderDelivered(order.id, "email", note);
+    await updateOrder(order.id, { deliveryStatus: "SENT", errorMessage: undefined });
+    if (admin) {
+      await tgSendMessage(
+        admin,
+        `📧 <b>Авто-видано на email:</b> ${esc(targetEmail)} — ${esc(product.title)}\n` +
+          `Клієнт: ${esc(order.name)} · Спосіб зв'язку (${order.contactMethod}): ${esc(order.contact)}` +
+          (tgNote ? `\n<i>(${esc(tgNote)})</i>` : ""),
+      );
+    }
+    return { ok: true, channel: "email" };
+  }
+
+  // 3. Telegram успішно надіслано (запасний/прямий канал)
+  if (tgSuccess) {
+    const note = emailError ? `telegram (email: ${emailError})` : undefined;
+    await markOrderDelivered(order.id, "telegram", note);
+    await updateOrder(order.id, { deliveryStatus: "SENT", errorMessage: undefined });
+    if (admin) {
+      await tgSendMessage(
+        admin,
+        `📤 <b>Видано в Telegram:</b> ${esc(order.name)} · ${esc(order.contact)} — ${esc(product.title)}` +
+          (targetEmail ? `\n<i>(Email ${esc(targetEmail)}: ${esc(emailError ?? "")})</i>` : ""),
+      );
+    }
+    return { ok: true, channel: "telegram" };
+  }
+
+  // 4. Жоден канал не спрацював — ручна видача адміном
+  const reasons: string[] = [];
+  if (targetEmail) {
+    reasons.push(`Email: ${emailError ?? "помилка"}`);
+  } else {
+    reasons.push("Email не вказано");
+  }
+  if (order.contactMethod === "telegram") {
+    reasons.push(`Telegram: ${tgNote ?? "не підключено"}`);
+  } else if (order.contactMethod === "phone") {
+    reasons.push(`Контакт: телефон (${order.contact})`);
+  }
+  const failReason = reasons.join(" · ");
+
+  await markOrderDelivered(order.id, "manual", failReason);
+  await updateOrder(order.id, {
+    deliveryStatus: "FAILED",
+    errorMessage: failReason,
+  });
+
+  if (admin) {
     await tgSendMessage(
       admin,
-      `📦 Оплачено. Спосіб зв'язку — телефон (${esc(order.contact)}).\n` +
-        `Надішліть посилання вручну:\n${dlUrl}`,
+      `⚠️ <b>Не вдалося авто-видати товар!</b>\n` +
+        `<b>Причина:</b> ${esc(failReason)}\n` +
+        `Клієнт: ${esc(order.name)} · ${esc(order.contact)}` +
+        (targetEmail ? `\nEmail: ${esc(targetEmail)}` : "") +
+        `\n\nПосилання для ручної відправки:\n${dlUrl}`,
     );
-  return { ok: false, channel: "manual", note: "phone" };
+  }
+
+  return { ok: false, channel: "manual", note: failReason };
 }

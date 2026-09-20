@@ -253,6 +253,11 @@ export default function OrdersBoard({
                           ({o.contactMethod})
                         </span>
                       </Row>
+                      {o.email && (
+                        <Row label="Email видачі">
+                          <CopyText text={o.email} />
+                        </Row>
+                      )}
                       <Row label="Ім'я">{o.name}</Row>
                       {o.type === "product" ? (
                         <Row label="Slug">{o.productSlug}</Row>

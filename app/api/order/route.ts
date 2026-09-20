@@ -37,16 +37,16 @@ export async function POST(req: Request) {
     );
   }
 
-  const parsed = parseContact(body);
-  if (!parsed.ok) {
-    return Response.json({ ok: false, error: parsed.error }, { status: 400 });
-  }
-  const { name, contact, contactMethod } = parsed;
   const type = body.type;
-
   if (type !== "product" && type !== "custom") {
     return Response.json({ ok: false, error: "Невірний type" }, { status: 400 });
   }
+
+  const parsed = parseContact(body, { requireDeliveryEmail: type === "product" });
+  if (!parsed.ok) {
+    return Response.json({ ok: false, error: parsed.error }, { status: 400 });
+  }
+  const { name, contact, contactMethod, email } = parsed;
 
   const message = (body.message ?? "").trim();
   let payload: OrderPayload;
@@ -84,6 +84,7 @@ export async function POST(req: Request) {
       productTitle: product.title,
       productPrice: effectivePrice,
       name,
+      email,
       contactMethod,
       contact,
       message: message + envNote,
@@ -94,6 +95,7 @@ export async function POST(req: Request) {
       productTitle: product.title,
       productPrice: effectivePrice,
       name,
+      email,
       contactMethod,
       contact,
       message: message + envNote,
@@ -111,6 +113,7 @@ export async function POST(req: Request) {
       budget,
       deadline,
       name,
+      email,
       contactMethod,
       contact,
       message,
@@ -121,6 +124,7 @@ export async function POST(req: Request) {
       budget,
       deadline,
       name,
+      email,
       contactMethod,
       contact,
       message,
