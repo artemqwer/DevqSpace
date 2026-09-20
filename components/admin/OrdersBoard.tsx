@@ -53,6 +53,49 @@ const NEXT_STATUS: { id: OrderStatus; label: string; icon: string }[] = [
   { id: "rejected", label: "Відхилити", icon: "ph-x" },
 ];
 
+function CyberCheckbox({
+  checked,
+  indeterminate = false,
+  onChange,
+  disabled = false,
+  title,
+}: {
+  checked: boolean;
+  indeterminate?: boolean;
+  onChange?: () => void;
+  disabled?: boolean;
+  title?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={indeterminate ? "mixed" : checked}
+      title={title}
+      disabled={disabled}
+      onClick={(e) => {
+        e.stopPropagation();
+        onChange?.();
+      }}
+      className={`relative w-[18px] h-[18px] rounded-[5px] border flex items-center justify-center transition-all duration-150 shrink-0 outline-none select-none ${
+        checked || indeterminate
+          ? "bg-neon-blue border-neon-blue text-black shadow-[0_0_10px_rgba(0,240,255,0.45)]"
+          : "bg-surface2/90 border-white/20 text-transparent hover:border-neon-blue/70 hover:bg-surface2 hover:shadow-[0_0_8px_rgba(0,240,255,0.25)]"
+      } ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer active:scale-90"}`}
+    >
+      {indeterminate ? (
+        <i className="ph-bold ph-minus text-[11px] leading-none" />
+      ) : (
+        <i
+          className={`ph-bold ph-check text-[11px] leading-none transition-transform duration-150 ${
+            checked ? "scale-100 opacity-100" : "scale-50 opacity-0"
+          }`}
+        />
+      )}
+    </button>
+  );
+}
+
 export default function OrdersBoard({
   initialOrders,
   maskedEnv = {},
@@ -84,6 +127,10 @@ export default function OrdersBoard({
 
   const allFilteredSelected =
     filtered.length > 0 && filtered.every((o) => selectedIds.has(o.id));
+  const someFilteredSelected =
+    filtered.length > 0 &&
+    filtered.some((o) => selectedIds.has(o.id)) &&
+    !allFilteredSelected;
 
   const toggleSelectAll = () => {
     if (allFilteredSelected) {
@@ -260,17 +307,20 @@ export default function OrdersBoard({
       {/* Bulk actions & selection toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 rounded-xl border border-white/10 bg-surface/80 backdrop-blur-sm mb-3">
         <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-mono text-gray-300 hover:text-white">
-            <input
-              type="checkbox"
+          <div
+            onClick={toggleSelectAll}
+            className="flex items-center gap-2.5 cursor-pointer select-none text-xs font-mono text-gray-300 hover:text-white transition-colors"
+          >
+            <CyberCheckbox
               checked={allFilteredSelected}
+              indeterminate={someFilteredSelected}
               onChange={toggleSelectAll}
-              className="w-4 h-4 rounded bg-surface2 border-white/20 text-neon-blue cursor-pointer accent-neon-blue"
+              title={allFilteredSelected ? "Зняти всі" : "Обрати всі"}
             />
             <span>
               {allFilteredSelected ? "Зняти всі" : "Обрати всі"} ({filtered.length})
             </span>
-          </label>
+          </div>
           {selectedIds.size > 0 && (
             <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-neon-blue/20 text-neon-blue border border-neon-blue/40 font-bold">
               Обрано: {selectedIds.size}
@@ -327,25 +377,24 @@ export default function OrdersBoard({
             return (
               <div
                 key={o.id}
-                className={`rounded-xl border transition-colors overflow-hidden ${
+                className={`rounded-xl border transition-all duration-150 overflow-hidden ${
                   isSelected
-                    ? "border-neon-blue/50 bg-neon-blue/[0.03]"
+                    ? "border-neon-blue/60 bg-neon-blue/[0.04] shadow-[0_0_15px_rgba(0,240,255,0.06)]"
                     : "border-white/10 bg-surface/50"
                 }`}
               >
                 <div className="w-full flex items-center gap-3 p-3 text-left hover:bg-white/5 transition-colors">
                   {/* Selection Checkbox */}
-                  <label
+                  <div
                     onClick={(e) => e.stopPropagation()}
-                    className="flex items-center justify-center shrink-0 cursor-pointer p-1 -m-1"
+                    className="flex items-center justify-center shrink-0 pr-0.5"
                   >
-                    <input
-                      type="checkbox"
+                    <CyberCheckbox
                       checked={isSelected}
                       onChange={() => toggleSelect(o.id)}
-                      className="w-4 h-4 rounded bg-surface2 border-white/20 text-neon-blue cursor-pointer accent-neon-blue"
+                      title={isSelected ? "Зняти вибір" : "Вибрати замовлення"}
                     />
-                  </label>
+                  </div>
 
                   {/* Header click toggles accordion */}
                   <div
