@@ -67,9 +67,84 @@ export default function OrdersBoard({
   const [openId, setOpenId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [regenNote, setRegenNote] = useState<Record<string, string>>({});
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const filtered =
     filter === "all" ? orders : orders.filter((o) => o.status === filter);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const allFilteredSelected =
+    filtered.length > 0 && filtered.every((o) => selectedIds.has(o.id));
+
+  const toggleSelectAll = () => {
+    if (allFilteredSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        filtered.forEach((o) => next.delete(o.id));
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        filtered.forEach((o) => next.add(o.id));
+        return next;
+      });
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  const bulkSetStatus = async (status: OrderStatus) => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    setBulkBusy(true);
+    setOrders((prev) =>
+      prev.map((o) => (selectedIds.has(o.id) ? { ...o, status } : o)),
+    );
+    try {
+      await fetch("/api/admin/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids, status }),
+      });
+    } catch (e) {
+      console.error("[bulk status] error:", e);
+    } finally {
+      setBulkBusy(false);
+      clearSelection();
+      router.refresh();
+    }
+  };
+
+  const bulkRemove = async () => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    if (!confirm(`Видалити обрані замовлення (${ids.length} шт.)?`)) return;
+    setBulkBusy(true);
+    setOrders((prev) => prev.filter((o) => !selectedIds.has(o.id)));
+    try {
+      await fetch(`/api/admin/orders?ids=${encodeURIComponent(ids.join(","))}`, {
+        method: "DELETE",
+      });
+    } catch (e) {
+      console.error("[bulk delete] error:", e);
+    } finally {
+      setBulkBusy(false);
+      clearSelection();
+      router.refresh();
+    }
+  };
 
   const setStatus = async (id: string, status: OrderStatus) => {
     setBusy(id);
@@ -155,7 +230,7 @@ export default function OrdersBoard({
   return (
     <div>
       {/* Filters */}
-      <div className="flex gap-2 mb-4 overflow-x-auto custom-scrollbar pb-1">
+      <div className="flex gap-2 mb-3 overflow-x-auto custom-scrollbar pb-1">
         {STATUSES.map((s) => {
           const count =
             s.id === "all"
@@ -182,6 +257,64 @@ export default function OrdersBoard({
         })}
       </div>
 
+      {/* Bulk actions & selection toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 rounded-xl border border-white/10 bg-surface/80 backdrop-blur-sm mb-3">
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-mono text-gray-300 hover:text-white">
+            <input
+              type="checkbox"
+              checked={allFilteredSelected}
+              onChange={toggleSelectAll}
+              className="w-4 h-4 rounded bg-surface2 border-white/20 text-neon-blue cursor-pointer accent-neon-blue"
+            />
+            <span>
+              {allFilteredSelected ? "Зняти всі" : "Обрати всі"} ({filtered.length})
+            </span>
+          </label>
+          {selectedIds.size > 0 && (
+            <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-neon-blue/20 text-neon-blue border border-neon-blue/40 font-bold">
+              Обрано: {selectedIds.size}
+            </span>
+          )}
+        </div>
+
+        {selectedIds.size > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-mono text-gray-400 mr-1 hidden sm:inline">
+              Статус для обраних:
+            </span>
+            {NEXT_STATUS.map((s) => (
+              <button
+                key={s.id}
+                disabled={bulkBusy}
+                onClick={() => bulkSetStatus(s.id)}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-mono transition-all hover:scale-105 active:scale-95 disabled:opacity-40 ${STATUS_STYLE[s.id]}`}
+              >
+                <i className={`ph-bold ${s.icon}`} />
+                <span>{s.label}</span>
+              </button>
+            ))}
+
+            <button
+              disabled={bulkBusy}
+              onClick={bulkRemove}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-mono transition-all ml-1"
+              title="Видалити обрані замовлення"
+            >
+              <i className="ph-bold ph-trash" />
+              <span className="hidden sm:inline">Видалити</span>
+            </button>
+
+            <button
+              onClick={clearSelection}
+              className="text-xs font-mono text-gray-500 hover:text-gray-300 px-2 py-1 transition-colors"
+            >
+              Скасувати
+            </button>
+          </div>
+        )}
+      </div>
+
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-white/10 bg-surface/50 p-10 text-center text-sm font-mono text-gray-500">
           Замовлень немає
@@ -190,59 +323,80 @@ export default function OrdersBoard({
         <div className="space-y-2">
           {filtered.map((o) => {
             const open = openId === o.id;
+            const isSelected = selectedIds.has(o.id);
             return (
               <div
                 key={o.id}
-                className="rounded-xl border border-white/10 bg-surface/50 overflow-hidden"
+                className={`rounded-xl border transition-colors overflow-hidden ${
+                  isSelected
+                    ? "border-neon-blue/50 bg-neon-blue/[0.03]"
+                    : "border-white/10 bg-surface/50"
+                }`}
               >
-                <button
-                  onClick={() => setOpenId(open ? null : o.id)}
-                  className="w-full flex items-center gap-3 p-3 text-left hover:bg-white/5 transition-colors"
-                >
-                  <span
-                    className={`w-9 h-9 rounded-lg bg-surface2 border border-white/10 flex items-center justify-center shrink-0 ${o.type === "product" ? "text-neon-blue" : "text-neon-pink"}`}
+                <div className="w-full flex items-center gap-3 p-3 text-left hover:bg-white/5 transition-colors">
+                  {/* Selection Checkbox */}
+                  <label
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center justify-center shrink-0 cursor-pointer p-1 -m-1"
                   >
-                    <i
-                      className={`ph ${o.type === "product" ? "ph-package" : "ph-wrench"}`}
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelect(o.id)}
+                      className="w-4 h-4 rounded bg-surface2 border-white/20 text-neon-blue cursor-pointer accent-neon-blue"
                     />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm text-white truncate">
-                      {o.type === "product" ? o.productTitle : o.customType}
-                    </div>
-                    <div className="text-[11px] font-mono text-gray-500 truncate">
-                      {o.name} · {new Date(o.createdAt).toLocaleString("uk-UA")}
-                    </div>
-                  </div>
-                  {o.type === "product" && o.productPrice ? (
-                    <span className="text-sm font-display font-bold text-white shrink-0">
-                      ${o.productPrice}
-                    </span>
-                  ) : null}
-                  {o.paid && (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded border shrink-0 bg-neon-green/10 text-neon-green border-neon-green/30 flex items-center gap-1">
-                      <i className="ph-fill ph-check-circle" /> Оплачено
-                    </span>
-                  )}
-                  {o.type === "product" && deliveryOf(o) !== "PENDING" && (
+                  </label>
+
+                  {/* Header click toggles accordion */}
+                  <div
+                    onClick={() => setOpenId(open ? null : o.id)}
+                    className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer select-none"
+                  >
                     <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded border shrink-0 items-center gap-1 hidden sm:flex ${DELIVERY_STYLE[deliveryOf(o)]}`}
+                      className={`w-9 h-9 rounded-lg bg-surface2 border border-white/10 flex items-center justify-center shrink-0 ${o.type === "product" ? "text-neon-blue" : "text-neon-pink"}`}
                     >
                       <i
-                        className={`ph-bold ${DELIVERY_ICON[deliveryOf(o)]} ${deliveryOf(o) === "GENERATING" ? "animate-spin" : ""}`}
+                        className={`ph ${o.type === "product" ? "ph-package" : "ph-wrench"}`}
                       />
-                      {DELIVERY_LABEL[deliveryOf(o)]}
                     </span>
-                  )}
-                  <span
-                    className={`text-[10px] font-mono px-2 py-0.5 rounded border shrink-0 ${STATUS_STYLE[o.status]}`}
-                  >
-                    {STATUSES.find((s) => s.id === o.status)?.label}
-                  </span>
-                  <i
-                    className={`ph ph-caret-down text-gray-500 transition-transform ${open ? "rotate-180" : ""}`}
-                  />
-                </button>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm text-white truncate">
+                        {o.type === "product" ? o.productTitle : o.customType}
+                      </div>
+                      <div className="text-[11px] font-mono text-gray-500 truncate">
+                        {o.name} · {new Date(o.createdAt).toLocaleString("uk-UA")}
+                      </div>
+                    </div>
+                    {o.type === "product" && o.productPrice ? (
+                      <span className="text-sm font-display font-bold text-white shrink-0">
+                        ${o.productPrice}
+                      </span>
+                    ) : null}
+                    {o.paid && (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded border shrink-0 bg-neon-green/10 text-neon-green border-neon-green/30 flex items-center gap-1">
+                        <i className="ph-fill ph-check-circle" /> Оплачено
+                      </span>
+                    )}
+                    {o.type === "product" && deliveryOf(o) !== "PENDING" && (
+                      <span
+                        className={`text-[10px] font-mono px-2 py-0.5 rounded border shrink-0 items-center gap-1 hidden sm:flex ${DELIVERY_STYLE[deliveryOf(o)]}`}
+                      >
+                        <i
+                          className={`ph-bold ${DELIVERY_ICON[deliveryOf(o)]} ${deliveryOf(o) === "GENERATING" ? "animate-spin" : ""}`}
+                        />
+                        {DELIVERY_LABEL[deliveryOf(o)]}
+                      </span>
+                    )}
+                    <span
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded border shrink-0 ${STATUS_STYLE[o.status]}`}
+                    >
+                      {STATUSES.find((s) => s.id === o.status)?.label}
+                    </span>
+                    <i
+                      className={`ph ph-caret-down text-gray-500 transition-transform ${open ? "rotate-180" : ""}`}
+                    />
+                  </div>
+                </div>
 
                 {open && (
                   <div className="px-3 pb-3 pt-1 border-t border-white/5 space-y-3">

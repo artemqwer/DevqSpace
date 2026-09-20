@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/session";
 import {
   updateOrderStatus,
+  updateOrdersStatus,
   markOrderPaid,
   deleteOrder,
   getOrder,
@@ -17,17 +18,28 @@ export async function PATCH(req: Request) {
   if (!(await getSession())) {
     return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
-  let body: { id?: string; status?: string; paid?: boolean };
+  let body: { id?: string; ids?: string[]; status?: string; paid?: boolean };
   try {
     body = (await req.json()) as {
       id?: string;
+      ids?: string[];
       status?: string;
       paid?: boolean;
     };
   } catch {
     return Response.json({ ok: false }, { status: 400 });
   }
-  const { id, status, paid } = body;
+  const { id, ids, status, paid } = body;
+
+  // Групове оновлення статусів
+  if (Array.isArray(ids) && ids.length > 0) {
+    if (!status || !STATUSES.includes(status as OrderStatus)) {
+      return Response.json({ ok: false, error: "Невірний статус" }, { status: 400 });
+    }
+    const count = await updateOrdersStatus(ids, status as OrderStatus);
+    return Response.json({ ok: true, count });
+  }
+
   if (!id) {
     return Response.json({ ok: false, error: "Bad data" }, { status: 400 });
   }
@@ -64,7 +76,18 @@ export async function DELETE(req: Request) {
   if (!(await getSession())) {
     return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
-  const id = new URL(req.url).searchParams.get("id");
+  const url = new URL(req.url);
+  const id = url.searchParams.get("id");
+  const rawIds = url.searchParams.get("ids");
+
+  if (rawIds) {
+    const ids = rawIds.split(",").map((s) => s.trim()).filter(Boolean);
+    for (const i of ids) {
+      await deleteOrder(i);
+    }
+    return Response.json({ ok: true, count: ids.length });
+  }
+
   if (!id) return Response.json({ ok: false }, { status: 400 });
   await deleteOrder(id);
   return Response.json({ ok: true });

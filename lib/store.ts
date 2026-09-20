@@ -548,6 +548,18 @@ export async function updateOrderStatus(
   return true;
 }
 
+export async function updateOrdersStatus(
+  ids: string[],
+  status: OrderStatus,
+): Promise<number> {
+  let updated = 0;
+  for (const id of ids) {
+    const ok = await updateOrderStatus(id, status);
+    if (ok) updated++;
+  }
+  return updated;
+}
+
 export async function markOrderPaid(
   id: string,
   info: { invoiceId?: number; amount?: string; asset?: string },
