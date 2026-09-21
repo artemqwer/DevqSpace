@@ -68,11 +68,11 @@ export function ProductCard({ product }: { product: Product }) {
           )}
         </div>
 
-        <div className="mt-4 flex items-end justify-between border-t border-border pt-4">
+        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-border pt-4">
           <div className="font-display text-lg font-bold text-foreground">
             ${product.price}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2">
             {product.demoUrl && (
               <Link
                 href={product.demoUrl}
