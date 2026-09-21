@@ -18,14 +18,14 @@ export function ProductCard({ product }: { product: Product }) {
           className="h-full w-full transition-transform duration-500 group-hover:scale-[1.04]"
         />
         {product.badge && (
-          <span className="absolute left-3 top-3 z-10 rounded-full border border-white/15 bg-black/40 px-2.5 py-1 text-[0.7rem] font-semibold text-white backdrop-blur">
+          <span className="absolute left-3 top-3 z-10 rounded-full border border-white/15 bg-black/55 px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-wide text-white backdrop-blur-md">
             {product.badge}
           </span>
         )}
         {product.demoUrl && (
-          <span className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full border border-neon-green/40 bg-black/70 px-2.5 py-1 text-[0.68rem] font-bold text-neon-green backdrop-blur">
-            <span className="h-1.5 w-1.5 rounded-full bg-neon-green animate-pulse" />
-            Live Demo
+          <span className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full border border-neon-green/40 bg-black/60 px-2 py-1 text-[0.62rem] font-semibold text-neon-green backdrop-blur-md">
+            <span className="h-1.5 w-1.5 rounded-full bg-neon-green shadow-[0_0_6px_rgba(0,255,136,0.9)] animate-pulse" />
+            Live
           </span>
         )}
       </Link>
@@ -68,7 +68,7 @@ export function ProductCard({ product }: { product: Product }) {
           )}
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-border pt-4">
+        <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-border pt-4">
           <div className="font-display text-lg font-bold text-foreground">
             ${product.price}
           </div>
