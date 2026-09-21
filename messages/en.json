@@ -406,7 +406,7 @@
     "footerLegal": "Legal",
     "terms": {
       "title": "Terms of Sale",
-      "intro": "This document is an official offer by {entityType} {entityName} to enter into a contract for the sale of digital goods on the terms set out below. Paying for an order means full and unconditional acceptance of these terms.",
+      "intro": "This document is an official offer by {entityType} {entityName} to enter into a contract for the sale of digital goods on the terms set out below. Paying for an order means full and unconditional acceptance of these terms. Version dated 21 September 2026.",
       "h1": "1. General",
       "b1": "Seller — {entityType} {entityName}, registration number {edrpou}, address: {address}. Buyer — any legally capable person who places an order on this site. The contract takes effect once payment is received.",
       "h2": "2. Subject",
@@ -421,12 +421,18 @@
       "b6": "The Seller warrants that the product functions as described on its product page. Support includes: consultations on initial setup via the README guide and bug fixes for the original source code during the warranty period. Support does NOT include: developing new features, modifying business logic to Buyer's individual specifications, or integrating third-party services outside product description (such work is quoted separately via devq.space/custom). Warranty is voided if the Buyer modifies source code independently or due to outages of third-party platforms (Telegram, hosting, payment gateways).",
       "h7": "7. Liability",
       "b7": "The Seller is not liable for lost profit or indirect damages related to the use of the product. The Seller's liability is limited to the amount paid for the particular product.",
-      "h8": "8. Company details",
-      "b8": "{entityType} {entityName}, registration number {edrpou}, {address}. Email: {supportEmail}. Phone: {supportPhone}. Support hours: {workHours}."
+      "h8": "8. Force majeure",
+      "b8": "The parties are released from liability for failure to perform their obligations where it is caused by circumstances beyond their control — hostilities, failures of backbone networks and payment systems, decisions of public authorities, or natural disasters. For the duration of such circumstances, the deadlines for performance are postponed.",
+      "h9": "9. Changes to these terms",
+      "b9": "The Seller may amend this offer. A new version takes effect once published on the site. Orders already placed and paid for are governed by the version in force on the date of payment. Continued use of the site after changes means acceptance of the new version.",
+      "h10": "10. Governing law and disputes",
+      "b10": "This contract is governed by the laws of Ukraine. The parties first seek to resolve disputes through negotiation and written claims, with 20 business days to respond to a claim. Failing agreement, the dispute is settled by a court under the laws of Ukraine.",
+      "h11": "11. Company details",
+      "b11": "{entityType} {entityName}, registration number {edrpou}, {address}. Email: {supportEmail}. Phone: {supportPhone}. Support hours: {workHours}."
     },
     "privacy": {
       "title": "Privacy Policy",
-      "intro": "This document explains what data the site collects, why, and how long it is kept. Data controller — {entityType} {entityName}.",
+      "intro": "This document explains what data the site collects, why, and how long it is kept. Data controller — {entityType} {entityName}. Version dated 21 September 2026.",
       "h1": "1. What we collect",
       "b1": "The name and contact you provide in the form (Telegram, email or phone), the contents and amount of your order, and anonymous product-view statistics. We do not collect payment details: payment is handled on the payment provider's side.",
       "h2": "2. Why",
@@ -440,11 +446,17 @@
       "h6": "6. Retention and deletion",
       "b6": "Order data is kept for as long as warranty obligations apply. You may ask us to delete your data — write to {supportEmail} and we will comply within 30 days, except for data we are legally required to retain.",
       "h7": "7. Your rights",
-      "b7": "You have the right to know what data we hold about you, to have it corrected or deleted, and to withdraw your consent to processing. Write to {supportEmail}."
+      "b7": "You have the right to know what data we hold about you, to have it corrected or deleted, and to withdraw your consent to processing. Write to {supportEmail}.",
+      "h8": "8. Legal basis for processing",
+      "b8": "We process your data on the basis of the contract between us (to fulfil the order and warranty obligations), your consent (given when you submit the form), and our legitimate interests in security and record-keeping. Personal data is processed in accordance with Ukraine's Law On the Protection of Personal Data.",
+      "h9": "9. Data security",
+      "b9": "Only authorised people have access to the data. Product-configuration data is encrypted with AES-256-GCM and the connection to the site is protected by TLS. We apply organisational and technical measures to prevent unauthorised access to, loss of, or alteration of the data.",
+      "h10": "10. Changes to this policy",
+      "b10": "We may update this policy. The current version is always published on this page, and the date of the latest changes is shown in the introduction. Material changes are marked with a new revision date."
     },
     "refund": {
       "title": "Refund Policy",
-      "intro": "A digital product cannot be returned the way a physical one can: once the code has been delivered, access to it cannot be revoked. So here are clear rules on when we refund.",
+      "intro": "A digital product cannot be returned the way a physical one can: once the code has been delivered, access to it cannot be revoked. So here are clear rules on when we refund. Version dated 21 September 2026.",
       "h1": "1. Full refund",
       "b1": "You paid but never received the product and we could not deliver it within three business days. The product does not match its description. The product does not run following our instructions and we could not fix it.",
       "h2": "2. No refund",
@@ -452,7 +464,11 @@
       "h3": "3. How to request",
       "b3": "Write to {supportEmail} or to our Telegram support within 14 days of payment. Include the order number and describe the problem. We reply during: {workHours}.",
       "h4": "4. Timing",
-      "b4": "We first try to solve the problem technically — that is faster than a refund and usually works. If it does not, we refund within 10 business days using the same method the payment came through. Crypto network fees cannot be refunded for technical reasons."
+      "b4": "We first try to solve the problem technically — that is faster than a refund and usually works. If it does not, we refund within 10 business days using the same method the payment came through. Crypto network fees cannot be refunded for technical reasons.",
+      "h5": "5. Payment disputes",
+      "b5": "If you believe a payment was made in error, contact us first — we resolve it faster than a bank does. Starting a chargeback without contacting support first is treated as unfair, since the digital product has already been delivered; in that case we provide the payment system with proof of delivery.",
+      "h6": "6. Governing law",
+      "b6": "These terms form part of the public offer and are governed by the laws of Ukraine. They do not limit the consumer rights provided by law; where the law grants broader rights, the law prevails."
     }
   },
   "reviews": {
