@@ -12,19 +12,16 @@ const GA_ID = "G-K7C0BNHPQ3"; // Google Analytics 4
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin", "cyrillic"],
-  weight: ["300", "400", "500", "600"],
 });
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
 });
 
 const jetBrainsMono = JetBrains_Mono({
   variable: "--font-mono-space",
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
 });
 
 export const metadata: Metadata = {

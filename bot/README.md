@@ -1,58 +1,54 @@
-# DevqSpace Admin Bot
+# DevqSpace Telegram Боти
 
-Простий Telegram-бот для адміна студії. Доповнює основний flow: замовлення з сайту приходять напряму через Bot API, цей скрипт додає інтерактивні команди.
+У системі DevqSpace передбачено два Telegram-боти з розділенням обов'язків:
+1. **Admin Bot (`admin_bot.py` / `/api/tg-webhook`)** — облік замовлень, аналітика продажів, каталог товарів, Mini App дашборд.
+2. **Support Bot (`support_bot.py` / `/api/support/tg-webhook`)** — робоче місце оператора служби підтримки. Дозволяє листуватися з клієнтами на сайті прямо з Telegram від імені сапорту.
 
-## Швидкий старт
+---
 
-1. Створіть бота через [@BotFather](https://t.me/BotFather) → отримайте `BOT_TOKEN`
-2. Напишіть йому `/start` у Telegram
-3. Відкрийте `https://api.telegram.org/bot<TOKEN>/getUpdates` у браузері → знайдіть `chat.id`
+## 1. Support Bot (Листування з ролі сапорту)
 
-```bash
-cd bot
-cp .env.example .env
-# відредагуйте .env: BOT_TOKEN + ADMIN_CHAT_ID
+### Як це працює:
+1. Клієнт пише у віджет чату на сайті `devq.space` (або прямо у Support Bot у Telegram).
+2. За замовчуванням запити обробляє AI (Google Gemini / OpenAI).
+3. Якщо клієнт просить оператора або AI ескалює звернення — у чат підтримки надходить сповіщення з контекстом та кнопками керування.
+4. **Оператор просто робить Reply (Відповісти) на це повідомлення в Telegram** — і відповідь миттєво надсилається клієнту у віджет на сайті!
+5. Також доступні кнопки швидкої дії: `[🤖 Повернути AI]`, `[🔒 Закрити тікет]`, `[💬 Відкрити в адмінці]`.
 
-python -m venv .venv
-source .venv/bin/activate    # Linux / Mac
-# .venv\Scripts\activate     # Windows
+### Команди оператора в Telegram:
+| Команда | Дія |
+|---|---|
+| `Reply на повідомлення` | Відповісти клієнту на сайт від імені сапорту |
+| `/tickets` або `/open` | Переглянути чергу відкритих тікетів |
+| `/ticket <id>` | Історія діалогу з клієнтом |
+| `/reply <id> <текст>` | Відповісти клієнту за номером тікету |
+| `/ai <id>` | Повернути керування діалогом AI-боту |
+| `/close <id>` | Закрити звернення |
+| `/where` | Дізнатися `chat_id` поточного чату або групи підтримки |
+| `/help` | Список доступних команд |
 
-pip install -r requirements.txt
-python admin_bot.py
-```
+### Запуск Support Bot:
+* **На Vercel (рекомендовано, без VPS):**
+  Усе працює в рамках Next.js через webhook `/api/support/tg-webhook`. Достатньо активувати через:
+  ```
+  GET https://devq.space/api/support/tg-webhook/setup?key=<SUPPORT_TELEGRAM_SETUP_KEY>
+  ```
+* **На VPS або локально (Long Polling):**
+  ```bash
+  python support_bot.py
+  ```
 
-Той самий `BOT_TOKEN` і `ADMIN_CHAT_ID` треба прописати в `.env` Next.js застосунку як `TELEGRAM_BOT_TOKEN` і `TELEGRAM_ADMIN_CHAT_ID` — тоді кожне замовлення з сайту автоматично летить вам у Telegram.
+---
 
-## Команди
+## 2. Admin Bot (Замовлення та каталог)
 
-| Команда   | Дія                                       |
-|-----------|-------------------------------------------|
-| `/start`  | Привітання                                |
-| `/help`   | Список команд                             |
-| `/ping`   | Перевірити що бот живий                   |
-| `/where`  | Дізнатися свій `chat_id`                  |
-| `/stats`  | Статистика сесії (аптайм + повідомлення)  |
-
-## Деплой на VPS
-
-```bash
-# 1. systemd unit (/etc/systemd/system/nexus-bot.service)
-[Unit]
-Description=DevqSpace Admin Bot
-After=network.target
-
-[Service]
-Type=simple
-WorkingDirectory=/opt/nexus-bot
-ExecStart=/opt/nexus-bot/.venv/bin/python admin_bot.py
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
-sudo systemctl enable --now nexus-bot
-sudo journalctl -u nexus-bot -f
-```
+### Команди:
+| Команда | Дія |
+|---|---|
+| `/start` | Привітання та вхід у Mini App |
+| `/app` | Відкрити веб-дашборд усередині Telegram |
+| `/stats` | Аналітика переглядів, замовлень і виторгу |
+| `/products` | Керування товарами каталогу |
+| `/where` | Дізнатися свій `chat_id` |
+| `/invite` | Згенерувати одноразове посилання для додавання додаткового адміна |
+| `/help` | Список команд |

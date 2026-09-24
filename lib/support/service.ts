@@ -9,7 +9,11 @@ import {
 } from "./store";
 import { askLLM, type LLMChatMessage } from "./llm";
 import { analyzeMessageTriggers } from "./triggers";
-import { notifyAllAdmins, type InlineKeyboard } from "@/lib/telegram";
+import {
+  notifySupportOperators,
+  sendSupportTgMessage,
+  escapeHtml,
+} from "./telegram";
 import type { SupportTicket, SupportMessage } from "./types";
 
 export type HandleUserMessageResult = {
@@ -20,51 +24,18 @@ export type HandleUserMessageResult = {
 };
 
 /**
- * Сповіщення операторів у закритий адмін-чат/канал Telegram при ескалації.
+ * Сповіщення операторів у чат/групу підтримки Telegram при ескалації.
  */
 async function alertOperatorsAboutEscalation(
   ticket: SupportTicket,
   reason: string,
   userMessageText: string,
 ): Promise<void> {
-  const shortId = ticket.id.slice(0, 15);
-  const recentHistory = ticket.messages
-    .slice(-4)
-    .map((m) => `<b>${m.sender === "user" ? "👤 Клієнт" : "🤖 AI"}:</b> ${escapeHtml(m.text.slice(0, 150))}`)
-    .join("\n");
-
-  const adminText =
-    `🚨 <b>Виклик оператора підтримки DevqSpace!</b>\n\n` +
-    `📋 <b>Тікет:</b> <code>#${shortId}</code>\n` +
-    `⚡ <b>Причина:</b> ${escapeHtml(reason)}\n` +
-    `👤 <b>Клієнт:</b> ${escapeHtml(ticket.clientInfo?.contact || ticket.clientInfo?.name || "Гість сайту")}\n\n` +
-    `💬 <b>Останнє повідомлення:</b>\n<i>"${escapeHtml(userMessageText)}"</i>\n\n` +
-    `📜 <b>Контекст діалогу:</b>\n${recentHistory || "Початок діалогу"}\n\n` +
-    `<i>AI заморожено для цього клієнта. Відповідайте в адмінці /admin/support.</i>`;
-
-  const keyboard: InlineKeyboard = {
-    inline_keyboard: [
-      [
-        {
-          text: "💬 Відкрити в адмінці",
-          url: "https://devq.space/admin/support",
-        },
-      ],
-    ],
-  };
-
   try {
-    await notifyAllAdmins(adminText, keyboard);
+    await notifySupportOperators(ticket, userMessageText, reason);
   } catch (e) {
-    console.error("[support] Failed to notify telegram admins:", e);
+    console.error("[support] Failed to notify support operators via TG:", e);
   }
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 }
 
 /**
@@ -257,6 +228,20 @@ export async function sendOperatorReply(
   ticket.status = "operator_active";
   ticket.unreadForOperator = false;
   ticket.unreadForUser = true;
+
+  // Якщо це клієнт з Telegram (sessionId = "tg_<chatId>") — надсилаємо повідомлення йому в чат
+  if (ticket.sessionId.startsWith("tg_")) {
+    const clientChatId = ticket.sessionId.replace("tg_", "");
+    try {
+      await sendSupportTgMessage(
+        clientChatId,
+        `👨‍💻 <b>Підтримка DevqSpace:</b>\n\n${escapeHtml(replyText)}`,
+        "HTML",
+      );
+    } catch (e) {
+      console.error("[support] Failed to push operator reply to TG client:", e);
+    }
+  }
 
   return await saveTicket(ticket);
 }

@@ -63,3 +63,27 @@ export type VerificationState = {
   lockedUntil?: number;
   verifiedOrderIds: string[];
 };
+
+export type SupportAdmin = {
+  chatId: string;
+  username?: string;
+  firstName?: string;
+  isPrimary?: boolean;
+  addedBy?: string;
+  addedAt: number;
+};
+
+export type PendingAdmin = {
+  username: string; // lowercase, without @
+  addedBy?: string;
+  addedAt: number;
+};
+
+export type InviteCode = {
+  code: string;
+  createdBy: string;
+  createdAt: number;
+  usedBy?: string;
+  usedAt?: number;
+  expiresAt: number;
+};
