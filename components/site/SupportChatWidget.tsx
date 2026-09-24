@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import SupportMarkdown from "./SupportMarkdown";
 
 type Message = {
   id: string;
@@ -15,12 +16,25 @@ export default function SupportChatWidget() {
   const [enabled, setEnabled] = useState(false);
   const [welcomeMessage, setWelcomeMessage] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(false);
   const [isFrozen, setIsFrozen] = useState(false);
   const [sessionId, setSessionId] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-expand window upwards when multi-line or long messages arrive
+  useEffect(() => {
+    if (messages.length > 0) {
+      const hasSubstantialMessage = messages.some(
+        (m) => m.text.length > 100 || m.text.includes("\n"),
+      );
+      if (hasSubstantialMessage) {
+        setIsExpanded(true);
+      }
+    }
+  }, [messages]);
 
   // 1. Initial check: DO NOT RENDER IF API IS NOT SET OR DISABLED
   useEffect(() => {
@@ -158,7 +172,19 @@ export default function SupportChatWidget() {
     <div className="fixed bottom-5 right-5 z-50 font-sans">
       {/* CHAT WINDOW DRAWER */}
       {isOpen ? (
-        <div className="w-[360px] sm:w-[400px] h-[520px] max-h-[85vh] rounded-2xl border border-white/15 bg-surface/95 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(0,240,255,0.15)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
+        <div
+          className={`
+            rounded-2xl border border-white/15 bg-surface/95 backdrop-blur-xl
+            shadow-[0_10px_40px_rgba(0,0,0,0.8),0_0_25px_rgba(0,240,255,0.18)]
+            flex flex-col overflow-hidden
+            transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+            ${
+              isExpanded
+                ? "w-[calc(100vw-24px)] sm:w-[460px] md:w-[500px] h-[640px] sm:h-[690px] max-h-[90vh]"
+                : "w-[calc(100vw-32px)] sm:w-[390px] h-[510px] max-h-[82vh]"
+            }
+          `}
+        >
           {/* Header */}
           <div className="p-3.5 border-b border-white/10 bg-surface2/80 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -184,13 +210,28 @@ export default function SupportChatWidget() {
               </div>
             </div>
 
-            <button
-              onClick={() => setIsOpen(false)}
-              className="w-7 h-7 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
-              title="Закрити чат"
-            >
-              <i className="ph-bold ph-x text-sm" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setIsExpanded((v) => !v)}
+                className="w-7 h-7 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
+                title={isExpanded ? "Зменшити вікно" : "Розгорнути вікно вгору"}
+              >
+                <i
+                  className={`ph-bold text-sm ${
+                    isExpanded ? "ph-arrows-in-simple" : "ph-arrows-out-simple"
+                  }`}
+                />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="w-7 h-7 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
+                title="Закрити чат"
+              >
+                <i className="ph-bold ph-x text-sm" />
+              </button>
+            </div>
           </div>
 
           {/* Messages body */}
@@ -200,8 +241,13 @@ export default function SupportChatWidget() {
               <div className="w-6 h-6 rounded-md bg-neon-blue/10 text-neon-blue border border-neon-blue/30 flex items-center justify-center shrink-0 mt-0.5">
                 <i className="ph-fill ph-robot text-xs" />
               </div>
-              <div className="p-3 rounded-2xl rounded-tl-sm bg-surface2/90 border border-white/10 text-gray-200 leading-relaxed shadow-sm">
-                {welcomeMessage || "Привіт! Чим можу допомогти?"}
+              <div className="p-3 rounded-2xl rounded-tl-sm bg-surface2/90 border border-white/10 text-gray-200 leading-relaxed shadow-sm max-w-[95%]">
+                <SupportMarkdown
+                  content={
+                    welcomeMessage ||
+                    "Привіт! Я AI-асистент DevqSpace. Допоможу з вибором готового рішення, статусом замовлення або відповім на технічні запитання. Чим можу допомогти?"
+                  }
+                />
               </div>
             </div>
 
@@ -248,28 +294,30 @@ export default function SupportChatWidget() {
                     </div>
                   ) : (
                     <div
-                      className={`max-w-[85%] p-3 rounded-2xl text-xs leading-relaxed ${
+                      className={`p-3 rounded-2xl text-xs leading-relaxed ${
                         isUser
-                          ? "bg-neon-blue text-black font-medium rounded-tr-sm shadow-[0_0_12px_rgba(0,240,255,0.25)]"
+                          ? "max-w-[85%] sm:max-w-[80%] bg-neon-blue text-black font-medium rounded-tr-sm shadow-[0_0_12px_rgba(0,240,255,0.25)]"
                           : isOperator
-                            ? "bg-neon-pink/15 text-white border border-neon-pink/40 rounded-tl-sm shadow-[0_0_12px_rgba(255,0,128,0.15)]"
-                            : "bg-surface2 text-gray-200 border border-white/10 rounded-tl-sm"
+                            ? "max-w-[95%] sm:max-w-[92%] bg-neon-pink/15 text-white border border-neon-pink/40 rounded-tl-sm shadow-[0_0_12px_rgba(255,0,128,0.15)]"
+                            : "max-w-[95%] sm:max-w-[92%] bg-surface2 text-gray-200 border border-white/10 rounded-tl-sm shadow-sm"
                       }`}
                     >
                       {!isUser && (
-                        <div className="flex items-center gap-1.5 text-[10px] font-mono text-gray-400 mb-1">
+                        <div className="flex items-center gap-1.5 text-[10px] font-mono text-gray-400 mb-1.5 pb-1 border-b border-white/5">
                           {isOperator ? (
-                            <span className="text-neon-pink font-bold">
+                            <span className="text-neon-pink font-bold flex items-center gap-1">
+                              <i className="ph-fill ph-headset" />
                               👨‍💻 Оператор DevqSpace
                             </span>
                           ) : (
-                            <span className="text-neon-blue font-bold">
+                            <span className="text-neon-blue font-bold flex items-center gap-1">
+                              <i className="ph-fill ph-robot" />
                               🤖 AI Консультант
                             </span>
                           )}
                         </div>
                       )}
-                      <p className="whitespace-pre-wrap">{m.text}</p>
+                      <SupportMarkdown content={m.text} isUser={isUser} />
                     </div>
                   )}
                 </div>

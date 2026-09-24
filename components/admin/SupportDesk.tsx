@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import type { SupportTicket, SupportSettings } from "@/lib/support/types";
+import SupportMarkdown from "@/components/site/SupportMarkdown";
 
 export default function SupportDesk({
   initialTickets,
@@ -479,7 +480,7 @@ export default function SupportDesk({
                               </span>
                             </div>
 
-                            <p className="whitespace-pre-wrap">{m.text}</p>
+                            <SupportMarkdown content={m.text} isUser={isUser} />
                           </div>
                         )}
                       </div>
