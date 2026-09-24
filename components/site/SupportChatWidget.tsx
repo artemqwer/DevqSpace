@@ -57,7 +57,7 @@ export default function SupportChatWidget() {
     setSessionId(sId);
 
     // Fetch existing chat history if any
-    fetch(`/api/support/chat?sessionId=${sId}`)
+    fetch(`/api/support/chat?sessionId=${sId}&_t=${Date.now()}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
         if (data.ok && data.ticket) {
@@ -80,7 +80,10 @@ export default function SupportChatWidget() {
     if (!enabled || !isOpen || !sessionId) return;
     const interval = setInterval(async () => {
       try {
-        const r = await fetch(`/api/support/chat?sessionId=${sessionId}`);
+        const r = await fetch(
+          `/api/support/chat?sessionId=${sessionId}&_t=${Date.now()}`,
+          { cache: "no-store" },
+        );
         if (r.ok) {
           const data = await r.json();
           if (data.ok && data.ticket) {
@@ -91,7 +94,7 @@ export default function SupportChatWidget() {
       } catch (e) {
         console.error(e);
       }
-    }, 5000);
+    }, 2500);
     return () => clearInterval(interval);
   }, [enabled, isOpen, sessionId]);
 
@@ -119,6 +122,7 @@ export default function SupportChatWidget() {
       const res = await fetch("/api/support/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        cache: "no-store",
         body: JSON.stringify({
           sessionId,
           message: text,
@@ -131,6 +135,17 @@ export default function SupportChatWidget() {
           setMessages(data.messages || []);
           setIsFrozen(Boolean(data.isFrozen));
         }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err_${Date.now()}`,
+            sender: "system",
+            text: errData.error || "Не вдалося надіслати повідомлення.",
+            timestamp: Date.now(),
+          },
+        ]);
       }
     } catch (e) {
       console.error("Chat send error:", e);
@@ -266,7 +281,9 @@ export default function SupportChatWidget() {
                 <span className="w-1.5 h-1.5 rounded-full bg-neon-blue animate-bounce" />
                 <span className="w-1.5 h-1.5 rounded-full bg-neon-blue animate-bounce [animation-delay:0.2s]" />
                 <span className="w-1.5 h-1.5 rounded-full bg-neon-blue animate-bounce [animation-delay:0.4s]" />
-                <span className="ml-1">Готую відповідь...</span>
+                <span className="ml-1">
+                  {isFrozen ? "Надсилаю оператору..." : "Готую відповідь..."}
+                </span>
               </div>
             )}
 
@@ -274,7 +291,13 @@ export default function SupportChatWidget() {
           </div>
 
           {/* Footer input */}
-          <div className="p-2.5 border-t border-white/10 bg-surface2/80">
+          <div className="p-2.5 border-t border-white/10 bg-surface2/80 space-y-1.5">
+            {isFrozen && (
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-neon-pink/10 border border-neon-pink/20 text-[10px] font-mono text-neon-pink">
+                <span className="w-1.5 h-1.5 rounded-full bg-neon-pink animate-pulse" />
+                <span>AI призупинено. Ви спілкуєтеся з оператором підтримки.</span>
+              </div>
+            )}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -286,7 +309,11 @@ export default function SupportChatWidget() {
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder="Запитайте будь-що..."
+                placeholder={
+                  isFrozen
+                    ? "Повідомлення для оператора..."
+                    : "Запитайте будь-що..."
+                }
                 className="flex-1 bg-surface border border-white/10 focus:border-neon-blue rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 outline-none transition-colors font-mono"
               />
               <button

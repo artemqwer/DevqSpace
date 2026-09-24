@@ -13,17 +13,26 @@ export async function GET(req: Request) {
     }
 
     const ticket = await getTicketBySession(sessionId);
-    return NextResponse.json({
-      ok: true,
-      ticket: ticket
-        ? {
-            id: ticket.id,
-            status: ticket.status,
-            messages: ticket.messages,
-            isFrozen: ticket.status === "waiting_operator" || ticket.status === "operator_active",
-          }
-        : null,
-    });
+    return NextResponse.json(
+      {
+        ok: true,
+        ticket: ticket
+          ? {
+              id: ticket.id,
+              status: ticket.status,
+              messages: ticket.messages,
+              isFrozen:
+                ticket.status === "waiting_operator" ||
+                ticket.status === "operator_active",
+            }
+          : null,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
+      },
+    );
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
   }
@@ -41,10 +50,16 @@ export async function POST(req: Request) {
       );
     }
 
+    const existingTicket = await getTicketBySession(sessionId);
+    const isOperatorSession =
+      existingTicket &&
+      (existingTicket.status === "waiting_operator" ||
+        existingTicket.status === "operator_active");
+
     const settings = await getSupportSettings();
-    if (!settings.aiEnabled || !settings.apiKey) {
+    if (!isOperatorSession && (!settings.aiEnabled || !settings.apiKey)) {
       return NextResponse.json(
-        { ok: false, error: "Support chat is currently inactive." },
+        { ok: false, error: "Підтримка тимчасово недоступна. Будь ласка, спробуйте пізніше." },
         { status: 503 },
       );
     }
@@ -59,14 +74,21 @@ export async function POST(req: Request) {
       name,
     });
 
-    return NextResponse.json({
-      ok: true,
-      reply: result.reply,
-      sender: result.sender,
-      isFrozen: result.isFrozen,
-      status: result.ticket.status,
-      messages: result.ticket.messages,
-    });
+    return NextResponse.json(
+      {
+        ok: true,
+        reply: result.reply,
+        sender: result.sender,
+        isFrozen: result.isFrozen,
+        status: result.ticket.status,
+        messages: result.ticket.messages,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
+      },
+    );
   } catch (e: any) {
     console.error("[api/support/chat] error:", e);
     return NextResponse.json(

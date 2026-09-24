@@ -59,6 +59,10 @@ function getRedis(): Redis | null {
   return redisClient;
 }
 
+import { devReadState, devWriteState } from "@/lib/devStorage";
+
+const SUPPORT_DB_FILE = "support.json";
+
 // In-memory fallback
 type MemSupportDB = {
   settings: SupportSettings;
@@ -71,14 +75,49 @@ const g = globalThis as unknown as {
   __devqSupportMem?: MemSupportDB;
 };
 
-function mem(): MemSupportDB {
-  if (!g.__devqSupportMem) {
-    g.__devqSupportMem = {
+function hydrate(): MemSupportDB {
+  const raw = devReadState(SUPPORT_DB_FILE) as any;
+  if (!raw) {
+    return {
       settings: { ...DEFAULT_SUPPORT_SETTINGS },
       tickets: new Map(),
       sessionTickets: new Map(),
       verifications: new Map(),
     };
+  }
+  try {
+    return {
+      settings: { ...DEFAULT_SUPPORT_SETTINGS, ...(raw.settings || {}) },
+      tickets: new Map(raw.tickets || []),
+      sessionTickets: new Map(raw.sessionTickets || []),
+      verifications: new Map(raw.verifications || []),
+    };
+  } catch {
+    return {
+      settings: { ...DEFAULT_SUPPORT_SETTINGS },
+      tickets: new Map(),
+      sessionTickets: new Map(),
+      verifications: new Map(),
+    };
+  }
+}
+
+function persist(m: MemSupportDB): void {
+  try {
+    devWriteState(SUPPORT_DB_FILE, {
+      settings: m.settings,
+      tickets: Array.from(m.tickets.entries()),
+      sessionTickets: Array.from(m.sessionTickets.entries()),
+      verifications: Array.from(m.verifications.entries()),
+    });
+  } catch (e) {
+    console.error("[support/store] Failed to persist support state:", e);
+  }
+}
+
+function mem(): MemSupportDB {
+  if (!g.__devqSupportMem) {
+    g.__devqSupportMem = hydrate();
   }
   return g.__devqSupportMem;
 }
@@ -107,6 +146,7 @@ export async function saveSupportSettings(
   const redis = getRedis();
   if (!redis) {
     mem().settings = next;
+    persist(mem());
     return next;
   }
   await redis.set(REDIS_KEYS.settings, next);
@@ -158,6 +198,7 @@ export async function createTicket(
   if (!redis) {
     mem().tickets.set(id, ticket);
     mem().sessionTickets.set(sessionId, id);
+    persist(mem());
     return ticket;
   }
 
@@ -187,9 +228,12 @@ export async function saveTicket(ticket: SupportTicket): Promise<SupportTicket> 
   const redis = getRedis();
   if (!redis) {
     mem().tickets.set(ticket.id, ticket);
+    mem().sessionTickets.set(ticket.sessionId, ticket.id);
+    persist(mem());
     return ticket;
   }
   await redis.set(REDIS_KEYS.ticket(ticket.id), ticket);
+  await redis.set(REDIS_KEYS.sessionTicket(ticket.sessionId), ticket.id);
   await redis.zadd(REDIS_KEYS.ticketIndex, {
     score: ticket.updatedAt,
     member: ticket.id,
@@ -303,6 +347,7 @@ export async function saveVerificationState(
   const redis = getRedis();
   if (!redis) {
     mem().verifications.set(key, state);
+    persist(mem());
     return;
   }
   // Store with 24 hours TTL

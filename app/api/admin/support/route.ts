@@ -11,13 +11,17 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const NO_CACHE_HEADERS = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+};
+
 export async function GET() {
   if (!(await getSession())) {
     return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
   const tickets = await getAllTickets(100);
-  return Response.json({ ok: true, tickets });
+  return Response.json({ ok: true, tickets }, { headers: NO_CACHE_HEADERS });
 }
 
 export async function POST(req: Request) {
@@ -37,7 +41,7 @@ export async function POST(req: Request) {
       return Response.json({ ok: false, error: "Ticket not found" }, { status: 404 });
     }
 
-    return Response.json({ ok: true, ticket: updated });
+    return Response.json({ ok: true, ticket: updated }, { headers: NO_CACHE_HEADERS });
   } catch (e: any) {
     return Response.json({ ok: false, error: e.message }, { status: 500 });
   }
@@ -65,7 +69,7 @@ export async function PATCH(req: Request) {
       return Response.json({ ok: false, error: "Unknown action" }, { status: 400 });
     }
 
-    return Response.json({ ok: true, ticket: updated });
+    return Response.json({ ok: true, ticket: updated }, { headers: NO_CACHE_HEADERS });
   } catch (e: any) {
     return Response.json({ ok: false, error: e.message }, { status: 500 });
   }

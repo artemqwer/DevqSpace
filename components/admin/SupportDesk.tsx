@@ -28,22 +28,23 @@ export default function SupportDesk({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Poll for tickets update every 6 seconds when in chat tab
+  // Poll for tickets update every 2.5 seconds when in chat tab
   useEffect(() => {
     if (activeTab !== "chat") return;
     const interval = setInterval(async () => {
       try {
-        const res = await fetch("/api/admin/support");
+        const res = await fetch(`/api/admin/support?_t=${Date.now()}`, { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           if (data.ok && data.tickets) {
             setTickets(data.tickets);
+            setSelectedTicketId((prev) => prev || data.tickets[0]?.id || null);
           }
         }
       } catch (e) {
         console.error("Failed to poll tickets:", e);
       }
-    }, 6000);
+    }, 2500);
     return () => clearInterval(interval);
   }, [activeTab]);
 
@@ -57,11 +58,12 @@ export default function SupportDesk({
   const refreshTickets = async () => {
     setRefreshing(true);
     try {
-      const res = await fetch("/api/admin/support");
+      const res = await fetch(`/api/admin/support?_t=${Date.now()}`, { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         if (data.ok && data.tickets) {
           setTickets(data.tickets);
+          setSelectedTicketId((prev) => prev || data.tickets[0]?.id || null);
         }
       }
     } finally {
@@ -76,6 +78,7 @@ export default function SupportDesk({
       const res = await fetch("/api/admin/support", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        cache: "no-store",
         body: JSON.stringify({
           ticketId: selectedTicket.id,
           text: replyText.trim(),
@@ -89,7 +92,12 @@ export default function SupportDesk({
           );
           setReplyText("");
         }
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Не вдалося надіслати відповідь. Перевірте сесію або оновіть сторінку.");
       }
+    } catch (e: any) {
+      alert(`Помилка відправки: ${e.message}`);
     } finally {
       setSending(false);
     }

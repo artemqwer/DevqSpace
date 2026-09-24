@@ -79,23 +79,24 @@ export async function handleUserMessage(
   const trimmed = messageText.trim();
 
   // 1. Додаємо повідомлення користувача в історію
-  const userMsg = await addMessage(ticket.id, "user", trimmed);
-  if (userMsg) {
-    ticket.messages.push(userMsg);
-  }
+  await addMessage(ticket.id, "user", trimmed);
+  const freshTicket = (await getTicket(ticket.id)) || ticket;
 
   // 2. ПЕРЕВІРКА РЕЖИМУ ЗАМОРОЗКИ (AI Freeze Mode)
   // Якщо тікет уже у статусі очікування оператора або оператор уже веде діалог — AI мовчить!
-  if (ticket.status === "waiting_operator" || ticket.status === "operator_active") {
+  if (freshTicket.status === "waiting_operator" || freshTicket.status === "operator_active") {
     // Сповіщаємо операторів про нове повідомлення в активному тикеті
-    ticket.unreadForOperator = true;
-    await saveTicket(ticket);
+    await alertOperatorsAboutEscalation(
+      freshTicket,
+      "Нове повідомлення від клієнта в активному діалозі",
+      trimmed,
+    );
 
     return {
       reply:
         "Менеджер підтримки вже сповіщений і відповість вам найближчим часом. Будь ласка, зачекайте.",
       sender: "system",
-      ticket,
+      ticket: freshTicket,
       isFrozen: true,
     };
   }
@@ -160,8 +161,8 @@ export async function handleUserMessage(
   ];
 
   // Беремо свіжі повідомлення з бази
-  const freshTicket = (await getTicket(ticket.id)) || ticket;
-  const recentMsgs = freshTicket.messages.slice(-10);
+  const currentTicket = (await getTicket(ticket.id)) || freshTicket;
+  const recentMsgs = currentTicket.messages.slice(-10);
   for (const m of recentMsgs) {
     if (m.sender === "user" && m.text?.trim()) {
       historyForLLM.push({ role: "user", content: m.text.trim() });
@@ -242,8 +243,18 @@ export async function sendOperatorReply(
   const ticket = await getTicket(ticketId);
   if (!ticket) return null;
 
-  await addMessage(ticket.id, "operator", replyText);
-  await updateTicketStatus(ticket.id, "operator_active");
+  const msg: SupportMessage = {
+    id: `msg_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36)}`,
+    sender: "operator",
+    text: replyText,
+    timestamp: Date.now(),
+  };
+
+  ticket.messages.push(msg);
+  if (ticket.messages.length > 40) {
+    ticket.messages = ticket.messages.slice(-40);
+  }
+  ticket.status = "operator_active";
   ticket.unreadForOperator = false;
   ticket.unreadForUser = true;
 
@@ -257,14 +268,16 @@ export async function unfreezeAI(ticketId: string): Promise<SupportTicket | null
   const ticket = await getTicket(ticketId);
   if (!ticket) return null;
 
-  await updateTicketStatus(ticket.id, "ai");
-  await addMessage(
-    ticket.id,
-    "system",
-    "Діалог з оператором завершено. AI-асистент знову активний і готовий допомогти з іншими питаннями.",
-  );
-
-  return (await getTicket(ticketId)) || ticket;
+  ticket.status = "ai";
+  ticket.unreadForOperator = false;
+  const sysMsg: SupportMessage = {
+    id: `msg_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36)}`,
+    sender: "system",
+    text: "Діалог з оператором завершено. AI-асистент знову активний і готовий допомогти з іншими питаннями.",
+    timestamp: Date.now(),
+  };
+  ticket.messages.push(sysMsg);
+  return await saveTicket(ticket);
 }
 
 /**
@@ -274,12 +287,14 @@ export async function closeTicket(ticketId: string): Promise<SupportTicket | nul
   const ticket = await getTicket(ticketId);
   if (!ticket) return null;
 
-  await updateTicketStatus(ticket.id, "closed");
-  await addMessage(
-    ticket.id,
-    "system",
-    "Звернення успішно закрито. Якщо виникнуть нові питання — напишіть нам у будь-який час!",
-  );
-
-  return (await getTicket(ticketId)) || ticket;
+  ticket.status = "closed";
+  ticket.unreadForOperator = false;
+  const sysMsg: SupportMessage = {
+    id: `msg_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36)}`,
+    sender: "system",
+    text: "Звернення успішно закрито. Якщо виникнуть нові питання — напишіть нам у будь-який час!",
+    timestamp: Date.now(),
+  };
+  ticket.messages.push(sysMsg);
+  return await saveTicket(ticket);
 }
