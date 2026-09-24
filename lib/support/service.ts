@@ -79,7 +79,10 @@ export async function handleUserMessage(
   const trimmed = messageText.trim();
 
   // 1. Додаємо повідомлення користувача в історію
-  await addMessage(ticket.id, "user", trimmed);
+  const userMsg = await addMessage(ticket.id, "user", trimmed);
+  if (userMsg) {
+    ticket.messages.push(userMsg);
+  }
 
   // 2. ПЕРЕВІРКА РЕЖИМУ ЗАМОРОЗКИ (AI Freeze Mode)
   // Якщо тікет уже у статусі очікування оператора або оператор уже веде діалог — AI мовчить!
@@ -156,14 +159,20 @@ export async function handleUserMessage(
     },
   ];
 
-  // Додаємо останні 10 реплік
-  const recentMsgs = ticket.messages.slice(-10);
+  // Беремо свіжі повідомлення з бази
+  const freshTicket = (await getTicket(ticket.id)) || ticket;
+  const recentMsgs = freshTicket.messages.slice(-10);
   for (const m of recentMsgs) {
-    if (m.sender === "user") {
-      historyForLLM.push({ role: "user", content: m.text });
-    } else if (m.sender === "ai") {
-      historyForLLM.push({ role: "assistant", content: m.text });
+    if (m.sender === "user" && m.text?.trim()) {
+      historyForLLM.push({ role: "user", content: m.text.trim() });
+    } else if (m.sender === "ai" && m.text?.trim()) {
+      historyForLLM.push({ role: "assistant", content: m.text.trim() });
     }
+  }
+
+  // Завжди гарантуємо наявність повідомлення користувача в історії
+  if (!historyForLLM.some((m) => m.role === "user")) {
+    historyForLLM.push({ role: "user", content: trimmed });
   }
 
   // Викликаємо LLM з Tool-Calling

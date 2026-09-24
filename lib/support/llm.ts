@@ -61,6 +61,21 @@ export async function askLLM(
   return await askOpenAICompatible(messages, settings, context);
 }
 
+function toGeminiSchema(schema: any): any {
+  if (!schema || typeof schema !== "object") return schema;
+  const res: Record<string, any> = Array.isArray(schema) ? [] : {};
+  for (const [k, v] of Object.entries(schema)) {
+    if (k === "type" && typeof v === "string") {
+      res[k] = v.toUpperCase();
+    } else if (typeof v === "object") {
+      res[k] = toGeminiSchema(v);
+    } else {
+      res[k] = v;
+    }
+  }
+  return res;
+}
+
 /**
  * 1. Нативний Google Gemini REST адаптер (з підтримкою functionDeclarations)
  */
@@ -72,7 +87,8 @@ async function askGoogleGemini(
     onEscalate?: (reason: string) => Promise<void>;
   },
 ): Promise<LLMResponse> {
-  const model = settings.model || "gemini-2.5-flash";
+  const rawModel = settings.model || "gemini-2.5-flash";
+  const cleanModel = rawModel.replace(/^models\//, "");
   const apiKey = settings.apiKey;
   const executedToolNames: string[] = [];
   let escalated = false;
@@ -88,18 +104,43 @@ async function askGoogleGemini(
   const systemMsg = messages.find((m) => m.role === "system");
   const systemText = systemMsg?.content || settings.systemPrompt;
 
-  // Формуємо початковий contents для Gemini
+  // Формуємо contents для Gemini з чергуванням реплік
   const contents: Array<{
     role: "user" | "model" | "function";
     parts: Array<Record<string, any>>;
   }> = [];
 
   for (const m of messages) {
-    if (m.role === "user") {
-      contents.push({ role: "user", parts: [{ text: m.content || "" }] });
-    } else if (m.role === "assistant") {
-      contents.push({ role: "model", parts: [{ text: m.content || "" }] });
+    if (m.role === "user" && m.content?.trim()) {
+      const last = contents[contents.length - 1];
+      if (last && last.role === "user") {
+        last.parts.push({ text: m.content.trim() });
+      } else {
+        contents.push({ role: "user", parts: [{ text: m.content.trim() }] });
+      }
+    } else if (m.role === "assistant" && m.content?.trim()) {
+      const last = contents[contents.length - 1];
+      if (last && last.role === "model") {
+        last.parts.push({ text: m.content.trim() });
+      } else {
+        contents.push({ role: "model", parts: [{ text: m.content.trim() }] });
+      }
     }
+  }
+
+  // Захист: contents ніколи не може бути порожнім для Gemini!
+  if (contents.length === 0) {
+    const lastUserMsg = messages.slice().reverse().find((m) => m.role === "user");
+    contents.push({
+      role: "user",
+      parts: [
+        {
+          text:
+            lastUserMsg?.content?.trim() ||
+            "Привіт! Допоможи з платформою DevqSpace.",
+        },
+      ],
+    });
   }
 
   // Схема інструментів для Gemini functionDeclarations
@@ -108,7 +149,7 @@ async function askGoogleGemini(
       functionDeclarations: SUPPORT_TOOLS.map((t) => ({
         name: t.function.name,
         description: t.function.description,
-        parameters: t.function.parameters,
+        parameters: toGeminiSchema(t.function.parameters),
       })),
     },
   ];
@@ -127,7 +168,7 @@ async function askGoogleGemini(
       },
     };
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${cleanModel}:generateContent?key=${apiKey}`;
 
     let res: Response;
     try {
@@ -146,10 +187,24 @@ async function askGoogleGemini(
 
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
-      return {
-        success: false,
-        error: `Google Gemini API помилка HTTP ${res.status}: ${errText.slice(0, 150)}`,
-      };
+      console.warn(`[gemini-native] HTTP ${res.status}: ${errText}, trying OpenAI-compatible endpoint...`);
+      // Автоматичний надійний фолбек на офіційний OpenAI-compatible endpoint Gemini
+      try {
+        return await askOpenAICompatible(
+          messages,
+          {
+            ...settings,
+            baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+            model: cleanModel,
+          },
+          context,
+        );
+      } catch {
+        return {
+          success: false,
+          error: `Google Gemini API помилка HTTP ${res.status}: ${errText.slice(0, 150)}`,
+        };
+      }
     }
 
     const data = await res.json().catch(() => null);
