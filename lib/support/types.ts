@@ -50,7 +50,7 @@ export type SupportSettings = {
   provider: LLMProvider;
   apiKey: string; // secret, хранится в Redis / devStorage
   baseUrl: string; // напр. https://generativelanguage.googleapis.com/v1beta или https://api.openai.com/v1
-  model: string; // напр. gemini-2.5-flash, gemini-1.5-flash, gpt-4o-mini
+  model: string; // напр. gemini-2.0-flash, gemini-1.5-flash, gpt-4o-mini
   systemPrompt: string;
   companyName: string;
   welcomeMessage: string;

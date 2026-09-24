@@ -24,7 +24,7 @@ export const DEFAULT_SUPPORT_SETTINGS: SupportSettings = {
   baseUrl:
     process.env.SUPPORT_AI_BASE_URL ??
     "https://generativelanguage.googleapis.com/v1beta",
-  model: process.env.SUPPORT_AI_MODEL ?? "gemini-2.5-flash",
+  model: process.env.SUPPORT_AI_MODEL ?? "gemini-2.0-flash",
   companyName: "DevqSpace",
   welcomeMessage:
     "Привіт! Я AI-асистент DevqSpace. Допоможу з вибором готового рішення, статусом замовлення або відповім на технічні запитання. Чим можу допомогти?",

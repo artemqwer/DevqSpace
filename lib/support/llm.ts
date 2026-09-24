@@ -1,5 +1,5 @@
 import "server-only";
-import { getSupportSettings } from "./store";
+import { getSupportSettings, saveSupportSettings } from "./store";
 import { SUPPORT_TOOLS, executeTool, type ToolDefinition } from "./tools";
 
 export type LLMChatMessage = {
@@ -77,6 +77,42 @@ function toGeminiSchema(schema: any): any {
 }
 
 /**
+ * Опитування Google Gemini API для отримання списку реально доступних моделей за ключем.
+ */
+export async function getAvailableGeminiModels(apiKey: string): Promise<string[]> {
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`,
+      { signal: AbortSignal.timeout(10000) },
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!Array.isArray(data.models)) return [];
+
+    return data.models
+      .filter((m: any) =>
+        Array.isArray(m.supportedGenerationMethods) &&
+        m.supportedGenerationMethods.includes("generateContent"),
+      )
+      .map((m: any) => m.name.replace(/^models\//, ""))
+      .sort((a: string, b: string) => {
+        const rank = (id: string) => {
+          if (id === "gemini-2.0-flash") return 1;
+          if (id.includes("2.0-flash")) return 2;
+          if (id === "gemini-1.5-flash") return 3;
+          if (id.includes("1.5-flash")) return 4;
+          if (id.includes("flash")) return 5;
+          return 20;
+        };
+        return rank(a) - rank(b);
+      });
+  } catch (e) {
+    console.error("[gemini] Failed to list models:", e);
+    return [];
+  }
+}
+
+/**
  * 1. Нативний Google Gemini REST адаптер (з підтримкою functionDeclarations)
  */
 async function askGoogleGemini(
@@ -87,8 +123,14 @@ async function askGoogleGemini(
     onEscalate?: (reason: string) => Promise<void>;
   },
 ): Promise<LLMResponse> {
-  const rawModel = settings.model || "gemini-2.5-flash";
-  const cleanModel = rawModel.replace(/^models\//, "");
+  const rawModel = settings.model || "gemini-2.0-flash";
+  let cleanModel = rawModel.replace(/^models\//, "");
+
+  // Захист від застарілих / неіснуючих конфігів у базі
+  if (cleanModel === "gemini-2.5-flash" || cleanModel === "gemini-1.0-pro") {
+    cleanModel = "gemini-2.0-flash";
+  }
+
   const apiKey = settings.apiKey;
   const executedToolNames: string[] = [];
   let escalated = false;
@@ -187,7 +229,31 @@ async function askGoogleGemini(
 
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
-      console.warn(`[gemini-native] HTTP ${res.status}: ${errText}, trying OpenAI-compatible endpoint...`);
+      console.warn(`[gemini-native] HTTP ${res.status}: ${errText}`);
+
+      // Якщо модель не знайдена (404) або застаріла — автоматично опитуємо API на актуальні моделі!
+      if (
+        res.status === 404 ||
+        errText.includes("no longer available") ||
+        errText.includes("not found")
+      ) {
+        console.warn(`[gemini] Model ${cleanModel} not available (HTTP 404). Querying available models for key...`);
+        try {
+          const available = await getAvailableGeminiModels(apiKey);
+          const fallbackModel = available[0] || "gemini-2.0-flash";
+          if (fallbackModel && fallbackModel !== cleanModel) {
+            console.log(`[gemini] Auto-switching from ${cleanModel} to available model: ${fallbackModel}`);
+            cleanModel = fallbackModel;
+            // Оновлюємо налаштування в базі для наступних запитів
+            await saveSupportSettings({ model: fallbackModel }).catch(() => {});
+            // Повторюємо запит з новою моделлю
+            continue;
+          }
+        } catch (discoErr) {
+          console.error("[gemini] Model discovery failed:", discoErr);
+        }
+      }
+
       // Автоматичний надійний фолбек на офіційний OpenAI-compatible endpoint Gemini
       try {
         return await askOpenAICompatible(

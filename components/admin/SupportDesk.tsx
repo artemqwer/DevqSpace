@@ -25,6 +25,44 @@ export default function SupportDesk({
   const [apiKeyInput, setApiKeyInput] = useState(initialSettings.apiKey);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState(false);
+  const [availableModels, setAvailableModels] = useState<
+    Array<{ id: string; name: string; description?: string }>
+  >([]);
+  const [fetchingModels, setFetchingModels] = useState(false);
+  const [modelsError, setModelsError] = useState<string | null>(null);
+
+  const handleFetchModels = async () => {
+    setFetchingModels(true);
+    setModelsError(null);
+    try {
+      const res = await fetch("/api/admin/support/models", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          provider: settings.provider,
+          apiKey: apiKeyInput,
+          baseUrl: settings.baseUrl,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok && Array.isArray(data.models)) {
+        setAvailableModels(data.models);
+        if (data.models.length > 0) {
+          const hasCurrent = data.models.some((m: any) => m.id === settings.model);
+          if (!hasCurrent) {
+            setSettings((prev) => ({ ...prev, model: data.models[0].id }));
+          }
+        }
+      } else {
+        setModelsError(data.error || "Не вдалося отримати список моделей");
+      }
+    } catch (e: any) {
+      setModelsError(e.message || "Помилка зв'язку з сервером");
+    } finally {
+      setFetchingModels(false);
+    }
+  };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -549,8 +587,8 @@ export default function SupportDesk({
                 {
                   id: "google",
                   label: "Google Gemini",
-                  desc: "Швидкий, безкоштовний ліміт",
-                  model: "gemini-2.5-flash",
+                  desc: "Gemini 2.0 Flash / 1.5 Flash",
+                  model: "gemini-2.0-flash",
                   url: "https://generativelanguage.googleapis.com/v1beta",
                   recommended: true,
                 },
@@ -572,7 +610,7 @@ export default function SupportDesk({
                   id: "openrouter",
                   label: "OpenRouter",
                   desc: "Всі моделі через 1 ключ",
-                  model: "google/gemini-2.5-flash",
+                  model: "google/gemini-2.0-flash-001",
                   url: "https://openrouter.ai/api/v1",
                 },
                 {
@@ -673,25 +711,81 @@ export default function SupportDesk({
             />
           </div>
 
-          {/* Model Name */}
+          {/* Model Name & Query Button */}
           <div className="space-y-2">
-            <label className="text-xs font-mono text-gray-300">
-              Модель (Model)
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-mono text-gray-300">
+                Модель (Model)
+              </label>
+              <button
+                type="button"
+                onClick={handleFetchModels}
+                disabled={fetchingModels}
+                className="px-2.5 py-1 rounded-lg border border-neon-blue/40 bg-neon-blue/10 hover:bg-neon-blue/20 text-neon-blue text-xs font-mono transition-all flex items-center gap-1.5 disabled:opacity-40"
+                title="Опитати API на список доступних для вашого ключа моделей"
+              >
+                <i
+                  className={`ph-bold ph-arrows-clockwise ${
+                    fetchingModels ? "animate-spin" : ""
+                  }`}
+                />
+                <span>
+                  {fetchingModels ? "Опитую API..." : "🔍 Опитати доступні моделі"}
+                </span>
+              </button>
+            </div>
+
+            {modelsError && (
+              <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono">
+                ⚠️ {modelsError}
+              </div>
+            )}
+
+            {availableModels.length > 0 && (
+              <div className="space-y-1.5 p-3 rounded-xl bg-neon-blue/5 border border-neon-blue/30 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between text-xs font-mono text-neon-blue">
+                  <span className="flex items-center gap-1.5 font-bold">
+                    <i className="ph-bold ph-check-circle" />
+                    Доступні моделі від API ({availableModels.length}):
+                  </span>
+                  <span className="text-[10px] text-gray-400">Оберіть зі списку:</span>
+                </div>
+                <select
+                  value={settings.model}
+                  onChange={(e) =>
+                    setSettings({ ...settings, model: e.target.value })
+                  }
+                  className="w-full bg-surface2 border border-white/20 focus:border-neon-blue rounded-lg px-3 py-2 text-xs text-white font-mono outline-none"
+                >
+                  {availableModels.map((m) => (
+                    <option key={m.id} value={m.id} className="bg-surface2 text-white">
+                      {m.name || m.id} ({m.id})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <input
               type="text"
               value={settings.model}
-              onChange={(e) => setSettings({ ...settings, model: e.target.value })}
-              placeholder="gpt-4o-mini"
+              onChange={(e) =>
+                setSettings({ ...settings, model: e.target.value })
+              }
+              placeholder="gemini-2.0-flash"
               className="w-full bg-surface2 border border-white/15 focus:border-neon-blue rounded-xl px-4 py-2.5 text-sm text-white font-mono outline-none"
             />
             <div className="flex flex-wrap items-center gap-2 pt-1">
-              <span className="text-[11px] font-mono text-gray-500">Популярні:</span>
+              <span className="text-[11px] font-mono text-gray-500">
+                Швидкий вибір:
+              </span>
               {[
+                "gemini-2.0-flash",
+                "gemini-1.5-flash",
+                "gemini-1.5-flash-8b",
+                "gemini-1.5-pro",
                 "gpt-4o-mini",
-                "gpt-4o",
                 "deepseek-chat",
-                "llama-3.3-70b-versatile",
               ].map((m) => (
                 <button
                   type="button"
