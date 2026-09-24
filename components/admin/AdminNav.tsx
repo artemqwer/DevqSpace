@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 const LINKS = [
   { href: "/admin", label: "Дашборд", icon: "ph-chart-line-up", exact: true },
+  { href: "/admin/support", label: "Підтримка", icon: "ph-chat-circle-dots" },
   { href: "/admin/orders", label: "Замовлення", icon: "ph-tray" },
   { href: "/admin/products", label: "Товари", icon: "ph-package" },
   { href: "/admin/reviews", label: "Відгуки", icon: "ph-star" },
