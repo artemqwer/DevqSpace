@@ -587,8 +587,8 @@ export default function SupportDesk({
                 {
                   id: "google",
                   label: "Google Gemini",
-                  desc: "Gemini 2.0 Flash / 1.5 Flash",
-                  model: "gemini-2.0-flash",
+                  desc: "Gemini 1.5 Flash (найстабільніша) / 2.0",
+                  model: "gemini-1.5-flash",
                   url: "https://generativelanguage.googleapis.com/v1beta",
                   recommended: true,
                 },

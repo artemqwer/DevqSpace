@@ -196,8 +196,8 @@ async function askGoogleGemini(
     },
   ];
 
-  // Tool-calling loop (макс 3 ітерації)
-  for (let iteration = 0; iteration < 3; iteration++) {
+  // Tool-calling loop (макс 4 ітерації з урахуванням можливого ретраю моделі)
+  for (let iteration = 0; iteration < 4; iteration++) {
     const payload = {
       systemInstruction: systemText
         ? { parts: [{ text: systemText }] }
@@ -254,6 +254,32 @@ async function askGoogleGemini(
         }
       }
 
+      // Якщо модель перевантажена (503 High Demand / 429 Rate Limit) — пробуємо резервну стабільну модель!
+      if (
+        res.status === 503 ||
+        res.status === 429 ||
+        errText.includes("high demand") ||
+        errText.includes("Resource has been exhausted") ||
+        errText.includes("overloaded")
+      ) {
+        console.warn(
+          `[gemini] Model ${cleanModel} overloaded (HTTP ${res.status}). Cascading to backup model...`,
+        );
+        const fallbackCascade = [
+          "gemini-1.5-flash",
+          "gemini-1.5-flash-8b",
+          "gemini-2.0-flash-lite",
+          "gemini-2.0-flash",
+        ];
+        const nextModel = fallbackCascade.find((m) => m !== cleanModel);
+        if (nextModel) {
+          console.log(`[gemini] Switching to alternate model: ${nextModel}`);
+          cleanModel = nextModel;
+          await new Promise((resolve) => setTimeout(resolve, 800));
+          continue;
+        }
+      }
+
       // Автоматичний надійний фолбек на офіційний OpenAI-compatible endpoint Gemini
       try {
         return await askOpenAICompatible(
@@ -291,6 +317,12 @@ async function askGoogleGemini(
       // Звичайний текст
       const textPart = parts.find((p: any) => typeof p.text === "string");
       const reply = textPart?.text?.trim() || "Чим можу ще допомогти?";
+
+      // Якщо відбулося успішне перемикання з перевантаженої моделі — оновлюємо налаштування
+      if (cleanModel !== (settings.model || "").replace(/^models\//, "")) {
+        saveSupportSettings({ model: cleanModel }).catch(() => {});
+      }
+
       return {
         success: true,
         reply,
