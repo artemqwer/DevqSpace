@@ -24,17 +24,7 @@ export default function SupportChatWidget() {
   const [sessionId, setSessionId] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-expand window upwards when multi-line or long messages arrive
-  useEffect(() => {
-    if (messages.length > 0) {
-      const hasSubstantialMessage = messages.some(
-        (m) => m.text.length > 100 || m.text.includes("\n"),
-      );
-      if (hasSubstantialMessage) {
-        setIsExpanded(true);
-      }
-    }
-  }, [messages]);
+
 
   // 1. Initial check: DO NOT RENDER IF API IS NOT SET OR DISABLED
   useEffect(() => {
@@ -169,7 +159,7 @@ export default function SupportChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 font-sans">
+    <div className="fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-50 font-sans">
       {/* CHAT WINDOW DRAWER */}
       {isOpen ? (
         <div
@@ -180,8 +170,8 @@ export default function SupportChatWidget() {
             transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
             ${
               isExpanded
-                ? "w-[calc(100vw-24px)] sm:w-[460px] md:w-[500px] h-[640px] sm:h-[690px] max-h-[90vh]"
-                : "w-[calc(100vw-32px)] sm:w-[390px] h-[510px] max-h-[82vh]"
+                ? "w-[calc(100vw-24px)] sm:w-[460px] md:w-[500px] h-[min(640px,calc(100dvh-24px))] sm:h-[640px] max-h-[90vh]"
+                : "w-[calc(100vw-24px)] sm:w-[390px] h-[min(510px,calc(100dvh-24px))] sm:h-[510px] max-h-[82vh]"
             }
           `}
         >
@@ -362,7 +352,7 @@ export default function SupportChatWidget() {
                     ? "Повідомлення для оператора..."
                     : "Запитайте будь-що..."
                 }
-                className="flex-1 bg-surface border border-white/10 focus:border-neon-blue rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 outline-none transition-colors font-mono"
+                className="flex-1 bg-surface border border-white/10 focus:border-neon-blue rounded-xl px-3 py-2 text-base sm:text-xs text-white placeholder-gray-500 outline-none transition-colors font-mono"
               />
               <button
                 type="submit"
