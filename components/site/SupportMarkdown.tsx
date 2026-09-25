@@ -44,7 +44,7 @@ function parseInline(text: string, isUser = false): React.ReactNode[] {
       return (
         <code
           key={i}
-          className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${
+          className={`px-1.5 py-0.5 rounded text-[11px] font-mono break-all inline-block max-w-full ${
             isUser
               ? "bg-black/20 text-black font-semibold"
               : "bg-white/10 text-neon-blue border border-white/10"
@@ -67,8 +67,8 @@ function parseInline(text: string, isUser = false): React.ReactNode[] {
           rel="noopener noreferrer"
           className={
             isUser
-              ? "underline font-bold text-black hover:opacity-80"
-              : "text-neon-blue hover:text-white underline underline-offset-2 transition-colors font-medium"
+              ? "underline font-bold text-black hover:opacity-80 break-all"
+              : "text-neon-blue hover:text-white underline underline-offset-2 transition-colors font-medium break-all"
           }
         >
           {label}
@@ -180,7 +180,11 @@ export function SupportMarkdown({
   // Додаємо залишковий абзац
   flushParagraph("end");
 
-  return <div className="space-y-2">{elements}</div>;
+  return (
+    <div className="space-y-2 break-words [overflow-wrap:anywhere] max-w-full">
+      {elements}
+    </div>
+  );
 }
 
 export default SupportMarkdown;
