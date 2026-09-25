@@ -43,6 +43,15 @@
 html {
   scroll-behavior: smooth;
   overflow-x: clip;
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Блокування авто-зуму Safari на iOS при фокусі на полях вводу */
+@media screen and (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
 }
 
 body {

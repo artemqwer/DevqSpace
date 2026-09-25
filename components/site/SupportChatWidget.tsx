@@ -24,17 +24,7 @@ export default function SupportChatWidget() {
   const [sessionId, setSessionId] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-expand window upwards when multi-line or long messages arrive
-  useEffect(() => {
-    if (messages.length > 0) {
-      const hasSubstantialMessage = messages.some(
-        (m) => m.text.length > 100 || m.text.includes("\n"),
-      );
-      if (hasSubstantialMessage) {
-        setIsExpanded(true);
-      }
-    }
-  }, [messages]);
+
 
   // 1. Initial check: DO NOT RENDER IF API IS NOT SET OR DISABLED
   useEffect(() => {
