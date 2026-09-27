@@ -4,28 +4,41 @@ import { createHmac, timingSafeEqual } from "crypto";
 // Apple Pay, Google Pay та Crypto. Виплати працюють глобально без ФОПа.
 // Документація: https://docs.whop.com / https://api.whop.com/api/v1
 
-const API_KEY = process.env.WHOP_API_KEY;
-const WEBHOOK_SECRET = process.env.WHOP_WEBHOOK_SECRET;
-const PRODUCT_ID = process.env.WHOP_PRODUCT_ID;
-const API_URL = process.env.WHOP_API_URL || "https://api.whop.com/api/v1";
+function getApiKey(): string | undefined {
+  return process.env.WHOP_API_KEY;
+}
+
+function getWebhookSecret(): string | undefined {
+  return process.env.WHOP_WEBHOOK_SECRET;
+}
+
+function getProductId(): string | undefined {
+  return process.env.WHOP_PRODUCT_ID;
+}
+
+function getApiUrl(): string {
+  return process.env.WHOP_API_URL || "https://api.whop.com/api/v1";
+}
 
 export function whopEnabled(): boolean {
-  return Boolean(API_KEY);
+  return Boolean(getApiKey());
 }
 
 // Кешування product_id, якщо не задано у змінних середовища
 let cachedProductId: string | null = null;
 
 async function resolveProductId(): Promise<string | null> {
-  if (PRODUCT_ID) return PRODUCT_ID;
+  const envPid = getProductId();
+  if (envPid) return envPid;
   if (cachedProductId) return cachedProductId;
-  if (!API_KEY) return null;
+  const apiKey = getApiKey();
+  if (!apiKey) return null;
 
   try {
     // 1. Спробувати знайти вже наявний товар у Whop
-    const listRes = await fetch(`${API_URL}/products`, {
+    const listRes = await fetch(`${getApiUrl()}/products`, {
       headers: {
-        Authorization: `Bearer ${API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       cache: "no-store",
@@ -44,10 +57,10 @@ async function resolveProductId(): Promise<string | null> {
     }
 
     // 2. Якщо товару немає — створити базовий продукт
-    const createRes = await fetch(`${API_URL}/products`, {
+    const createRes = await fetch(`${getApiUrl()}/products`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -79,7 +92,8 @@ export async function createCheckout(opts: {
   email?: string;
   redirectUrl: string;
 }): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
-  if (!API_KEY) {
+  const apiKey = getApiKey();
+  if (!apiKey) {
     return { ok: false, error: "Whop не налаштовано (відсутній WHOP_API_KEY)" };
   }
 
@@ -100,10 +114,10 @@ export async function createCheckout(opts: {
       redirect_url: opts.redirectUrl,
     };
 
-    const res = await fetch(`${API_URL}/checkout_configurations`, {
+    const res = await fetch(`${getApiUrl()}/checkout_configurations`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
         "Api-Version-Date": "2026-09-25",
       },
@@ -152,7 +166,8 @@ export function verifyWebhook(
     signature: string | null;
   },
 ): boolean {
-  if (!WEBHOOK_SECRET || !headers.id || !headers.timestamp || !headers.signature) {
+  const secret = getWebhookSecret();
+  if (!secret || !headers.id || !headers.timestamp || !headers.signature) {
     return false;
   }
 
@@ -164,10 +179,12 @@ export function verifyWebhook(
 
   try {
     let secretBytes: Buffer;
-    if (WEBHOOK_SECRET.startsWith("whsec_")) {
-      secretBytes = Buffer.from(WEBHOOK_SECRET.slice(6), "base64");
+    if (secret.startsWith("whsec_")) {
+      secretBytes = Buffer.from(secret.slice(6), "base64");
+    } else if (secret.startsWith("ws_")) {
+      secretBytes = Buffer.from(secret.slice(3), "base64");
     } else {
-      secretBytes = Buffer.from(WEBHOOK_SECRET, "utf8");
+      secretBytes = Buffer.from(secret, "utf8");
     }
 
     const signedPayload = `${headers.id}.${headers.timestamp}.${rawBody}`;
