@@ -13,6 +13,7 @@ import { nowPaymentsEnabled } from "@/lib/nowpayments";
 import { wayForPayEnabled } from "@/lib/wayforpay";
 import { lemonEnabled } from "@/lib/lemonsqueezy";
 import { paddleEnabled, paddleClientConfig } from "@/lib/paddle";
+import { whopEnabled } from "@/lib/whop";
 import { jarEnabled, usdToUah } from "@/lib/monojar";
 import { BackButton } from "@/components/site/BackButton";
 
@@ -35,6 +36,7 @@ export default async function OrderPage({ params }: Props) {
 
   // Метод показуємо, лише якщо він і має ключі (env), і ввімкнений в адмінці.
   const toggles = await getPaymentToggles();
+  const whopOn = whopEnabled() && toggles.whop;
   const jarOn = jarEnabled() && toggles.jar;
   const wfpOn = wayForPayEnabled() && toggles.wfp;
   const cryptoOn = nowPaymentsEnabled() && toggles.crypto;
@@ -88,6 +90,7 @@ export default async function OrderPage({ params }: Props) {
 
         <OrderForm
           product={product}
+          whopEnabled={whopOn}
           paddleEnabled={paddleOn}
           paddleConfig={paddleOn ? paddleClientConfig() : null}
           lemonEnabled={lemonOn}

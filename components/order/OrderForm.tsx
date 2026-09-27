@@ -83,6 +83,7 @@ const loadPaddle = () =>
 
 export default function OrderForm({
   product,
+  whopEnabled = false,
   paddleEnabled = false,
   paddleConfig = null,
   lemonEnabled = false,
@@ -94,6 +95,7 @@ export default function OrderForm({
   botUsername,
 }: {
   product: Product;
+  whopEnabled?: boolean;
   paddleEnabled?: boolean;
   paddleConfig?: { token: string; environment: string } | null;
   lemonEnabled?: boolean;
@@ -127,6 +129,7 @@ export default function OrderForm({
   const onEnvValidity = useCallback((v: boolean) => setEnvValid(v), []);
   const [submitting, setSubmitting] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [whopPaying, setWhopPaying] = useState(false);
   const [paddlePaying, setPaddlePaying] = useState(false);
   const [lemonPaying, setLemonPaying] = useState(false);
   const [wfpPaying, setWfpPaying] = useState(false);
@@ -177,7 +180,7 @@ export default function OrderForm({
     return true;
   };
 
-  type PaymentMethodId = "paddle" | "lemon" | "wfp" | "jar" | "crypto";
+  type PaymentMethodId = "whop" | "paddle" | "lemon" | "wfp" | "jar" | "crypto";
 
   const availableMethods = useMemo(() => {
     const list: {
@@ -188,6 +191,17 @@ export default function OrderForm({
       badge?: string;
       amountFormatted: string;
     }[] = [];
+
+    if (whopEnabled) {
+      list.push({
+        id: "whop",
+        name: "Whop",
+        desc: "Card / Apple Pay / Crypto",
+        icon: "ph-shopping-bag",
+        badge: "USD",
+        amountFormatted: `$${finalPrice}`,
+      });
+    }
 
     if (paddleEnabled) {
       list.push({
@@ -244,6 +258,7 @@ export default function OrderForm({
 
     return list;
   }, [
+    whopEnabled,
     paddleEnabled,
     lemonEnabled,
     wfpEnabled,
@@ -255,6 +270,7 @@ export default function OrderForm({
   ]);
 
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethodId>(() => {
+    if (whopEnabled) return "whop";
     if (paddleEnabled) return "paddle";
     if (lemonEnabled) return "lemon";
     if (wfpEnabled) return "wfp";
@@ -347,6 +363,44 @@ export default function OrderForm({
     } catch {
       setError(to("errNet"));
       setPaddlePaying(false);
+    }
+  };
+
+  const handleWhop = async () => {
+    setError(null);
+    if (!validateForm()) return;
+    setWhopPaying(true);
+    try {
+      const res = await fetch("/api/pay/whop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productSlug: product.slug,
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          contactMethod,
+          contact: contact.trim(),
+          message: getCombinedMessage(),
+          customPrice: finalPrice,
+          company,
+          envValues,
+        }),
+      });
+      const data = (await res.json()) as {
+        ok: boolean;
+        url?: string;
+        orderId?: string;
+        error?: string;
+      };
+      if (!data.ok || !data.url) {
+        setError(data.error || to("errCreate"));
+        setWhopPaying(false);
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setError(to("errNet"));
+      setWhopPaying(false);
     }
   };
 
@@ -919,7 +973,7 @@ export default function OrderForm({
           values={envValues}
           onChange={setEnvValues}
           onValidityChange={onEnvValidity}
-          disabled={submitting || paying || jarPaying || wfpPaying || lemonPaying || paddlePaying}
+          disabled={submitting || paying || jarPaying || wfpPaying || lemonPaying || paddlePaying || whopPaying}
         />
 
         {error && (
@@ -942,7 +996,7 @@ export default function OrderForm({
                   <button
                     key={m.id}
                     type="button"
-                    disabled={submitting || paddlePaying || lemonPaying || wfpPaying || jarPaying || paying}
+                    disabled={submitting || whopPaying || paddlePaying || lemonPaying || wfpPaying || jarPaying || paying}
                     onClick={() => setSelectedMethod(m.id)}
                     className={`flex items-center justify-between p-3.5 rounded-xl border transition-all text-left ${
                       isSelected
@@ -1000,7 +1054,8 @@ export default function OrderForm({
             <button
               type="button"
               onClick={() => {
-                if (selectedMethod === "paddle") handlePaddle();
+                if (selectedMethod === "whop") handleWhop();
+                else if (selectedMethod === "paddle") handlePaddle();
                 else if (selectedMethod === "lemon") handleLemon();
                 else if (selectedMethod === "wfp") handleWfp();
                 else if (selectedMethod === "jar") handleJar();
@@ -1008,6 +1063,7 @@ export default function OrderForm({
               }}
               disabled={
                 submitting ||
+                whopPaying ||
                 paddlePaying ||
                 lemonPaying ||
                 wfpPaying ||
@@ -1017,7 +1073,7 @@ export default function OrderForm({
               }
               className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-blue to-neon-purple text-white shadow-[0_10px_30px_-10px_rgba(80,120,255,0.6)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed mt-2"
             >
-              {paddlePaying || lemonPaying || wfpPaying || jarPaying || paying ? (
+              {whopPaying || paddlePaying || lemonPaying || wfpPaying || jarPaying || paying ? (
                 <>
                   <i className="ph-bold ph-circle-notch animate-spin text-lg" />
                   {selectedMethod === "crypto" ? to("creatingInv") : to("creating")}
@@ -1046,7 +1102,7 @@ export default function OrderForm({
           type="submit"
           // Свідомо БЕЗ envValid: якщо клієнт не розібрався в налаштуваннях,
           // він має змогу просто залишити заявку — оформимо підтримкою.
-          disabled={submitting || paying || jarPaying || wfpPaying || lemonPaying || paddlePaying}
+          disabled={submitting || paying || jarPaying || wfpPaying || lemonPaying || paddlePaying || whopPaying}
           className={
             availableMethods.length > 0
               ? "w-full flex items-center justify-center gap-2 font-display font-medium rounded-xl px-6 py-3.5 bg-surface2 border border-white/10 text-white hover:border-neon-blue/50 active:scale-[0.98] transition-all disabled:opacity-60"

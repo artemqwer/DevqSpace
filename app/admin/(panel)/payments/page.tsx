@@ -4,6 +4,7 @@ import { nowPaymentsEnabled } from "@/lib/nowpayments";
 import { wayForPayEnabled } from "@/lib/wayforpay";
 import { lemonEnabled } from "@/lib/lemonsqueezy";
 import { paddleEnabled } from "@/lib/paddle";
+import { whopEnabled } from "@/lib/whop";
 import PaymentSettings from "@/components/admin/PaymentSettings";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export default async function AdminPaymentsPage() {
     wfp: wayForPayEnabled(),
     lemon: lemonEnabled(),
     paddle: paddleEnabled(),
+    whop: whopEnabled(),
   };
 
   return (

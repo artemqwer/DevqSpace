@@ -1510,6 +1510,7 @@ export type PaymentToggles = {
   wfp: boolean;
   lemon: boolean;
   paddle: boolean;
+  whop: boolean;
 };
 const PAY_DEFAULTS: PaymentToggles = {
   jar: true,
@@ -1517,6 +1518,7 @@ const PAY_DEFAULTS: PaymentToggles = {
   wfp: true,
   lemon: true,
   paddle: true,
+  whop: true,
 };
 
 export async function getPaymentToggles(): Promise<PaymentToggles> {

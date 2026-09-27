@@ -8,6 +8,7 @@ type Toggles = {
   wfp: boolean;
   lemon: boolean;
   paddle: boolean;
+  whop: boolean;
 };
 type MethodKey = keyof Toggles;
 
@@ -18,6 +19,13 @@ const METHODS: {
   icon: string;
   envHint: string;
 }[] = [
+  {
+    key: "whop",
+    label: "Whop",
+    desc: "Картки / Apple Pay / Google Pay / Crypto без ФОПа (MoR, глобальні виплати). Автовидача.",
+    icon: "ph-shopping-bag",
+    envHint: "WHOP_API_KEY, WHOP_WEBHOOK_SECRET, WHOP_PRODUCT_ID",
+  },
   {
     key: "paddle",
     label: "Paddle",
