@@ -4,12 +4,22 @@ import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
 import { Footer } from "@/components/site/Footer";
 import { Play, ShoppingCartSimple, Monitor, DeviceTablet, DeviceMobile, Sparkle, ArrowRight } from "@phosphor-icons/react/dist/ssr";
+import { getLocale, getTranslations } from "next-intl/server";
+import { PRODUCTS, localizeProduct } from "@/lib/products";
 
-export const metadata: Metadata = {
-  title: "Live Demos — Інтерактивні демо-стенди продуктів",
-  description:
-    "Протестуйте інтерфейси веб-додатків, SaaS, адмін-панелей та шаблонів DevqSpace наживо в браузері перед покупкою.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return {
+    title:
+      locale === "en"
+        ? "Live Demos — Interactive Product Showcases | DevqSpace"
+        : "Live Demos — Інтерактивні демо-стенди продуктів | DevqSpace",
+    description:
+      locale === "en"
+        ? "Test web apps, SaaS, dashboards and DevqSpace templates live in your browser before buying."
+        : "Протестуйте інтерфейси веб-додатків, SaaS, адмін-панелей та шаблонів DevqSpace наживо в браузері перед покупкою.",
+  };
+}
 
 type DemoItem = {
   slug: string;
@@ -186,7 +196,13 @@ const ACCENT_CLASSES = {
   },
 };
 
-export default function DemosHubPage() {
+export default async function DemosHubPage() {
+  const [locale, t, tc] = await Promise.all([
+    getLocale(),
+    getTranslations("demosHub"),
+    getTranslations("cat"),
+  ]);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="grid-bg grid-fade pointer-events-none fixed inset-0 z-0" aria-hidden />
@@ -200,24 +216,24 @@ export default function DemosHubPage() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon-green opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-neon-green"></span>
             </span>
-            LIVE DEMO HUB · {DEMOS.length} ІНТЕРАКТИВНИХ СТЕНДІВ
+            {t("badge", { count: DEMOS.length })}
           </div>
           <h1 className="font-display text-3xl font-bold tracking-tight text-white md:text-5xl lg:text-6xl leading-[1.08]">
-            Спробуйте продукти <span className="text-gradient">наживо</span> перед покупкою
+            {t("titleA")} <span className="text-gradient">{t("titleGrad")}</span> {t("titleB")}
           </h1>
           <p className="mt-4 text-sm text-muted-foreground md:text-base leading-relaxed">
-            Всі Web/SaaS-додатки та шаблони мають інтерактивні стенди з перемиканням режимів перегляду: ПК, Планшет та Смартфон. Відкритий вихідний код, миттєве завантаження.
+            {t("subtitle")}
           </p>
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-6 text-xs font-mono text-muted-foreground">
             <span className="flex items-center gap-2">
-              <Monitor className="h-4 w-4 text-neon-blue" /> Desktop (1280px)
+              <Monitor className="h-4 w-4 text-neon-blue" /> {t("desktop")}
             </span>
             <span className="flex items-center gap-2">
-              <DeviceTablet className="h-4 w-4 text-neon-purple" /> Tablet (768px)
+              <DeviceTablet className="h-4 w-4 text-neon-purple" /> {t("tablet")}
             </span>
             <span className="flex items-center gap-2">
-              <DeviceMobile className="h-4 w-4 text-neon-green" /> Mobile (390px)
+              <DeviceMobile className="h-4 w-4 text-neon-green" /> {t("mobile")}
             </span>
           </div>
         </div>
@@ -226,6 +242,13 @@ export default function DemosHubPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {DEMOS.map((demo) => {
             const acc = ACCENT_CLASSES[demo.accent];
+            const rawProduct = PRODUCTS.find((p) => p.slug === demo.slug);
+            const localized = rawProduct ? localizeProduct(rawProduct, locale) : null;
+            const title = localized?.title || demo.title;
+            const tagline = localized?.tagline || demo.tagline;
+            const features = localized?.features?.length ? localized.features : demo.features;
+            const categoryLabel = rawProduct ? tc(`${rawProduct.category}.label`) : demo.category;
+
             return (
               <div
                 key={demo.slug}
@@ -234,7 +257,7 @@ export default function DemosHubPage() {
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <span className={`mono-label rounded-full border px-2.5 py-0.5 text-[0.7rem] font-bold ${acc.badge}`}>
-                      {demo.category}
+                      {categoryLabel}
                     </span>
                     <span className="font-display text-lg font-bold text-white">
                       ${demo.price}
@@ -242,10 +265,10 @@ export default function DemosHubPage() {
                   </div>
 
                   <h2 className="font-display text-xl font-bold text-white leading-snug">
-                    {demo.title}
+                    {title}
                   </h2>
                   <p className="mt-2 text-xs leading-relaxed text-muted-foreground line-clamp-2">
-                    {demo.tagline}
+                    {tagline}
                   </p>
 
                   <div className="mt-4 flex flex-wrap gap-1.5">
@@ -260,7 +283,7 @@ export default function DemosHubPage() {
                   </div>
 
                   <ul className="mt-4 space-y-1.5 border-t border-border/50 pt-3">
-                    {demo.features.slice(0, 3).map((f) => (
+                    {features.slice(0, 3).map((f) => (
                       <li key={f} className="flex items-center gap-2 text-xs text-foreground/80">
                         <Sparkle weight="fill" className={`h-3 w-3 shrink-0 ${acc.text}`} />
                         <span>{f}</span>
@@ -275,12 +298,12 @@ export default function DemosHubPage() {
                     className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-neon-green text-black px-4 py-3 text-xs font-display font-bold hover:brightness-110 active:scale-95 transition-all shadow-[0_0_15px_rgba(0,255,102,0.25)]"
                   >
                     <Play weight="fill" className="h-4 w-4" />
-                    Запустити Демо
+                    {t("runDemo")}
                   </Link>
                   <Link
                     href={`/order/${demo.slug}`}
                     className="flex items-center justify-center gap-1.5 rounded-xl border border-border-strong bg-surface-2 px-3.5 py-3 text-xs font-semibold text-foreground hover:border-neon-blue/50 hover:text-neon-blue transition-colors"
-                    title="Придбати"
+                    title={t("buyTooltip")}
                   >
                     <ShoppingCartSimple weight="bold" className="h-4 w-4" />
                   </Link>
@@ -295,17 +318,17 @@ export default function DemosHubPage() {
           <div className="inline-flex flex-col sm:flex-row items-center gap-4 rounded-2xl border border-border bg-surface/50 p-6 backdrop-blur">
             <div className="text-left">
               <h3 className="font-display text-lg font-bold text-white">
-                Шукаєте Telegram-ботів або мобільні додатки?
+                {t("bottomTitle")}
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Telegram-боти оснащені інтерактивним емулятором прямо на сторінці товару.
+                {t("bottomDesc")}
               </p>
             </div>
             <Link
               href="/catalog"
               className="shrink-0 flex items-center gap-2 rounded-xl bg-gradient-to-r from-neon-blue to-neon-purple px-5 py-3 text-sm font-semibold text-primary-foreground hover:opacity-95 transition-opacity"
             >
-              Весь каталог товарів
+              {t("bottomCta")}
               <ArrowRight weight="bold" className="h-4 w-4" />
             </Link>
           </div>

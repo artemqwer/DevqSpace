@@ -5,11 +5,16 @@ import { Navbar } from "@/components/site/Navbar";
 import { MobileNav } from "@/components/site/MobileNav";
 import { Footer } from "@/components/site/Footer";
 
-export const metadata: Metadata = {
-  title: "Кейси",
-  description:
-    "Реальні проєкти студії DevqSpace — Telegram-боти, веб-додатки та мобільні застосунки для бізнесу.",
-};
+import { getTranslations } from "next-intl/server";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("nav");
+  const tc = await getTranslations("cases");
+  return {
+    title: `${t("cases")} | DevqSpace`,
+    description: tc("title"),
+  };
+}
 
 type Accent = "blue" | "purple" | "pink" | "green";
 

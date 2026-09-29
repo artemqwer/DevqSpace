@@ -27,8 +27,11 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
+  const locale = await getLocale();
+  const localized = product ? localizeProduct(product, locale) : null;
+  const prefix = locale === "en" ? "Order" : "Замовлення";
   return {
-    title: product ? `Замовлення · ${product.title}` : "Замовлення",
+    title: localized ? `${prefix} · ${localized.title}` : prefix,
   };
 }
 

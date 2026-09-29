@@ -20,11 +20,13 @@ import { getTranslations } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Категорії",
-  description:
-    "Готові цифрові продукти за напрямами: Telegram-боти, Web/SaaS, мобільні, автоматизація, Web3, шаблони.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("categories");
+  return {
+    title: t("pageTitle"),
+    description: t("subtitle", { count: 6 }),
+  };
+}
 
 const iconByCategory: Record<CategoryId, ComponentType<IconProps>> = {
   "telegram-bots": TelegramLogo,

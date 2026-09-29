@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { EnvField } from "@/lib/products";
 import { requiredFilled, TG_TOKEN_RE, type EnvValues } from "@/lib/envFields";
 import { ORDER_INPUT_CLS } from "./styles";
@@ -26,6 +27,7 @@ export default function EnvFieldsForm({
   onValidityChange: (valid: boolean) => void;
   disabled?: boolean;
 }) {
+  const t = useTranslations("orderForm");
   const [tokens, setTokens] = useState<Record<string, TokenState>>({});
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const aborters = useRef<Record<string, AbortController>>({});
@@ -77,17 +79,17 @@ export default function EnvFieldsForm({
           ...prev,
           [key]: data.ok
             ? { status: "ok", username: data.username ?? null }
-            : { status: "error", message: data.error ?? "Токен не підійшов" },
+            : { status: "error", message: data.error ?? t("tokenInvalid") },
         }));
       })
       .catch((e: unknown) => {
         if (e instanceof DOMException && e.name === "AbortError") return;
         setTokens((prev) => ({
           ...prev,
-          [key]: { status: "error", message: "Помилка мережі" },
+          [key]: { status: "error", message: t("netError") },
         }));
       });
-  }, []);
+  }, [t]);
 
   const setValue = (field: EnvField, value: string) => {
     onChange({ ...values, [field.key]: value });
@@ -122,10 +124,10 @@ export default function EnvFieldsForm({
         <i className="ph-bold ph-sliders-horizontal mt-0.5 text-neon-purple" />
         <div>
           <div className="text-xs font-mono text-neon-purple uppercase tracking-wider">
-            Налаштування вашої копії
+            {t("envTitle")}
           </div>
           <p className="text-[11px] font-mono text-gray-500 mt-0.5">
-            Підставимо у файл .env — архів прийде вже налаштованим.
+            {t("envHint")}
           </p>
         </div>
       </div>
@@ -181,7 +183,7 @@ export default function EnvFieldsForm({
 
             {isToken && state.status === "ok" && (
               <p className="mt-1.5 text-[11px] font-mono text-neon-green">
-                Бот знайдений
+                {t("botFound")}
                 {state.username ? ` — @${state.username}` : ""}
               </p>
             )}

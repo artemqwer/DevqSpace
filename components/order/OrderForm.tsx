@@ -186,7 +186,7 @@ export default function OrderForm({
       });
       const data = await res.json();
       if (!data.ok) {
-        setPromoError(data.error || "Недійсний промокод");
+        setPromoError(data.error || to("promoErrInvalid"));
         setAppliedPromo(null);
       } else {
         const promoObj = data.promo || data;
@@ -201,7 +201,7 @@ export default function OrderForm({
       }
     } catch (err) {
       console.error("Promo error:", err);
-      setPromoError("Помилка перевірки промокоду");
+      setPromoError(to("promoErrCheck"));
     } finally {
       setPromoLoading(false);
     }

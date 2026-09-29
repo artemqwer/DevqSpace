@@ -41,7 +41,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { sessionId, message, contact, name } = body;
+    const { sessionId, message, contact, name, locale } = body;
 
     if (!sessionId || !message || typeof message !== "string" || !message.trim()) {
       return NextResponse.json(
@@ -58,8 +58,12 @@ export async function POST(req: Request) {
 
     const settings = await getSupportSettings();
     if (!isOperatorSession && (!settings.aiEnabled || !settings.apiKey)) {
+      const errText =
+        locale === "en"
+          ? "Support is temporarily unavailable. Please try again later."
+          : "Підтримка тимчасово недоступна. Будь ласка, спробуйте пізніше.";
       return NextResponse.json(
-        { ok: false, error: "Підтримка тимчасово недоступна. Будь ласка, спробуйте пізніше." },
+        { ok: false, error: errText },
         { status: 503 },
       );
     }
@@ -72,6 +76,7 @@ export async function POST(req: Request) {
       userAgent,
       contact,
       name,
+      locale,
     });
 
     return NextResponse.json(

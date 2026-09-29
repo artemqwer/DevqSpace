@@ -5,11 +5,16 @@ import { MobileNav } from "@/components/site/MobileNav";
 import { Footer } from "@/components/site/Footer";
 import CustomForm from "@/components/custom/CustomForm";
 
-export const metadata: Metadata = {
-  title: "Кастомна розробка",
-  description:
-    "Замовте кастомний Telegram-бот, веб-додаток або мобільний застосунок під вашу задачу.",
-};
+import { getTranslations } from "next-intl/server";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("custom");
+  const tn = await getTranslations("nav");
+  return {
+    title: `${tn("custom")} | DevqSpace`,
+    description: t("sub"),
+  };
+}
 
 const BULLETS = [
   { icon: "ph-chats-circle", key: "b1" },

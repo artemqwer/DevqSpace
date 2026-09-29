@@ -2,10 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "@phosphor-icons/react";
+import { useTranslations } from "next-intl";
 
 export function BackButton({
   fallbackHref = "/catalog",
-  label = "Назад",
+  label,
   className = "",
 }: {
   fallbackHref?: string;
@@ -13,6 +14,8 @@ export function BackButton({
   className?: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("nav");
+  const displayLabel = label ?? t("back");
 
   const handleBack = () => {
     if (typeof window !== "undefined") {
@@ -33,10 +36,10 @@ export function BackButton({
       type="button"
       onClick={handleBack}
       className={`group inline-flex items-center gap-2 rounded-xl border border-border bg-surface-2/70 px-3.5 py-2 text-xs font-mono text-muted-foreground backdrop-blur-md transition-all hover:border-neon-blue/50 hover:bg-surface-2 hover:text-foreground active:scale-[0.97] ${className}`}
-      aria-label={label}
+      aria-label={displayLabel}
     >
       <ArrowLeft className="h-4 w-4 text-neon-blue transition-transform group-hover:-translate-x-0.5" />
-      <span>{label}</span>
+      <span>{displayLabel}</span>
     </button>
   );
 }

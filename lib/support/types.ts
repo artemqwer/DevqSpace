@@ -30,6 +30,7 @@ export type SupportTicket = {
     verifiedOrderId?: string;
     contact?: string;
     name?: string;
+    locale?: string;
   };
   escalationReason?: string;
   messages: SupportMessage[];

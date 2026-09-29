@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { Product } from "@/lib/products";
 import { Monitor, DeviceTablet, DeviceMobile, ArrowSquareOut } from "@phosphor-icons/react";
 
@@ -21,6 +22,7 @@ const ACCENT_COLORS: Record<AccentTheme, { hex: string; name: string }> = {
 };
 
 export function DemoFrame({ product }: DemoFrameProps) {
+  const t = useTranslations("demoFrame");
   const [device, setDevice] = useState<DeviceMode>("desktop");
   const [accent, setAccent] = useState<AccentTheme>("cyan");
   const [customizerOpen, setCustomizerOpen] = useState(false);
@@ -37,10 +39,10 @@ export function DemoFrame({ product }: DemoFrameProps) {
           <Link
             href={`/catalog/${product.slug}`}
             className="flex items-center space-x-1.5 text-slate-400 hover:text-white transition group shrink-0"
-            title="Назад до сторінки товару"
+            title={t("backTitle")}
           >
             <span className="text-sm font-mono group-hover:-translate-x-0.5 transition-transform">←</span>
-            <span className="text-xs font-mono hidden sm:inline">Каталог</span>
+            <span className="text-xs font-mono hidden sm:inline">{t("back")}</span>
           </Link>
 
           <div className="h-4 w-px bg-white/10 hidden sm:block shrink-0" />
@@ -100,10 +102,10 @@ export function DemoFrame({ product }: DemoFrameProps) {
             target="_blank"
             rel="noopener noreferrer"
             className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-slate-300 hover:text-white transition"
-            title="Відкрити чистий продукт у новій вкладці на весь екран"
+            title={t("newTabTitle")}
           >
             <ArrowSquareOut className="h-3.5 w-3.5" />
-            <span className="text-[11px]">Нова вкладка</span>
+            <span className="text-[11px]">{t("newTab")}</span>
           </a>
 
           {/* Theme / Palette Customizer Button */}
@@ -111,20 +113,20 @@ export function DemoFrame({ product }: DemoFrameProps) {
             <button
               onClick={() => setCustomizerOpen(!customizerOpen)}
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-slate-300 transition"
-              title="Кастомізатор кольору та стилю"
+              title={t("colorTitle")}
             >
               <span
                 className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
                 style={{ backgroundColor: ACCENT_COLORS[accent].hex }}
               />
-              <span className="hidden lg:inline text-[11px]">Колір</span>
+              <span className="hidden lg:inline text-[11px]">{t("color")}</span>
             </button>
 
             {/* Customizer Popover */}
             {customizerOpen && (
               <div className="absolute right-0 top-full mt-2 w-52 p-3 rounded-2xl bg-[#0e121a] border border-white/20 shadow-2xl z-50 space-y-2.5 font-mono text-xs">
                 <div className="flex justify-between items-center pb-1.5 border-b border-white/10 text-[11px] text-slate-400">
-                  <span>АКЦЕНТНИЙ КОЛІР:</span>
+                  <span>{t("accentColorTitle")}</span>
                   <button
                     onClick={() => setCustomizerOpen(false)}
                     className="text-slate-500 hover:text-white"
@@ -171,8 +173,8 @@ export function DemoFrame({ product }: DemoFrameProps) {
             href={`/order/${product.slug}`}
             className="px-3.5 sm:px-4 py-1.5 bg-neon-green hover:bg-neon-green/90 text-black font-bold text-xs rounded-lg transition-all shadow-[0_0_15px_rgba(0,255,102,0.3)] flex items-center space-x-1.5"
           >
-            <span className="hidden sm:inline">Купити сорс-код</span>
-            <span className="sm:hidden">Купити</span>
+            <span className="hidden sm:inline">{t("buySource")}</span>
+            <span className="sm:hidden">{t("buyShort")}</span>
             <span className="font-mono bg-black/20 text-black px-1.5 py-0.2 rounded font-black">
               ${product.price}
             </span>

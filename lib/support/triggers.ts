@@ -19,6 +19,15 @@ const EXPLICIT_OPERATOR_TRIGGERS = [
   "real person",
   "хочу человека",
   "поговорить с человеком",
+  "call human",
+  "talk to a human",
+  "connect with a human",
+  "live agent",
+  "live operator",
+  "live support",
+  "human operator",
+  "customer service",
+  "representative",
 ];
 
 // Тригери конфлікту, скарг та претензій
@@ -43,6 +52,14 @@ const CONFLICT_TRIGGERS = [
   "вы издеваетесь",
   "тупой бот",
   "тупий бот",
+  "scam",
+  "fraud",
+  "stolen",
+  "terrible service",
+  "awful service",
+  "where is my order",
+  "sue you",
+  "lawsuit",
 ];
 
 export type TriggerAnalysisResult = {

@@ -7,11 +7,16 @@ import { Footer } from "@/components/site/Footer";
 import { AboutStats } from "@/components/site/AboutStats";
 import { SupportTgLink } from "@/components/site/SupportTgLink";
 
-export const metadata: Metadata = {
-  title: "Про нас",
-  description:
-    "DevqSpace — студія цифрових продуктів. Розробляємо та продаємо готові Telegram-боти, веб-додатки та мобільні застосунки.",
-};
+import { getTranslations } from "next-intl/server";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("about");
+  const tn = await getTranslations("nav");
+  return {
+    title: `${tn("about")} | DevqSpace`,
+    description: t("sub"),
+  };
+}
 
 const VALUES = [
   { icon: "ph-rocket-launch", k: "v1" },

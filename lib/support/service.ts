@@ -44,10 +44,11 @@ async function alertOperatorsAboutEscalation(
 export async function handleUserMessage(
   sessionId: string,
   messageText: string,
-  clientMeta?: { ip?: string; userAgent?: string; contact?: string; name?: string },
+  clientMeta?: { ip?: string; userAgent?: string; contact?: string; name?: string; locale?: string },
 ): Promise<HandleUserMessageResult> {
   const ticket = await getOrCreateTicket(sessionId, clientMeta);
   const trimmed = messageText.trim();
+  const isEn = clientMeta?.locale === "en" || ticket.clientInfo?.locale === "en";
 
   // 1. Додаємо повідомлення користувача в історію
   await addMessage(ticket.id, "user", trimmed);
@@ -59,13 +60,16 @@ export async function handleUserMessage(
     // Сповіщаємо операторів про нове повідомлення в активному тикеті
     await alertOperatorsAboutEscalation(
       freshTicket,
-      "Нове повідомлення від клієнта в активному діалозі",
+      isEn ? "New customer message in active dialog" : "Нове повідомлення від клієнта в активному діалозі",
       trimmed,
     );
 
+    const waitReply = isEn
+      ? "Support manager has been notified and will answer you shortly. Please wait."
+      : "Менеджер підтримки вже сповіщений і відповість вам найближчим часом. Будь ласка, зачекайте.";
+
     return {
-      reply:
-        "Менеджер підтримки вже сповіщений і відповість вам найближчим часом. Будь ласка, зачекайте.",
+      reply: waitReply,
       sender: "system",
       ticket: freshTicket,
       isFrozen: true,
@@ -80,13 +84,14 @@ export async function handleUserMessage(
   const triggerResult = analyzeMessageTriggers(trimmed, recentUserTexts);
 
   if (triggerResult.shouldEscalate) {
-    const reason = triggerResult.reason || "Запит на оператора";
+    const reason = triggerResult.reason || (isEn ? "Operator requested" : "Запит на оператора");
     await updateTicketStatus(ticket.id, "waiting_operator", reason);
 
     await alertOperatorsAboutEscalation(ticket, reason, trimmed);
 
-    const handoffNotice =
-      "🔔 Передаю ваш діалог черговому спеціалісту підтримки DevqSpace. Оператор підключиться та відповість вам прямо в цьому чаті протягом декількох хвилин.";
+    const handoffNotice = isEn
+      ? "🔔 Transferring your request to a DevqSpace support specialist. An operator will connect and reply directly in this chat shortly."
+      : "🔔 Передаю ваш діалог черговому спеціалісту підтримки DevqSpace. Оператор підключиться та відповість вам прямо в цьому чаті протягом декількох хвилин.";
 
     await addMessage(ticket.id, "system", handoffNotice, {
       escalationReason: reason,
@@ -110,8 +115,9 @@ export async function handleUserMessage(
     await updateTicketStatus(ticket.id, "waiting_operator", "AI деактивовано");
     await alertOperatorsAboutEscalation(ticket, "AI деактивовано (потрібен оператор)", trimmed);
 
-    const noAiReply =
-      "Дякуємо за звернення! Наш менеджер підтримки вже отримав ваше повідомлення та відповість найближчим часом.";
+    const noAiReply = isEn
+      ? "Thank you for reaching out! Our support manager has received your message and will reply shortly."
+      : "Дякуємо за звернення! Наш менеджер підтримки вже отримав ваше повідомлення та відповість найближчим часом.";
     await addMessage(ticket.id, "system", noAiReply);
 
     const updated = (await getTicket(ticket.id)) || ticket;
@@ -124,10 +130,14 @@ export async function handleUserMessage(
   }
 
   // Збираємо контекст для LLM
+  let basePrompt = settings.systemPrompt || "Ти — AI-консультант DevqSpace.";
+  if (isEn) {
+    basePrompt += "\n\nCRITICAL LANGUAGE INSTRUCTION: The user is browsing the website in English. You MUST respond in English clearly, professionally, and helpfully.";
+  }
   const historyForLLM: LLMChatMessage[] = [
     {
       role: "system",
-      content: settings.systemPrompt || "Ти — AI-консультант DevqSpace.",
+      content: basePrompt,
     },
   ];
 
@@ -161,8 +171,9 @@ export async function handleUserMessage(
     await updateTicketStatus(ticket.id, "waiting_operator", `Збій LLM: ${llmRes.error}`);
     await alertOperatorsAboutEscalation(ticket, `Збій зв'язку з LLM (${llmRes.error})`, trimmed);
 
-    const fallbackReply =
-      "Вибачте, виникла технічна затримка зв'язку. Я передав ваше звернення оператору, фахівець підключиться найближчим часом.";
+    const fallbackReply = isEn
+      ? "Sorry, there was a temporary connection delay. I have transferred your request to an operator who will assist you shortly."
+      : "Вибачте, виникла технічна затримка зв'язку. Я передав ваше звернення оператору, фахівець підключиться найближчим часом.";
     await addMessage(ticket.id, "system", fallbackReply);
 
     const updated = (await getTicket(ticket.id)) || ticket;
@@ -255,10 +266,13 @@ export async function unfreezeAI(ticketId: string): Promise<SupportTicket | null
 
   ticket.status = "ai";
   ticket.unreadForOperator = false;
+  const isEn = ticket.clientInfo?.locale === "en";
   const sysMsg: SupportMessage = {
     id: `msg_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36)}`,
     sender: "system",
-    text: "Діалог з оператором завершено. AI-асистент знову активний і готовий допомогти з іншими питаннями.",
+    text: isEn
+      ? "The conversation with the operator has ended. The AI assistant is active again and ready to help!"
+      : "Діалог з оператором завершено. AI-асистент знову активний і готовий допомогти з іншими питаннями.",
     timestamp: Date.now(),
   };
   ticket.messages.push(sysMsg);
@@ -274,10 +288,13 @@ export async function closeTicket(ticketId: string): Promise<SupportTicket | nul
 
   ticket.status = "closed";
   ticket.unreadForOperator = false;
+  const isEn = ticket.clientInfo?.locale === "en";
   const sysMsg: SupportMessage = {
     id: `msg_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36)}`,
     sender: "system",
-    text: "Звернення успішно закрито. Якщо виникнуть нові питання — напишіть нам у будь-який час!",
+    text: isEn
+      ? "This conversation has ended. If you have any new questions, we are always here to help!"
+      : "Звернення успішно закрито. Якщо виникнуть нові питання — напишіть нам у будь-який час!",
     timestamp: Date.now(),
   };
   ticket.messages.push(sysMsg);

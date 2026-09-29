@@ -184,7 +184,11 @@
     "fresh": "New",
     "supportScopeTitle": "Warranty & support scope:",
     "supportScopeIncluded": "Setup assistance via README and bug fixes for the source code.",
-    "supportScopeCustom": "Custom features and business modifications are available via custom dev."
+    "supportScopeCustom": "Custom features and business modifications are available via custom dev.",
+    "liveDemoTitle": "Try interactive demo live",
+    "liveDemoDesc": "Full preview stand with screen switching (Desktop / Tablet / Mobile)",
+    "liveDemoBtn": "Launch Live Demo",
+    "notFound": "Product not found"
   },
   "custom": {
     "eyebrow": "// custom development",
@@ -313,7 +317,14 @@
     "contactEmpty": "Enter your name and contact",
     "contactBadTelegram": "Handle looks like @username — 5–32 characters, letters, digits and “_” only",
     "contactBadEmail": "That email looks wrong. Example: name@example.com",
-    "contactBadPhone": "That number looks wrong. Example: +380 67 123 45 67"
+    "contactBadPhone": "That number looks wrong. Example: +380 67 123 45 67",
+    "envTitle": "Configure your copy",
+    "envHint": "Will be injected into .env — archive arrives pre-configured.",
+    "botFound": "Bot verified",
+    "tokenInvalid": "Invalid token",
+    "netError": "Network error",
+    "promoErrCheck": "Failed to verify promo code",
+    "promoErrInvalid": "Invalid or expired promo code"
   },
   "success": {
     "eyebrow": "// request received",
@@ -495,5 +506,61 @@
     "tokenTitle": "How was it?",
     "tokenSub": "You bought this product, so your review appears right away with a “Verified purchase” badge.",
     "tokenBad": "This link is invalid or already used."
+  },
+  "supportChat": {
+    "buttonLabel": "Support",
+    "headerTitle": "DevqSpace Support",
+    "statusAi": "⚡ AI Consultant online",
+    "statusOperator": "👨‍💻 Operator online",
+    "badgeAi": "🤖 AI Consultant",
+    "badgeOperator": "👨‍💻 DevqSpace Operator",
+    "windowCollapse": "Collapse window",
+    "windowExpand": "Expand window",
+    "windowClose": "Close chat",
+    "defaultWelcome": "Hello! I am the DevqSpace AI assistant. I can help you choose a ready-made solution, check order status, or answer technical questions. How can I help you today?",
+    "quickQuestionsTitle": "Quick questions:",
+    "quickQuestionOrder": "📦 What is my order status?",
+    "quickQuestionCatalog": "🛒 What ready-made bots are available?",
+    "quickQuestionOperator": "☎️ Connect with a human operator",
+    "loadingSending": "Sending to operator...",
+    "loadingGenerating": "Thinking...",
+    "aiPausedNotice": "AI is paused. You are chatting with a live support operator.",
+    "ticketClosedNotice": "This conversation has ended. If you have any questions, we're always here to help!",
+    "startNewChat": "Start new conversation",
+    "placeholderOperator": "Message for operator...",
+    "placeholderDefault": "Ask anything...",
+    "placeholderClosed": "Type to start a new conversation...",
+    "sendError": "Failed to send message.",
+    "networkError": "Connection error. Please try again."
+  },
+  "demosHub": {
+    "badge": "LIVE DEMO HUB · {count} INTERACTIVE DEMOS",
+    "titleA": "Try our products",
+    "titleGrad": "live",
+    "titleB": "before buying",
+    "subtitle": "All Web/SaaS apps and templates feature interactive preview stands with desktop, tablet and mobile modes. Full source code, instant delivery.",
+    "runDemo": "Launch Demo",
+    "buyTooltip": "Buy",
+    "bottomTitle": "Looking for Telegram bots or mobile apps?",
+    "bottomDesc": "Telegram bots feature an interactive emulator directly on the product page.",
+    "bottomCta": "Browse all products",
+    "desktop": "Desktop (1280px)",
+    "tablet": "Tablet (768px)",
+    "mobile": "Mobile (390px)"
+  },
+  "demoFrame": {
+    "back": "Catalog",
+    "backTitle": "Back to product page",
+    "liveDemo": "LIVE DEMO",
+    "desktop": "Desktop",
+    "tablet": "Tablet (768px)",
+    "mobile": "Mobile (390px)",
+    "newTab": "New tab",
+    "newTabTitle": "Open standalone demo in a new tab",
+    "color": "Color",
+    "colorTitle": "Theme and style customizer",
+    "accentColorTitle": "ACCENT COLOR:",
+    "buySource": "Buy source code",
+    "buyShort": "Buy"
   }
 }

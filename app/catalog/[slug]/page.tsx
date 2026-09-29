@@ -41,10 +41,12 @@ type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
-  if (!product) return { title: "Продукт не знайдено" };
+  const locale = await getLocale();
+  if (!product) return { title: locale === "en" ? "Product not found" : "Продукт не знайдено" };
+  const localized = localizeProduct(product, locale);
   return {
-    title: `${product.title}`,
-    description: product.tagline,
+    title: `${localized.title}`,
+    description: localized.tagline,
   };
 }
 
@@ -151,10 +153,10 @@ export default async function ProductPage({ params }: Props) {
                     Live Demo Online
                   </div>
                   <h3 className="mt-1 text-base font-display font-bold text-white">
-                    Спробуйте інтерактивне демо наживо
+                    {t("liveDemoTitle")}
                   </h3>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    Повноцінний прев’ю-стенд з перемиканням екранів (ПК / Планшет / Мобільний)
+                    {t("liveDemoDesc")}
                   </p>
                 </div>
                 <Link
@@ -162,7 +164,7 @@ export default async function ProductPage({ params }: Props) {
                   className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-neon-green text-black px-5 py-3 text-sm font-display font-bold shadow-[0_0_20px_rgba(0,255,102,0.3)] hover:brightness-110 active:scale-95 transition-all"
                 >
                   <Play weight="fill" className="h-4 w-4" />
-                  Відкрити Live Demo
+                  {t("liveDemoBtn")}
                 </Link>
               </div>
             )}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
 import SupportMarkdown from "./SupportMarkdown";
 
 type Message = {
@@ -13,6 +14,9 @@ type Message = {
 
 export default function SupportChatWidget() {
   const pathname = usePathname();
+  const t = useTranslations("supportChat");
+  const locale = useLocale();
+
   const [enabled, setEnabled] = useState(false);
   const [welcomeMessage, setWelcomeMessage] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -21,10 +25,9 @@ export default function SupportChatWidget() {
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(false);
   const [isFrozen, setIsFrozen] = useState(false);
+  const [ticketStatus, setTicketStatus] = useState<string>("ai");
   const [sessionId, setSessionId] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-
 
   // 1. Initial check: DO NOT RENDER IF API IS NOT SET OR DISABLED
   useEffect(() => {
@@ -38,7 +41,7 @@ export default function SupportChatWidget() {
           const data = await res.json();
           if (data.enabled) {
             setEnabled(true);
-            setWelcomeMessage(data.welcomeMessage);
+            setWelcomeMessage(data.welcomeMessage || "");
           } else {
             setEnabled(false);
           }
@@ -66,7 +69,8 @@ export default function SupportChatWidget() {
       .then((data) => {
         if (data.ok && data.ticket) {
           setMessages(data.ticket.messages || []);
-          setIsFrozen(data.ticket.isFrozen || false);
+          setIsFrozen(Boolean(data.ticket.isFrozen));
+          setTicketStatus(data.ticket.status || "ai");
         }
       })
       .catch(() => {});
@@ -92,7 +96,8 @@ export default function SupportChatWidget() {
           const data = await r.json();
           if (data.ok && data.ticket) {
             setMessages(data.ticket.messages || []);
-            setIsFrozen(data.ticket.isFrozen || false);
+            setIsFrozen(Boolean(data.ticket.isFrozen));
+            setTicketStatus(data.ticket.status || "ai");
           }
         }
       } catch (e) {
@@ -107,9 +112,28 @@ export default function SupportChatWidget() {
     return null;
   }
 
+  const handleStartNewChat = () => {
+    const newSid = `sess_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`;
+    localStorage.setItem("devq_support_sid", newSid);
+    setSessionId(newSid);
+    setMessages([]);
+    setIsFrozen(false);
+    setTicketStatus("ai");
+    setInputText("");
+  };
+
   const handleSend = async (textToSend?: string) => {
     const text = (textToSend || inputText).trim();
-    if (!text || loading || !sessionId) return;
+    if (!text || loading) return;
+
+    let activeSessionId = sessionId;
+    if (ticketStatus === "closed" || !activeSessionId) {
+      activeSessionId = `sess_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`;
+      localStorage.setItem("devq_support_sid", activeSessionId);
+      setSessionId(activeSessionId);
+      setTicketStatus("ai");
+      setIsFrozen(false);
+    }
 
     const tempUserMsg: Message = {
       id: `tmp_${Date.now()}`,
@@ -128,8 +152,9 @@ export default function SupportChatWidget() {
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
         body: JSON.stringify({
-          sessionId,
+          sessionId: activeSessionId,
           message: text,
+          locale,
         }),
       });
 
@@ -138,6 +163,7 @@ export default function SupportChatWidget() {
         if (data.ok) {
           setMessages(data.messages || []);
           setIsFrozen(Boolean(data.isFrozen));
+          setTicketStatus(data.status || "ai");
         }
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -146,17 +172,37 @@ export default function SupportChatWidget() {
           {
             id: `err_${Date.now()}`,
             sender: "system",
-            text: errData.error || "Не вдалося надіслати повідомлення.",
+            text: errData.error || t("sendError"),
             timestamp: Date.now(),
           },
         ]);
       }
     } catch (e) {
       console.error("Chat send error:", e);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `err_${Date.now()}`,
+          sender: "system",
+          text: t("networkError"),
+          timestamp: Date.now(),
+        },
+      ]);
     } finally {
       setLoading(false);
     }
   };
+
+  const isDefaultWelcome =
+    !welcomeMessage ||
+    welcomeMessage.includes("Привіт! Я AI-асистент DevqSpace");
+  const displayWelcome = isDefaultWelcome ? t("defaultWelcome") : welcomeMessage;
+
+  const quickChips = [
+    t("quickQuestionOrder"),
+    t("quickQuestionCatalog"),
+    t("quickQuestionOperator"),
+  ];
 
   return (
     <div className="fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-50 font-sans">
@@ -182,19 +228,23 @@ export default function SupportChatWidget() {
                 <i className="ph-fill ph-chat-circle-dots text-lg" />
                 <span
                   className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-black ${
-                    isFrozen ? "bg-neon-pink animate-pulse" : "bg-green-400"
+                    ticketStatus === "closed"
+                      ? "bg-gray-400"
+                      : isFrozen
+                        ? "bg-neon-pink animate-pulse"
+                        : "bg-green-400"
                   }`}
                 />
               </div>
               <div>
                 <h4 className="text-xs font-display font-bold text-white tracking-wide">
-                  DevqSpace Support
+                  {t("headerTitle")}
                 </h4>
                 <p className="text-[10px] font-mono text-gray-400">
                   {isFrozen ? (
-                    <span className="text-neon-pink">👨‍💻 Оператор на зв'язку</span>
+                    <span className="text-neon-pink">{t("statusOperator")}</span>
                   ) : (
-                    <span className="text-green-400">⚡ AI Консультант онлайн</span>
+                    <span className="text-green-400">{t("statusAi")}</span>
                   )}
                 </p>
               </div>
@@ -205,7 +255,7 @@ export default function SupportChatWidget() {
                 type="button"
                 onClick={() => setIsExpanded((v) => !v)}
                 className="w-7 h-7 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
-                title={isExpanded ? "Зменшити вікно" : "Розгорнути вікно вгору"}
+                title={isExpanded ? t("windowCollapse") : t("windowExpand")}
               >
                 <i
                   className={`ph-bold text-sm ${
@@ -217,7 +267,7 @@ export default function SupportChatWidget() {
                 type="button"
                 onClick={() => setIsOpen(false)}
                 className="w-7 h-7 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
-                title="Закрити чат"
+                title={t("windowClose")}
               >
                 <i className="ph-bold ph-x text-sm" />
               </button>
@@ -232,24 +282,15 @@ export default function SupportChatWidget() {
                 <i className="ph-fill ph-robot text-xs" />
               </div>
               <div className="p-3 rounded-2xl rounded-tl-sm bg-surface2/90 border border-white/10 text-gray-200 leading-relaxed shadow-sm max-w-[95%]">
-                <SupportMarkdown
-                  content={
-                    welcomeMessage ||
-                    "Привіт! Я AI-асистент DevqSpace. Допоможу з вибором готового рішення, статусом замовлення або відповім на технічні запитання. Чим можу допомогти?"
-                  }
-                />
+                <SupportMarkdown content={displayWelcome} />
               </div>
             </div>
 
             {/* Quick Action Chips when dialogue is short */}
             {messages.length === 0 && (
               <div className="pt-2 space-y-1.5 pl-8">
-                <p className="text-[11px] font-mono text-gray-500">Швидкі запитання:</p>
-                {[
-                  "📦 Який статус мого замовлення?",
-                  "🛒 Які готові боти є в наявності?",
-                  "☎️ Покликати живого оператора",
-                ].map((chip) => (
+                <p className="text-[11px] font-mono text-gray-500">{t("quickQuestionsTitle")}</p>
+                {quickChips.map((chip) => (
                   <button
                     key={chip}
                     onClick={() => handleSend(chip)}
@@ -297,12 +338,12 @@ export default function SupportChatWidget() {
                           {isOperator ? (
                             <span className="text-neon-pink font-bold flex items-center gap-1">
                               <i className="ph-fill ph-headset" />
-                              👨‍💻 Оператор DevqSpace
+                              {t("badgeOperator")}
                             </span>
                           ) : (
                             <span className="text-neon-blue font-bold flex items-center gap-1">
                               <i className="ph-fill ph-robot" />
-                              🤖 AI Консультант
+                              {t("badgeAi")}
                             </span>
                           )}
                         </div>
@@ -314,13 +355,33 @@ export default function SupportChatWidget() {
               );
             })}
 
+            {/* Ticket Closed Banner Card */}
+            {ticketStatus === "closed" && (
+              <div className="my-3 p-3.5 rounded-2xl bg-surface2/90 border border-white/15 text-center space-y-2.5 shadow-sm">
+                <div className="w-8 h-8 mx-auto rounded-full bg-neon-blue/10 border border-neon-blue/30 text-neon-blue flex items-center justify-center">
+                  <i className="ph-bold ph-check text-sm" />
+                </div>
+                <p className="text-[11px] font-mono text-gray-300 leading-relaxed">
+                  {t("ticketClosedNotice")}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleStartNewChat}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-neon-blue text-black hover:bg-neon-blue/90 font-mono text-xs font-bold transition-all shadow-[0_0_12px_rgba(0,240,255,0.3)] active:scale-95"
+                >
+                  <i className="ph-bold ph-arrow-counter-clockwise text-xs" />
+                  {t("startNewChat")}
+                </button>
+              </div>
+            )}
+
             {loading && (
               <div className="flex items-center gap-1.5 text-[11px] font-mono text-gray-400 pl-8">
                 <span className="w-1.5 h-1.5 rounded-full bg-neon-blue animate-bounce" />
                 <span className="w-1.5 h-1.5 rounded-full bg-neon-blue animate-bounce [animation-delay:0.2s]" />
                 <span className="w-1.5 h-1.5 rounded-full bg-neon-blue animate-bounce [animation-delay:0.4s]" />
                 <span className="ml-1">
-                  {isFrozen ? "Надсилаю оператору..." : "Готую відповідь..."}
+                  {isFrozen ? t("loadingSending") : t("loadingGenerating")}
                 </span>
               </div>
             )}
@@ -330,10 +391,10 @@ export default function SupportChatWidget() {
 
           {/* Footer input */}
           <div className="p-2.5 border-t border-white/10 bg-surface2/80 space-y-1.5">
-            {isFrozen && (
+            {isFrozen && ticketStatus !== "closed" && (
               <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-neon-pink/10 border border-neon-pink/20 text-[10px] font-mono text-neon-pink">
                 <span className="w-1.5 h-1.5 rounded-full bg-neon-pink animate-pulse" />
-                <span>AI призупинено. Ви спілкуєтеся з оператором підтримки.</span>
+                <span>{t("aiPausedNotice")}</span>
               </div>
             )}
             <form
@@ -348,9 +409,11 @@ export default function SupportChatWidget() {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder={
-                  isFrozen
-                    ? "Повідомлення для оператора..."
-                    : "Запитайте будь-що..."
+                  ticketStatus === "closed"
+                    ? t("placeholderClosed")
+                    : isFrozen
+                      ? t("placeholderOperator")
+                      : t("placeholderDefault")
                 }
                 className="flex-1 bg-surface border border-white/10 focus:border-neon-blue rounded-xl px-3 py-2 text-base sm:text-xs text-white placeholder-gray-500 outline-none transition-colors font-mono"
               />
@@ -376,7 +439,7 @@ export default function SupportChatWidget() {
           </div>
 
           <span className="text-xs font-mono font-medium text-gray-200 group-hover:text-white transition-colors hidden sm:inline">
-            Підтримка
+            {t("buttonLabel")}
           </span>
         </button>
       )}

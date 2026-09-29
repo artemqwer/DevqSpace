@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { MobileNav } from "@/components/site/MobileNav";
@@ -7,35 +7,41 @@ import { getSettings, SETTINGS_DEFAULTS } from "@/lib/settings";
 
 export type LegalDocId = "terms" | "privacy" | "refund";
 
-// Незаповнений реквізит показуємо заглушкою, а не порожнім місцем: так одразу
-// видно, що документ ще шаблон, і його не можна публікувати як є.
-const PLACEHOLDER: Record<string, string> = {
-  entityName: "[НАЗВА ФОП / ТОВ]",
-  edrpou: "[ЄДРПОУ]",
-  address: "[АДРЕСА]",
-  supportEmail: "[EMAIL ПІДТРИМКИ]",
-  supportPhone: "[ТЕЛЕФОН]",
-};
-
-// Розділів у документі різна кількість — беремо, доки вони є.
 const MAX_SECTIONS = 12;
 
 export async function LegalDoc({ doc }: { doc: LegalDocId }) {
-  const settings = await getSettings();
+  const [settings, locale] = await Promise.all([getSettings(), getLocale()]);
 
   // Тумблер вимкнено — сторінки не існує. Саме 404, а не порожня сторінка:
   // недописана оферта в індексі гірша за її відсутність.
   if (!settings.legalEnabled) notFound();
 
+  const isEn = locale === "en";
+  const placeholders = isEn
+    ? {
+        entityName: "[LEGAL ENTITY NAME]",
+        edrpou: "[REGISTRATION ID]",
+        address: "[LEGAL ADDRESS]",
+        supportEmail: "[SUPPORT EMAIL]",
+        supportPhone: "[PHONE NUMBER]",
+      }
+    : {
+        entityName: "[НАЗВА ФОП / ТОВ]",
+        edrpou: "[ЄДРПОУ]",
+        address: "[АДРЕСА]",
+        supportEmail: "[EMAIL ПІДТРИМКИ]",
+        supportPhone: "[ТЕЛЕФОН]",
+      };
+
   const t = await getTranslations(`legal.${doc}`);
 
   const values = {
     entityType: settings.entityType || SETTINGS_DEFAULTS.entityType,
-    entityName: settings.entityName || PLACEHOLDER.entityName,
-    edrpou: settings.edrpou || PLACEHOLDER.edrpou,
-    address: settings.address || PLACEHOLDER.address,
-    supportEmail: settings.supportEmail || PLACEHOLDER.supportEmail,
-    supportPhone: settings.supportPhone || PLACEHOLDER.supportPhone,
+    entityName: settings.entityName || placeholders.entityName,
+    edrpou: settings.edrpou || placeholders.edrpou,
+    address: settings.address || placeholders.address,
+    supportEmail: settings.supportEmail || placeholders.supportEmail,
+    supportPhone: settings.supportPhone || placeholders.supportPhone,
     workHours: settings.workHours || SETTINGS_DEFAULTS.workHours,
   };
 

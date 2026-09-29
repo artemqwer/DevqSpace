@@ -10,9 +10,12 @@ import { SupportTgLink } from "@/components/site/SupportTgLink";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Заявку прийнято",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("success");
+  return {
+    title: `${t("headA")} ${t("headB")}`,
+  };
+}
 
 export default async function OrderSuccessPage({
   searchParams,

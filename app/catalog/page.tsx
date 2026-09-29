@@ -5,15 +5,17 @@ import { Footer } from "@/components/site/Footer";
 import CatalogShell from "@/components/catalog/CatalogShell";
 import { getPublicProducts } from "@/lib/store";
 import { CATEGORIES, localizeProduct, type CategoryId } from "@/lib/products";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Каталог продуктів",
-  description:
-    "Готові Telegram-боти, веб-додатки та мобільні застосунки. Купуй з миттєвою доставкою і саппортом.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations("catalog")]);
+  return {
+    title: locale === "en" ? "Product Catalog | DevqSpace" : "Каталог продуктів | DevqSpace",
+    description: t("sub", { count: 12 }),
+  };
+}
 
 const VALID_CATS = new Set(CATEGORIES.map((c) => c.id));
 
