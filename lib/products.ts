@@ -432,7 +432,6 @@ export const PRODUCTS: Product[] = [
     delivery: "1-2 дні",
     warranty: "6 міс. саппорту",
     stack: ["Python", "Aiogram 3", "SQLite", "APScheduler", "Docker", "Monobank API"],
-    fileUrl: "/downloads/photo-booking-bot.zip",
     envFields: [
       {
         key: "BOT_TOKEN",
