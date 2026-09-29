@@ -4,6 +4,7 @@ type Body = {
   code?: string;
   productSlug?: string;
   price?: number;
+  orderAmount?: number;
 };
 
 export async function POST(req: Request) {
@@ -19,7 +20,13 @@ export async function POST(req: Request) {
     return Response.json({ ok: false, error: "Введіть промокод" }, { status: 400 });
   }
 
-  let basePrice = typeof body.price === "number" && body.price > 0 ? body.price : undefined;
+  const rawNum = typeof body.price === "number" && body.price > 0
+    ? body.price
+    : typeof body.orderAmount === "number" && body.orderAmount > 0
+      ? body.orderAmount
+      : undefined;
+
+  let basePrice = rawNum;
 
   if (body.productSlug && basePrice === undefined) {
     const product = await getProductBySlug(body.productSlug);
@@ -35,6 +42,12 @@ export async function POST(req: Request) {
 
   return Response.json({
     ok: true,
+    promo: {
+      code: result.promo.code,
+      discountType: result.promo.discountType,
+      discountValue: result.promo.discountValue,
+      description: result.promo.description,
+    },
     code: result.promo.code,
     discountType: result.promo.discountType,
     discountValue: result.promo.discountValue,

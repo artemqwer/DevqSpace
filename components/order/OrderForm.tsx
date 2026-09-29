@@ -180,6 +180,7 @@ export default function OrderForm({
         body: JSON.stringify({
           code,
           productSlug: product.slug,
+          price: finalPrice,
           orderAmount: finalPrice,
         }),
       });
@@ -188,16 +189,18 @@ export default function OrderForm({
         setPromoError(data.error || "Недійсний промокод");
         setAppliedPromo(null);
       } else {
+        const promoObj = data.promo || data;
         setAppliedPromo({
-          code: data.promo.code,
-          discountType: data.promo.discountType,
-          discountValue: data.promo.discountValue,
-          discountAmount: data.discountAmount,
+          code: promoObj.code || code,
+          discountType: promoObj.discountType,
+          discountValue: Number(promoObj.discountValue) || 0,
+          discountAmount: Number(data.discountAmount) || 0,
         });
         setPromoInput("");
         setPromoError(null);
       }
-    } catch {
+    } catch (err) {
+      console.error("Promo error:", err);
       setPromoError("Помилка перевірки промокоду");
     } finally {
       setPromoLoading(false);
