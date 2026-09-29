@@ -1,5 +1,11 @@
 import { sendOrderToTelegram, type OrderPayload } from "@/lib/telegram";
-import { getProductBySlug, addOrder, rateLimit } from "@/lib/store";
+import {
+  getProductBySlug,
+  addOrder,
+  rateLimit,
+  validatePromoCode,
+  incrementPromoUsage,
+} from "@/lib/store";
 import { prepareEnvData } from "@/lib/orderEnv";
 import { parseContact } from "@/lib/contact";
 
@@ -7,6 +13,7 @@ type OrderBody = Partial<OrderPayload> & {
   company?: string;
   envValues?: Record<string, string>;
   customPrice?: number;
+  promoCode?: string;
 };
 
 
@@ -78,22 +85,36 @@ export async function POST(req: Request) {
         ? rawCustom
         : product.price;
 
+    let discountAmount = 0;
+    let validPromoCode: string | undefined;
+    if (body.promoCode && typeof body.promoCode === "string" && body.promoCode.trim()) {
+      const pCheck = await validatePromoCode(body.promoCode.trim(), product.slug, effectivePrice);
+      if (pCheck.ok) {
+        discountAmount = pCheck.discountAmount;
+        validPromoCode = pCheck.promo.code;
+      }
+    }
+    const finalPriceToCharge = Math.max(1, effectivePrice - discountAmount);
+
     payload = {
       type: "product",
       productSlug: product.slug,
       productTitle: product.title,
-      productPrice: effectivePrice,
+      productPrice: finalPriceToCharge,
       name,
       email,
       contactMethod,
       contact,
-      message: message + envNote,
+      message: message + envNote + (validPromoCode ? `\n\n🎟 Промокод: ${validPromoCode} (-$${discountAmount})` : ""),
     };
     orderData = {
       type: "product",
       productSlug: product.slug,
       productTitle: product.title,
-      productPrice: effectivePrice,
+      productPrice: finalPriceToCharge,
+      originalPrice: discountAmount > 0 ? effectivePrice : undefined,
+      discountAmount: discountAmount > 0 ? discountAmount : undefined,
+      promoCode: validPromoCode,
       name,
       email,
       contactMethod,
@@ -136,6 +157,9 @@ export async function POST(req: Request) {
   try {
     const saved = await addOrder(orderData);
     orderId = saved.id;
+    if (orderData.type === "product" && orderData.promoCode) {
+      await incrementPromoUsage(orderData.promoCode).catch(() => {});
+    }
   } catch (e) {
     console.error("[order] failed to persist:", e);
   }

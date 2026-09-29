@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ACCENT_BUTTON, type Product } from "@/lib/products";
 import type { EnvValues } from "@/lib/envFields";
@@ -93,6 +93,7 @@ export default function OrderForm({
   jarEnabled = false,
   jarAmountUah = 0,
   botUsername,
+  initialPromo,
 }: {
   product: Product;
   whopEnabled?: boolean;
@@ -105,6 +106,7 @@ export default function OrderForm({
   jarEnabled?: boolean;
   jarAmountUah?: number;
   botUsername?: string | null;
+  initialPromo?: string;
 }) {
   const to = useTranslations("orderForm");
   const router = useRouter();
@@ -143,9 +145,77 @@ export default function OrderForm({
   const [serviceTier, setServiceTier] = useState<"code" | "setup" | "hosting">("code");
   const extraPrice = serviceTier === "setup" ? 39 : serviceTier === "hosting" ? 15 : 0;
   const finalPrice = product.price + extraPrice;
+
+  const [promoInput, setPromoInput] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [appliedPromo, setAppliedPromo] = useState<{
+    code: string;
+    discountType: "percent" | "fixed";
+    discountValue: number;
+    discountAmount: number;
+  } | null>(null);
+
+  const discountAmount = appliedPromo
+    ? appliedPromo.discountType === "percent"
+      ? Math.round((finalPrice * appliedPromo.discountValue) / 100)
+      : Math.min(finalPrice - 1, appliedPromo.discountValue)
+    : 0;
+  const discountedPrice = Math.max(1, finalPrice - discountAmount);
+
   const effectiveJarUah = Math.round(
-    finalPrice * (product.price > 0 ? jarAmountUah / product.price : 42),
+    discountedPrice * (product.price > 0 ? jarAmountUah / product.price : 42),
   );
+
+  const handleApplyPromo = async (codeToTest?: string) => {
+    const raw = codeToTest || promoInput;
+    const code = raw.trim().toUpperCase();
+    if (!code) return;
+    setPromoLoading(true);
+    setPromoError(null);
+    try {
+      const res = await fetch("/api/promo/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code,
+          productSlug: product.slug,
+          orderAmount: finalPrice,
+        }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setPromoError(data.error || "Недійсний промокод");
+        setAppliedPromo(null);
+      } else {
+        setAppliedPromo({
+          code: data.promo.code,
+          discountType: data.promo.discountType,
+          discountValue: data.promo.discountValue,
+          discountAmount: data.discountAmount,
+        });
+        setPromoInput("");
+        setPromoError(null);
+      }
+    } catch {
+      setPromoError("Помилка перевірки промокоду");
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoError(null);
+    setPromoInput("");
+  };
+
+  useEffect(() => {
+    if (initialPromo) {
+      handleApplyPromo(initialPromo);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPromo]);
 
   // Валідація Email для доставки товару
   const emailCheck = validateDeliveryEmail(email);
@@ -199,7 +269,7 @@ export default function OrderForm({
         desc: "Card / Apple Pay / Crypto",
         icon: "ph-shopping-bag",
         badge: "USD",
-        amountFormatted: `$${finalPrice}`,
+        amountFormatted: `$${discountedPrice}`,
       });
     }
 
@@ -210,7 +280,7 @@ export default function OrderForm({
         desc: "Visa / Mastercard",
         icon: "ph-credit-card",
         badge: "USD",
-        amountFormatted: `$${finalPrice}`,
+        amountFormatted: `$${discountedPrice}`,
       });
     } else if (lemonEnabled) {
       list.push({
@@ -219,7 +289,7 @@ export default function OrderForm({
         desc: "Visa / Mastercard",
         icon: "ph-credit-card",
         badge: "USD",
-        amountFormatted: `$${finalPrice}`,
+        amountFormatted: `$${discountedPrice}`,
       });
     }
 
@@ -230,7 +300,7 @@ export default function OrderForm({
         desc: "Visa / Mastercard",
         icon: "ph-credit-card",
         badge: "UAH",
-        amountFormatted: `≈ $${finalPrice}`,
+        amountFormatted: `≈ $${discountedPrice}`,
       });
     }
 
@@ -252,7 +322,7 @@ export default function OrderForm({
         desc: "USDT, BTC, TON, ETH",
         icon: "ph-currency-circle-dollar",
         badge: "Crypto",
-        amountFormatted: `$${finalPrice}`,
+        amountFormatted: `$${discountedPrice}`,
       });
     }
 
@@ -264,7 +334,7 @@ export default function OrderForm({
     wfpEnabled,
     jarEnabled,
     cryptoEnabled,
-    finalPrice,
+    discountedPrice,
     effectiveJarUah,
     to,
   ]);
@@ -309,6 +379,7 @@ export default function OrderForm({
           contact: contact.trim(),
           message: getCombinedMessage(),
           customPrice: finalPrice,
+          promoCode: appliedPromo?.code,
           company,
           envValues,
         }),
@@ -382,6 +453,7 @@ export default function OrderForm({
           contact: contact.trim(),
           message: getCombinedMessage(),
           customPrice: finalPrice,
+          promoCode: appliedPromo?.code,
           company,
           envValues,
         }),
@@ -420,6 +492,7 @@ export default function OrderForm({
           contact: contact.trim(),
           message: getCombinedMessage(),
           customPrice: finalPrice,
+          promoCode: appliedPromo?.code,
           company,
           envValues,
         }),
@@ -478,6 +551,7 @@ export default function OrderForm({
           contact: contact.trim(),
           message: getCombinedMessage(),
           customPrice: finalPrice,
+          promoCode: appliedPromo?.code,
           company,
           envValues,
         }),
@@ -535,6 +609,7 @@ export default function OrderForm({
           contact: contact.trim(),
           message: getCombinedMessage(),
           customPrice: finalPrice,
+          promoCode: appliedPromo?.code,
           company,
           envValues,
         }),
@@ -579,6 +654,7 @@ export default function OrderForm({
           contact: contact.trim(),
           message: getCombinedMessage(),
           customPrice: finalPrice,
+          promoCode: appliedPromo?.code,
           company,
           envValues,
         }),
@@ -619,6 +695,7 @@ export default function OrderForm({
           contact: contact.trim(),
           message: getCombinedMessage(),
           customPrice: finalPrice,
+          promoCode: appliedPromo?.code,
           company,
           envValues,
         }),
@@ -664,7 +741,7 @@ export default function OrderForm({
               </span>
             </div>
             <div className="text-xs text-gray-500 font-mono">
-              ≈ ${product.price} · {to("jarSub")}
+              ≈ ${discountedPrice} · {to("jarSub")}
             </div>
           </div>
 
@@ -738,8 +815,21 @@ export default function OrderForm({
             {product.delivery} · {product.warranty}
           </p>
         </div>
-        <div className="text-xl font-display font-bold text-white shrink-0">
-          ${finalPrice}
+        <div className="text-right shrink-0">
+          {appliedPromo && discountAmount > 0 ? (
+            <>
+              <div className="text-xs font-mono line-through text-gray-500 leading-tight">
+                ${finalPrice}
+              </div>
+              <div className="text-xl font-display font-bold text-neon-green leading-tight">
+                ${discountedPrice}
+              </div>
+            </>
+          ) : (
+            <div className="text-xl font-display font-bold text-white">
+              ${finalPrice}
+            </div>
+          )}
         </div>
       </div>
 
@@ -976,6 +1066,81 @@ export default function OrderForm({
           disabled={submitting || paying || jarPaying || wfpPaying || lemonPaying || paddlePaying || whopPaying}
         />
 
+        {/* Promo code block */}
+        <div className="rounded-xl border border-white/10 bg-surface2/40 p-3.5">
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-xs font-mono text-gray-400 uppercase tracking-wider">
+              {to("promoLabel")}
+            </label>
+            {appliedPromo && discountAmount > 0 && (
+              <span className="text-[11px] font-mono text-neon-green flex items-center gap-1">
+                <i className="ph-bold ph-check-circle" /> {to("promoApplied")}
+              </span>
+            )}
+          </div>
+
+          {appliedPromo && discountAmount > 0 ? (
+            <div className="flex items-center justify-between bg-neon-green/10 border border-neon-green/30 rounded-lg px-3.5 py-2.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <i className="ph-fill ph-tag text-neon-green text-base shrink-0" />
+                <span className="font-mono font-bold text-white text-sm tracking-wider">
+                  {appliedPromo.code}
+                </span>
+                <span className="text-xs font-mono text-neon-green">
+                  ({appliedPromo.discountType === "percent" ? `-${appliedPromo.discountValue}%` : `-$${appliedPromo.discountValue}`})
+                </span>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="text-xs font-mono font-bold text-neon-green">
+                  -${discountAmount}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleRemovePromo}
+                  className="text-gray-400 hover:text-white transition-colors p-1"
+                  title={to("promoRemove")}
+                >
+                  <i className="ph-bold ph-x text-sm" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={promoInput}
+                onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                placeholder={to("promoPh")}
+                className="flex-1 bg-surface border border-white/10 rounded-lg px-3.5 py-2 text-white placeholder-gray-500 font-mono text-xs uppercase tracking-wider focus:outline-none focus:border-neon-blue/50"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleApplyPromo();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                disabled={promoLoading || !promoInput.trim()}
+                onClick={() => handleApplyPromo()}
+                className="px-4 py-2 bg-neon-blue/10 border border-neon-blue/40 text-neon-blue font-mono text-xs font-bold rounded-lg hover:bg-neon-blue/20 active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none shrink-0"
+              >
+                {promoLoading ? (
+                  <i className="ph-bold ph-circle-notch animate-spin text-sm" />
+                ) : (
+                  to("promoApply")
+                )}
+              </button>
+            </div>
+          )}
+
+          {promoError && (
+            <p className="mt-2 text-xs font-mono text-neon-pink flex items-center gap-1.5">
+              <i className="ph-bold ph-warning-circle" /> {promoError}
+            </p>
+          )}
+        </div>
+
         {error && (
           <div className="text-sm text-neon-pink font-mono flex items-center gap-2">
             <i className="ph-fill ph-warning-circle" /> {error}
@@ -1091,7 +1256,7 @@ export default function OrderForm({
                   />
                   {to("payAction")} ·{" "}
                   {availableMethods.find((m) => m.id === selectedMethod)?.amountFormatted ??
-                    `$${product.price}`}
+                    `$${discountedPrice}`}
                 </>
               )}
             </button>
@@ -1165,13 +1330,34 @@ export default function OrderForm({
             {serviceTier === "hosting" && (
               <SummaryRow label={to("sumHosting")} value="+$15/mo" />
             )}
+            {appliedPromo && discountAmount > 0 && (
+              <div className="flex justify-between text-xs font-mono text-neon-green">
+                <span>
+                  {to("sumDiscount")} ({appliedPromo.code})
+                </span>
+                <span>-${discountAmount}</span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-baseline justify-between pt-4">
             <span className="text-gray-400 font-mono text-sm">{to("total")}</span>
-            <span className="text-3xl font-display font-bold text-white">
-              ${finalPrice}
-            </span>
+            <div className="text-right">
+              {appliedPromo && discountAmount > 0 ? (
+                <>
+                  <div className="text-sm font-mono line-through text-gray-500 leading-tight">
+                    ${finalPrice}
+                  </div>
+                  <div className="text-3xl font-display font-bold text-neon-green leading-tight">
+                    ${discountedPrice}
+                  </div>
+                </>
+              ) : (
+                <span className="text-3xl font-display font-bold text-white">
+                  ${finalPrice}
+                </span>
+              )}
+            </div>
           </div>
 
           <Link

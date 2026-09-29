@@ -7,6 +7,8 @@ import {
   getProductBySlug,
   addOrder,
   rateLimit,
+  validatePromoCode,
+  incrementPromoUsage,
 } from "@/lib/store";
 import { usdToUah } from "@/lib/monojar";
 import { prepareEnvData } from "@/lib/orderEnv";
@@ -23,6 +25,7 @@ type Body = {
   company?: string; // honeypot
   envValues?: Record<string, string>;
   customPrice?: number;
+  promoCode?: string;
 };
 
 export async function POST(req: Request) {
@@ -73,6 +76,17 @@ export async function POST(req: Request) {
       ? rawCustom
       : product.price;
 
+  let discountAmount = 0;
+  let validPromoCode: string | undefined;
+  if (body.promoCode && typeof body.promoCode === "string" && body.promoCode.trim()) {
+    const pCheck = await validatePromoCode(body.promoCode.trim(), product.slug, effectivePrice);
+    if (pCheck.ok) {
+      discountAmount = pCheck.discountAmount;
+      validPromoCode = pCheck.promo.code;
+    }
+  }
+  const finalPriceToCharge = Math.max(1, effectivePrice - discountAmount);
+
   // Поля .env перевіряються заново на сервері (включно з getMe для токенів).
   const env = await prepareEnvData(product, body.envValues);
   if (!env.ok) {
@@ -83,7 +97,10 @@ export async function POST(req: Request) {
     type: "product",
     productSlug: product.slug,
     productTitle: product.title,
-    productPrice: effectivePrice,
+    productPrice: finalPriceToCharge,
+    originalPrice: discountAmount > 0 ? effectivePrice : undefined,
+    discountAmount: discountAmount > 0 ? discountAmount : undefined,
+    promoCode: validPromoCode,
     name,
     email,
     contactMethod,
@@ -94,6 +111,10 @@ export async function POST(req: Request) {
     deliveryStatus: "PENDING",
   });
 
+  if (validPromoCode) {
+    await incrementPromoUsage(validPromoCode).catch(() => {});
+  }
+
   const proto =
     req.headers.get("x-forwarded-proto") ??
     new URL(req.url).protocol.replace(":", "");
@@ -103,7 +124,7 @@ export async function POST(req: Request) {
   const isEn = /(?:^|;\s*)NEXT_LOCALE=en\b/.test(
     req.headers.get("cookie") ?? "",
   );
-  const amountUah = await usdToUah(effectivePrice);
+  const amountUah = await usdToUah(finalPriceToCharge);
   const params = buildWidgetParams({
     amountUah,
     productName: `${product.title} — DevqSpace`,
@@ -124,7 +145,7 @@ export async function POST(req: Request) {
     type: "product",
     productSlug: product.slug,
     productTitle: product.title,
-    productPrice: effectivePrice,
+    productPrice: finalPriceToCharge,
     name,
     email,
     contactMethod,

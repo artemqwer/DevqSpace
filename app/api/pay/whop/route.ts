@@ -1,5 +1,11 @@
 import { whopEnabled, createCheckout } from "@/lib/whop";
-import { getProductBySlug, addOrder, rateLimit } from "@/lib/store";
+import {
+  getProductBySlug,
+  addOrder,
+  rateLimit,
+  validatePromoCode,
+  incrementPromoUsage,
+} from "@/lib/store";
 import { prepareEnvData } from "@/lib/orderEnv";
 import { sendOrderToTelegram, type OrderPayload } from "@/lib/telegram";
 import { parseContact } from "@/lib/contact";
@@ -14,6 +20,7 @@ type Body = {
   company?: string; // honeypot
   envValues?: Record<string, string>;
   customPrice?: number;
+  promoCode?: string;
 };
 
 export async function POST(req: Request) {
@@ -64,6 +71,17 @@ export async function POST(req: Request) {
       ? rawCustom
       : product.price;
 
+  let discountAmount = 0;
+  let validPromoCode: string | undefined;
+  if (body.promoCode && typeof body.promoCode === "string" && body.promoCode.trim()) {
+    const pCheck = await validatePromoCode(body.promoCode.trim(), product.slug, effectivePrice);
+    if (pCheck.ok) {
+      discountAmount = pCheck.discountAmount;
+      validPromoCode = pCheck.promo.code;
+    }
+  }
+  const finalPriceToCharge = Math.max(1, effectivePrice - discountAmount);
+
   const env = await prepareEnvData(product, body.envValues);
   if (!env.ok) {
     return Response.json({ ok: false, error: env.error }, { status: 400 });
@@ -73,7 +91,10 @@ export async function POST(req: Request) {
     type: "product",
     productSlug: product.slug,
     productTitle: product.title,
-    productPrice: effectivePrice,
+    productPrice: finalPriceToCharge,
+    originalPrice: discountAmount > 0 ? effectivePrice : undefined,
+    discountAmount: discountAmount > 0 ? discountAmount : undefined,
+    promoCode: validPromoCode,
     name,
     email,
     contactMethod,
@@ -84,6 +105,10 @@ export async function POST(req: Request) {
     deliveryStatus: "PENDING",
   });
 
+  if (validPromoCode) {
+    await incrementPromoUsage(validPromoCode).catch(() => {});
+  }
+
   const proto =
     req.headers.get("x-forwarded-proto") ??
     new URL(req.url).protocol.replace(":", "");
@@ -91,7 +116,7 @@ export async function POST(req: Request) {
   const origin = `${proto}://${host}`;
 
   const co = await createCheckout({
-    amountUsd: effectivePrice,
+    amountUsd: finalPriceToCharge,
     productName: `${product.title} — DevqSpace`,
     orderId: order.id,
     email: email ?? (contactMethod === "email" ? contact : undefined),
@@ -102,18 +127,22 @@ export async function POST(req: Request) {
     return Response.json({ ok: false, error: co.error }, { status: 502 });
   }
 
+  const promoNote = validPromoCode
+    ? `🏷 Промокод: ${validPromoCode} (-$${discountAmount})`
+    : "";
+
   const payload: OrderPayload = {
     type: "product",
     productSlug: product.slug,
     productTitle: product.title,
-    productPrice: effectivePrice,
+    productPrice: finalPriceToCharge,
     name,
     email,
     contactMethod,
     contact,
-    message: message
-      ? `${message}\n\n⏳ Очікує оплати (Whop)`
-      : "⏳ Очікує оплати (Whop)",
+    message: [message, promoNote, "⏳ Очікує оплати (Whop)"]
+      .filter(Boolean)
+      .join("\n\n"),
   };
   await sendOrderToTelegram(payload, order.id);
 

@@ -4,6 +4,8 @@ import {
   addOrder,
   setOrderInvoice,
   rateLimit,
+  validatePromoCode,
+  incrementPromoUsage,
 } from "@/lib/store";
 import { sendOrderToTelegram, type OrderPayload } from "@/lib/telegram";
 import { prepareEnvData } from "@/lib/orderEnv";
@@ -19,6 +21,7 @@ type Body = {
   company?: string; // honeypot
   envValues?: Record<string, string>;
   customPrice?: number;
+  promoCode?: string;
 };
 
 
@@ -73,6 +76,17 @@ export async function POST(req: Request) {
       ? rawCustom
       : product.price;
 
+  let discountAmount = 0;
+  let validPromoCode: string | undefined;
+  if (body.promoCode && typeof body.promoCode === "string" && body.promoCode.trim()) {
+    const pCheck = await validatePromoCode(body.promoCode.trim(), product.slug, effectivePrice);
+    if (pCheck.ok) {
+      discountAmount = pCheck.discountAmount;
+      validPromoCode = pCheck.promo.code;
+    }
+  }
+  const finalPriceToCharge = Math.max(1, effectivePrice - discountAmount);
+
   // Поля .env перевіряються заново на сервері (включно з getMe для токенів) —
   // те, що форма їх уже показала зеленими, нічого не гарантує.
   const env = await prepareEnvData(product, body.envValues);
@@ -84,7 +98,10 @@ export async function POST(req: Request) {
     type: "product",
     productSlug: product.slug,
     productTitle: product.title,
-    productPrice: effectivePrice,
+    productPrice: finalPriceToCharge,
+    originalPrice: discountAmount > 0 ? effectivePrice : undefined,
+    discountAmount: discountAmount > 0 ? discountAmount : undefined,
+    promoCode: validPromoCode,
     name,
     email,
     contactMethod,
@@ -95,6 +112,10 @@ export async function POST(req: Request) {
     deliveryStatus: "PENDING",
   });
 
+  if (validPromoCode) {
+    await incrementPromoUsage(validPromoCode).catch(() => {});
+  }
+
   const proto =
     req.headers.get("x-forwarded-proto") ??
     new URL(req.url).protocol.replace(":", "");
@@ -102,7 +123,7 @@ export async function POST(req: Request) {
   const origin = `${proto}://${host}`;
 
   const inv = await createInvoice({
-    amount: effectivePrice,
+    amount: finalPriceToCharge,
     description: `${product.title} — DevqSpace`,
     orderId: order.id,
     successUrl: `${origin}/order/success?p=${product.slug}`,
@@ -120,7 +141,7 @@ export async function POST(req: Request) {
     type: "product",
     productSlug: product.slug,
     productTitle: product.title,
-    productPrice: effectivePrice,
+    productPrice: finalPriceToCharge,
     name,
     email,
     contactMethod,

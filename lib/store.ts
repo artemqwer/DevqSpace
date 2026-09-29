@@ -54,6 +54,10 @@ export type StoredOrder = {
   // Замовлення, створені до злиття гілок, тримали персональний архів тут.
   // Читаємо для сумісності, нові пишемо тільки в packageUrl.
   deliverFileUrl?: string;
+  // Промокоди та знижки
+  promoCode?: string;
+  originalPrice?: number;
+  discountAmount?: number;
 };
 
 // Статус збірки й видачі персонального архіву. Доповнює старі delivered /
@@ -122,6 +126,7 @@ type MemDB = {
   settings: Map<string, string>; // налаштування сайту (контакти, реквізити)
   reviews: Map<string, Review>;
   reviewTokens: Map<string, string>; // одноразовий токен -> orderId
+  promoCodes: Map<string, PromoCode>;
 };
 
 const g = globalThis as unknown as {
@@ -146,6 +151,7 @@ type MemSnapshot = {
   settings: [string, string][];
   reviews: [string, Review][];
   reviewTokens: [string, string][];
+  promoCodes: [string, PromoCode][];
 };
 
 function emptyMem(): MemDB {
@@ -163,6 +169,7 @@ function emptyMem(): MemDB {
     settings: new Map(),
     reviews: new Map(),
     reviewTokens: new Map(),
+    promoCodes: new Map(),
   };
 }
 
@@ -185,6 +192,7 @@ function hydrate(): MemDB {
     db.settings = new Map(raw.settings ?? []);
     db.reviews = new Map(raw.reviews ?? []);
     db.reviewTokens = new Map(raw.reviewTokens ?? []);
+    db.promoCodes = new Map(raw.promoCodes ?? []);
   } catch {
     return emptyMem();
   }
@@ -217,6 +225,7 @@ function touch(): void {
       settings: [...m.settings.entries()],
       reviews: [...m.reviews.entries()],
       reviewTokens: [...m.reviewTokens.entries()],
+      promoCodes: [...m.promoCodes.entries()],
     };
     try {
       devWriteState(DB_FILE, snapshot);
@@ -248,6 +257,8 @@ const K = {
   reviewIndex: "reviews:index", // sorted set за createdAt
   reviewToken: (t: string) => `reviewtoken:${t}`, // одноразовий токен -> orderId
   paySettings: "settings:payments", // які методи оплати ввімкнені (адмінка)
+  promo: (code: string) => `promo:${code.toUpperCase()}`,
+  promoCodes: "promocodes:all",
 };
 
 // ---- Seeding --------------------------------------------------------
@@ -365,11 +376,28 @@ export async function getAllProducts(): Promise<Product[]> {
     list = [...mem().products.values()];
   } else {
     const slugs = await redis.smembers(K.productSlugs);
-    if (!slugs.length) return [];
-    const keys = slugs.map((s) => K.product(s));
-    const rows = await redis.mget<Product[]>(...keys);
-    list = rows.filter((r): r is Product => Boolean(r));
+    if (!slugs.length) {
+      list = [];
+    } else {
+      const keys = slugs.map((s) => K.product(s));
+      const rows = await redis.mget<Product[]>(...keys);
+      list = rows.filter((r): r is Product => Boolean(r));
+    }
   }
+
+  // Автоматично додаємо будь-які нові товари із SEED_PRODUCTS, яких ще нема в базі
+  for (const seed of SEED_PRODUCTS) {
+    if (!list.some((p) => p.slug === seed.slug)) {
+      list.push(seed);
+      if (redis) {
+        redis.set(K.product(seed.slug), seed).catch(() => {});
+        redis.sadd(K.productSlugs, seed.slug).catch(() => {});
+      } else {
+        mem().products.set(seed.slug, seed);
+      }
+    }
+  }
+
   for (const p of list) {
     const seed = SEED_PRODUCTS.find((s) => s.slug === p.slug);
     if (seed) {
@@ -387,10 +415,21 @@ export async function getProductBySlug(
 ): Promise<Product | null> {
   await ensureSeeded();
   const redis = getRedis();
-  const p = redis ? await redis.get<Product>(K.product(slug)) : mem().products.get(slug);
-  if (!p) return null;
+  let p = redis ? await redis.get<Product>(K.product(slug)) : mem().products.get(slug);
   const seed = SEED_PRODUCTS.find((s) => s.slug === slug);
-  if (seed) {
+  if (!p) {
+    if (seed) {
+      p = seed;
+      if (redis) {
+        await redis.set(K.product(slug), seed);
+        await redis.sadd(K.productSlugs, slug);
+      } else {
+        mem().products.set(slug, seed);
+      }
+    } else {
+      return null;
+    }
+  } else if (seed) {
     if (seed.demoUrl && !p.demoUrl) p.demoUrl = seed.demoUrl;
     if (seed.demoScript?.length && (!p.demoScript || p.demoScript.length === 0)) {
       p.demoScript = seed.demoScript;
@@ -1538,3 +1577,205 @@ export async function setPaymentToggles(
   else await redis.set(K.paySettings, next);
   return next;
 }
+
+// =====================================================================
+// Promo Codes
+// =====================================================================
+
+export type PromoCode = {
+  code: string;
+  discountType: "percent" | "fixed";
+  discountValue: number;
+  description?: string;
+  minOrderAmount?: number;
+  maxUses?: number;
+  usedCount?: number;
+  expiresAt?: number;
+  active: boolean;
+  applicableSlugs?: string[];
+};
+
+export const SEED_PROMOS: PromoCode[] = [
+  {
+    code: "PHOTO20",
+    discountType: "percent",
+    discountValue: 20,
+    description: "Знижка 20% на ботів та послуги для фотографів",
+    active: true,
+    usedCount: 7,
+  },
+  {
+    code: "DEVQ10",
+    discountType: "percent",
+    discountValue: 10,
+    description: "Знижка 10% на будь-яке замовлення",
+    active: true,
+    usedCount: 24,
+  },
+  {
+    code: "START15",
+    discountType: "percent",
+    discountValue: 15,
+    description: "Знижка 15% для нових клієнтів",
+    active: true,
+    usedCount: 15,
+  },
+  {
+    code: "DEVQSPACE",
+    discountType: "fixed",
+    discountValue: 10,
+    description: "Фіксована знижка $10",
+    active: true,
+    usedCount: 32,
+  },
+];
+
+async function ensurePromosSeeded(): Promise<void> {
+  const redis = getRedis();
+  if (!redis) {
+    const m = mem();
+    for (const p of SEED_PROMOS) {
+      if (!m.promoCodes.has(p.code)) {
+        m.promoCodes.set(p.code, { ...p });
+      }
+    }
+    return;
+  }
+  const count = await redis.scard(K.promoCodes);
+  if (!count || count === 0) {
+    const pipe = redis.pipeline();
+    for (const p of SEED_PROMOS) {
+      pipe.set(K.promo(p.code), p);
+      pipe.sadd(K.promoCodes, p.code);
+    }
+    await pipe.exec();
+  }
+}
+
+export async function listPromoCodes(): Promise<PromoCode[]> {
+  await ensurePromosSeeded();
+  const redis = getRedis();
+  if (!redis) {
+    return [...mem().promoCodes.values()];
+  }
+  const codes = await redis.smembers(K.promoCodes);
+  if (!codes.length) return [];
+  const keys = codes.map((c) => K.promo(c));
+  const rows = await redis.mget<PromoCode[]>(...keys);
+  return rows.filter((r): r is PromoCode => Boolean(r));
+}
+
+export async function getPromoCode(code: string): Promise<PromoCode | null> {
+  await ensurePromosSeeded();
+  const clean = code.trim().toUpperCase();
+  const redis = getRedis();
+  if (!redis) {
+    return mem().promoCodes.get(clean) ?? null;
+  }
+  const promo = await redis.get<PromoCode>(K.promo(clean));
+  return promo ?? null;
+}
+
+export async function savePromoCode(promo: PromoCode): Promise<void> {
+  const clean = promo.code.trim().toUpperCase();
+  const item: PromoCode = {
+    ...promo,
+    code: clean,
+    usedCount: promo.usedCount ?? 0,
+    active: promo.active ?? true,
+  };
+  const redis = getRedis();
+  if (!redis) {
+    mem().promoCodes.set(clean, item);
+    touch();
+    return;
+  }
+  const pipe = redis.pipeline();
+  pipe.set(K.promo(clean), item);
+  pipe.sadd(K.promoCodes, clean);
+  await pipe.exec();
+}
+
+export async function deletePromoCode(code: string): Promise<void> {
+  const clean = code.trim().toUpperCase();
+  const redis = getRedis();
+  if (!redis) {
+    mem().promoCodes.delete(clean);
+    touch();
+    return;
+  }
+  const pipe = redis.pipeline();
+  pipe.del(K.promo(clean));
+  pipe.srem(K.promoCodes, clean);
+  await pipe.exec();
+}
+
+export async function validatePromoCode(
+  code: string,
+  productSlug?: string,
+  price?: number,
+): Promise<
+  | {
+      ok: true;
+      promo: PromoCode;
+      discountAmount: number;
+      finalPrice: number;
+    }
+  | { ok: false; error: string }
+> {
+  if (!code || !code.trim()) {
+    return { ok: false, error: "Введіть промокод" };
+  }
+  const promo = await getPromoCode(code);
+  if (!promo) {
+    return { ok: false, error: "Промокод не знайдено або він недійсний" };
+  }
+  if (!promo.active) {
+    return { ok: false, error: "Цей промокод наразі неактивний" };
+  }
+  if (promo.expiresAt && Date.now() > promo.expiresAt) {
+    return { ok: false, error: "Термін дії промокоду закінчився" };
+  }
+  if (promo.maxUses && (promo.usedCount ?? 0) >= promo.maxUses) {
+    return { ok: false, error: "Ліміт використання промокоду вичерпано" };
+  }
+  if (price !== undefined && promo.minOrderAmount && price < promo.minOrderAmount) {
+    return {
+      ok: false,
+      error: `Мінімальна сума для цього промокоду — $${promo.minOrderAmount}`,
+    };
+  }
+  if (
+    promo.applicableSlugs?.length &&
+    productSlug &&
+    !promo.applicableSlugs.includes(productSlug)
+  ) {
+    return { ok: false, error: "Цей промокод не діє на обраний товар" };
+  }
+
+  const basePrice = price ?? 0;
+  let discountAmount = 0;
+  if (promo.discountType === "percent") {
+    discountAmount = Math.round((basePrice * promo.discountValue) / 100);
+  } else {
+    discountAmount = Math.min(Math.max(0, basePrice - 1), promo.discountValue);
+  }
+
+  discountAmount = Math.max(0, Math.min(Math.max(0, basePrice - 1), discountAmount));
+  const finalPrice = Math.max(1, basePrice - discountAmount);
+
+  return {
+    ok: true,
+    promo,
+    discountAmount,
+    finalPrice,
+  };
+}
+
+export async function incrementPromoUsage(code: string): Promise<void> {
+  const promo = await getPromoCode(code);
+  if (!promo) return;
+  promo.usedCount = (promo.usedCount ?? 0) + 1;
+  await savePromoCode(promo);
+}
+

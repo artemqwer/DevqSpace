@@ -19,7 +19,10 @@ import { BackButton } from "@/components/site/BackButton";
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ promo?: string; code?: string }>;
+};
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -29,8 +32,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function OrderPage({ params }: Props) {
+export default async function OrderPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const search = await searchParams;
+  const initialPromo = search?.promo || search?.code;
   const raw = await getProductBySlug(slug);
   if (!raw) notFound();
 
@@ -100,6 +105,7 @@ export default async function OrderPage({ params }: Props) {
           jarEnabled={jarOn}
           jarAmountUah={amountUah}
           botUsername={botUsername}
+          initialPromo={initialPromo}
         />
       </main>
       <Footer />
