@@ -405,6 +405,9 @@ export async function getAllProducts(): Promise<Product[]> {
       if (seed.demoScript?.length && (!p.demoScript || p.demoScript.length === 0)) {
         p.demoScript = seed.demoScript;
       }
+      if (seed.envFields?.length && (!p.envFields || p.envFields.length === 0)) {
+        p.envFields = seed.envFields;
+      }
     }
   }
   return list;
@@ -433,6 +436,14 @@ export async function getProductBySlug(
     if (seed.demoUrl && !p.demoUrl) p.demoUrl = seed.demoUrl;
     if (seed.demoScript?.length && (!p.demoScript || p.demoScript.length === 0)) {
       p.demoScript = seed.demoScript;
+    }
+    if (seed.envFields?.length && (!p.envFields || p.envFields.length === 0)) {
+      p.envFields = seed.envFields;
+      if (redis) {
+        redis.set(K.product(slug), p).catch(() => {});
+      } else {
+        mem().products.set(slug, p);
+      }
     }
   }
   return p;
