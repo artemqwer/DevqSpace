@@ -10,7 +10,12 @@ import {
 } from "./store";
 import { tgSendDocument, tgSendMessage, TG_CONFIG } from "./telegram";
 import { sendDeliveryEmail, emailEnabled } from "./email";
-import { packageOrder } from "./packager";
+import { packageOrder, type PackageResult } from "./packager";
+import { getObject } from "./blob";
+import { decryptJson } from "./crypto";
+import type { EnvValues } from "./envFields";
+import { isLocalDeliveryActive } from "./devStubs";
+import { saveLocalDelivery } from "./devStorage";
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -18,7 +23,7 @@ function esc(s: string): string {
 
 export type DeliveryResult = {
   ok: boolean;
-  channel: "telegram" | "email" | "manual" | "-";
+  channel: "telegram" | "email" | "manual" | "local" | "-";
   note?: string;
 };
 
@@ -53,13 +58,15 @@ export async function deliverOrder(
   );
 
   let fileUrl = product.fileUrl;
+  let pkgBytes: Uint8Array | undefined;
+  let pkgName: string | undefined;
 
   if (dynamicMode) {
     await updateOrder(order.id, {
       deliveryStatus: "GENERATING",
       errorMessage: undefined,
     });
-    let pkg;
+    let pkg: PackageResult;
     try {
       pkg = await packageOrder(order, product);
     } catch (e) {
@@ -84,6 +91,8 @@ export async function deliverOrder(
     }
 
     fileUrl = pkg.url;
+    pkgBytes = pkg.bytes;
+    pkgName = pkg.name;
     await updateOrder(order.id, {
       packageUrl: pkg.url,
       packageName: pkg.name,
@@ -115,7 +124,6 @@ export async function deliverOrder(
   await setReviewToken(reviewToken, order.id);
   const reviewUrl = `${baseUrl}/review/${reviewToken}`;
 
-  // ---- Автоматична видача: Email (гарантований) + Telegram (паралельний) ----
   const targetEmail = (
     order.email || (order.contactMethod === "email" ? order.contact : "")
   ).trim().toLowerCase();
@@ -123,6 +131,70 @@ export async function deliverOrder(
   let emailSuccess = false;
   let emailError: string | undefined;
 
+  // ---- Локальна видача (локальне dev-середовище або LOCAL_DELIVERY=true) ----
+  // Строго відокремлена від продакшну: на диску в .local_deliveries зберігається
+  // згенерований ZIP та JSON-маніфест, без спаму в реальний Telegram чи email.
+  if (isLocalDeliveryActive()) {
+    try {
+      const fileBytes = pkgBytes ?? (await getObject(fileUrl));
+      if (!fileBytes) {
+        throw new Error("Не вдалося отримати байти файлу товару");
+      }
+
+      const rawValues = order.envData
+        ? decryptJson<EnvValues>(order.envData) ?? undefined
+        : undefined;
+
+      const safeSlug =
+        product.slug.replace(/[^a-zA-Z0-9_-]/g, "") || "product";
+      const deliveryFileName =
+        pkgName ?? `${safeSlug}-${order.id}.zip`;
+
+      const saved = await saveLocalDelivery({
+        orderId: order.id,
+        productSlug: product.slug,
+        productTitle: product.title,
+        customerName: order.name,
+        customerContact: order.contact,
+        customerEmail: targetEmail || undefined,
+        contactMethod: order.contactMethod,
+        fileName: deliveryFileName,
+        fileBytes,
+        envValues: rawValues,
+        downloadUrl: dlUrl,
+      });
+
+      const note = `локально збережено: ${saved.fileName} (${saved.orderDir})`;
+      await markOrderDelivered(order.id, "local", note);
+      await updateOrder(order.id, {
+        deliveryStatus: "SENT",
+        errorMessage: undefined,
+      });
+
+      console.log(
+        `[delivery:local] Замовлення ${order.id} успішно збережено: ${saved.filePath}`,
+      );
+
+      return {
+        ok: true,
+        channel: "local",
+        note,
+      };
+    } catch (e) {
+      console.error("[delivery:local] Помилка локальної видачі:", e);
+      const errMsg =
+        e instanceof Error
+          ? `Локальна видача впала: ${e.message}`
+          : "Локальна видача впала з помилкою";
+      await updateOrder(order.id, {
+        deliveryStatus: "FAILED",
+        errorMessage: errMsg,
+      });
+      return { ok: false, channel: "local", note: errMsg };
+    }
+  }
+
+  // ---- Автоматична видача: Email (гарантований) + Telegram (паралельний) ----
   if (targetEmail) {
     if (emailEnabled()) {
       const r = await sendDeliveryEmail(

@@ -41,7 +41,7 @@ export type StoredOrder = {
   tgChatId?: number; // chat_id клієнта (прив'язується deep-link'ом бота)
   delivered?: boolean;
   deliveredAt?: number;
-  deliveryChannel?: "telegram" | "email" | "manual";
+  deliveryChannel?: "telegram" | "email" | "manual" | "local";
   deliveryNote?: string; // напр. "клієнт ще не підключив Telegram"
   downloadToken?: string; // токен для захищеного посилання на завантаження
   // Динамічна упаковка

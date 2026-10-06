@@ -19,3 +19,15 @@ export function devBaseUrl(): string {
 export function devRouteBlocked(): boolean {
   return IS_PROD;
 }
+
+// Режим локальної видачі замовлень у теку на диску (замість email / telegram).
+// Активний або при явному прапорці LOCAL_DELIVERY=true/1 (тільки поза продом),
+// або автоматично у dev-середовищі (коли активні dev-заглушки чи IS_DEV), якщо
+// явно не вимкнено через LOCAL_DELIVERY=off/false.
+export function isLocalDeliveryActive(): boolean {
+  if (IS_PROD) return false;
+  const flag = process.env.LOCAL_DELIVERY?.trim().toLowerCase();
+  if (flag === "false" || flag === "off" || flag === "0") return false;
+  if (flag === "true" || flag === "1" || flag === "on") return true;
+  return DEV_STUBS;
+}

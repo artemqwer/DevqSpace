@@ -14,7 +14,14 @@ import { renderEnvFile, quoteIfNeeded, type EnvValues } from "./envFields";
 // («# Токен бота от @BotFather»), а не голий список ключів.
 
 export type PackageResult =
-  | { ok: true; url: string; name: string; files: number }
+  | {
+      ok: true;
+      url: string;
+      name: string;
+      files: number;
+      bytes: Uint8Array;
+      envValues: Record<string, string>;
+    }
   | { ok: false; error: string };
 
 // Розпакований архів не має роз'їдати пам'ять serverless-функції.
@@ -63,23 +70,37 @@ function commonRoot(paths: string[]): string {
 // Замінює значення ключа, зберігаючи решту файлу — коментарі, порядок,
 // групування. Рядок може бути закоментований (`# BOT_TOKEN=...`) або мати
 // пробіли навколо `=`. Немає такого ключа взагалі — дописуємо в кінець.
-//
-// Без регулярок навмисно: ключі вже нормалізовані до [A-Z_][A-Z0-9_]* у
-// normalizeEnvFields, екранувати нема чого, а рядковий розбір читабельніший.
+// Строго перевіряємо, щоб після необов'язкового '# ' йшла точна назва ключа,
+// уникаючи випадкового співпадіння з довільними коментарями.
 function setEnvLine(content: string, key: string, value: string): string {
   const quoted = quoteIfNeeded(value);
-  const lines = content.split("\n");
+  // Нормалізуємо переноси рядків перед розбиттям
+  const isCrlf = content.includes("\r\n");
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const lines = normalized.split("\n");
+  const keyPattern = new RegExp(`^(?:#\\s*)?${key}\\s*=`);
+
+  let replaced = false;
   for (let i = 0; i < lines.length; i++) {
-    let body = lines[i].trim();
-    if (body.startsWith("#")) body = body.slice(1).trim();
-    const eq = body.indexOf("=");
-    if (eq > 0 && body.slice(0, eq).trim() === key) {
+    if (keyPattern.test(lines[i].trim())) {
       lines[i] = `${key}=${quoted}`;
-      return lines.join("\n");
+      replaced = true;
+      break;
     }
   }
-  const tail = content.endsWith("\n") || content === "" ? "" : "\n";
-  return `${content}${tail}${key}=${quoted}\n`;
+
+  if (!replaced) {
+    if (lines.length > 0 && lines[lines.length - 1] === "") {
+      lines[lines.length - 1] = `${key}=${quoted}`;
+      lines.push("");
+    } else {
+      lines.push(`${key}=${quoted}`);
+      lines.push("");
+    }
+  }
+
+  const newline = isCrlf ? "\r\n" : "\n";
+  return lines.join(newline);
 }
 
 export async function packageOrder(
@@ -133,9 +154,10 @@ export async function packageOrder(
   const enc = new TextEncoder();
   let patched = false;
 
+  // Шукаємо існуючі .env файли в архіві
   for (const path of Object.keys(out)) {
     const base = path.split("/").pop() ?? "";
-    if (base !== ".env" && base !== ".env.example") continue;
+    if (base !== ".env") continue;
 
     let content = dec.decode(out[path]);
     for (const [key, value] of Object.entries(values)) {
@@ -143,15 +165,27 @@ export async function packageOrder(
     }
     out[path] = enc.encode(content);
     patched = true;
+  }
 
-    // .env.example без сусіднього .env — робимо клієнту готовий .env.
-    if (base === ".env.example") {
+  // Якщо файлу .env не було, але є .env.example — беремо його як основу для нового .env,
+  // при цьому сам .env.example залишаємо абсолютно чистим і недоторканим!
+  if (!patched) {
+    for (const path of Object.keys(out)) {
+      const base = path.split("/").pop() ?? "";
+      if (base !== ".env.example") continue;
+
       const envPath = path.slice(0, path.length - base.length) + ".env";
-      if (!out[envPath]) out[envPath] = enc.encode(content);
+      let content = dec.decode(out[path]);
+      for (const [key, value] of Object.entries(values)) {
+        content = setEnvLine(content, key, value);
+      }
+      out[envPath] = enc.encode(content);
+      patched = true;
+      break;
     }
   }
 
-  // У шаблоні взагалі немає .env — генеруємо з нуля в корені.
+  // У шаблоні взагалі немає ані .env, ані .env.example — генеруємо .env з нуля в корені.
   if (!patched) {
     const root = commonRoot(Object.keys(out));
     out[`${root}.env`] = enc.encode(
@@ -184,6 +218,8 @@ export async function packageOrder(
       url: blob.url,
       name: `${safeSlug}-${order.id}.zip`,
       files: Object.keys(out).length,
+      bytes: zipped,
+      envValues: values,
     };
   } catch (e) {
     console.error("[packager] upload failed:", e);

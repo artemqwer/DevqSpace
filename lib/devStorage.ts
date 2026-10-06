@@ -113,3 +113,104 @@ export function devWriteState(name: string, value: unknown): void {
   writeFileSync(file, readFileSync(tmp));
   rmSync(tmp, { force: true });
 }
+
+// ---- Локальна видача замовлень на диск (.local_deliveries) -----------
+
+export const LOCAL_DELIVERIES_ROOT = join(process.cwd(), ".local_deliveries");
+
+export type LocalDeliveryManifest = {
+  orderId: string;
+  productSlug: string;
+  productTitle?: string;
+  customerName: string;
+  customerContact: string;
+  customerEmail?: string;
+  contactMethod: string;
+  timestamp: number;
+  isoDate: string;
+  fileName: string;
+  envValues?: Record<string, string>;
+  downloadUrl?: string;
+};
+
+export type SaveLocalDeliveryParams = {
+  orderId: string;
+  productSlug: string;
+  productTitle?: string;
+  customerName: string;
+  customerContact: string;
+  customerEmail?: string;
+  contactMethod: string;
+  fileName: string;
+  fileBytes: Uint8Array;
+  envValues?: Record<string, string>;
+  downloadUrl?: string;
+};
+
+export type SaveLocalDeliveryResult = {
+  orderDir: string;
+  filePath: string;
+  manifestPath: string;
+  fileName: string;
+};
+
+export async function saveLocalDelivery(
+  params: SaveLocalDeliveryParams,
+): Promise<SaveLocalDeliveryResult> {
+  const { mkdir, writeFile } = await import("node:fs/promises");
+
+  // Безпечне ім'я теки для замовлення: ID + валідований slug
+  const safeOrderId = params.orderId.replace(/[^a-zA-Z0-9_-]/g, "") || "order";
+  const safeSlug = params.productSlug.replace(/[^a-zA-Z0-9_-]/g, "") || "product";
+  const folderName = `${safeOrderId}_${safeSlug}`;
+
+  const orderDir = safeJoin(LOCAL_DELIVERIES_ROOT, folderName);
+  if (!orderDir) {
+    throw new Error("Небезпечний шлях для локальної видачі");
+  }
+
+  await mkdir(orderDir, { recursive: true });
+
+  // Безпечне ім'я файлу в межах теки
+  const safeFileName =
+    params.fileName.replace(/[^a-zA-Z0-9._-]/g, "_") || "package.zip";
+  const targetFilePath = safeJoin(orderDir, safeFileName);
+  if (!targetFilePath) {
+    throw new Error("Небезпечне ім'я файлу товару");
+  }
+
+  await writeFile(targetFilePath, Buffer.from(params.fileBytes));
+
+  const manifest: LocalDeliveryManifest = {
+    orderId: params.orderId,
+    productSlug: params.productSlug,
+    productTitle: params.productTitle,
+    customerName: params.customerName,
+    customerContact: params.customerContact,
+    customerEmail: params.customerEmail,
+    contactMethod: params.contactMethod,
+    timestamp: Date.now(),
+    isoDate: new Date().toISOString(),
+    fileName: safeFileName,
+    envValues: params.envValues,
+    downloadUrl: params.downloadUrl,
+  };
+
+  const manifestPath = safeJoin(orderDir, "manifest.json");
+  if (!manifestPath) {
+    throw new Error("Небезпечний шлях для маніфесту");
+  }
+
+  await writeFile(
+    manifestPath,
+    JSON.stringify(manifest, null, 2),
+    "utf8",
+  );
+
+  return {
+    orderDir,
+    filePath: targetFilePath,
+    manifestPath,
+    fileName: safeFileName,
+  };
+}

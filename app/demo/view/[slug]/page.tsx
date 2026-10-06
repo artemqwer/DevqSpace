@@ -14,6 +14,10 @@ import { EmailPackDemo } from "@/components/demos/EmailPackDemo";
 import { SolanaSniperDemo } from "@/components/demos/SolanaSniperDemo";
 import { TokenPresaleDemo } from "@/components/demos/TokenPresaleDemo";
 import { DexSwapDemo } from "@/components/demos/DexSwapDemo";
+import { TmaFoodDeliveryDemo } from "@/components/demos/TmaFoodDeliveryDemo";
+import { TmaBeautyBookingDemo } from "@/components/demos/TmaBeautyBookingDemo";
+import { TmaPaywallClubDemo } from "@/components/demos/TmaPaywallClubDemo";
+import { TmaQuizFunnelDemo } from "@/components/demos/TmaQuizFunnelDemo";
 
 interface DemoViewProps {
   params: Promise<{ slug: string }>;
@@ -63,6 +67,14 @@ export default async function DemoViewPage({ params }: DemoViewProps) {
         return <TokenPresaleDemo product={product} />;
       case "dex-swap-ui":
         return <DexSwapDemo product={product} />;
+      case "tma-food-delivery":
+        return <TmaFoodDeliveryDemo />;
+      case "tma-beauty-booking":
+        return <TmaBeautyBookingDemo />;
+      case "tma-paywall-club":
+        return <TmaPaywallClubDemo />;
+      case "tma-quiz-funnel":
+        return <TmaQuizFunnelDemo />;
       default:
         return (
           <div className="flex min-h-screen flex-col items-center justify-center p-8 text-center text-slate-300 bg-[#06070a]">

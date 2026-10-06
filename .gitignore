@@ -39,6 +39,8 @@ yarn-error.log*
 
 # локальне сховище dev-заглушок (blob, пошта, telegram, стан бази)
 /.devq-storage/
+/.local_deliveries/
+/local_deliveries/
 
 # typescript
 *.tsbuildinfo
