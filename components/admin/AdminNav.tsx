@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/admin/products", label: "Товари", icon: "ph-package" },
   { href: "/admin/reviews", label: "Відгуки", icon: "ph-star" },
   { href: "/admin/promos", label: "Промокоди", icon: "ph-tag" },
+  { href: "/admin/announcements", label: "Оголошення", icon: "ph-megaphone" },
   { href: "/admin/payments", label: "Оплата", icon: "ph-credit-card" },
   { href: "/admin/content", label: "Тексти", icon: "ph-text-aa" },
   { href: "/admin/legal", label: "Реквізити", icon: "ph-scroll" },

@@ -44,11 +44,13 @@ export async function POST(req: Request) {
     ok: true,
     promo: {
       code: result.promo.code,
+      promoType: result.promo.promoType ?? "discount",
       discountType: result.promo.discountType,
       discountValue: result.promo.discountValue,
       description: result.promo.description,
     },
     code: result.promo.code,
+    promoType: result.promo.promoType ?? "discount",
     discountType: result.promo.discountType,
     discountValue: result.promo.discountValue,
     discountAmount: result.discountAmount,

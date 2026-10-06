@@ -1,10 +1,19 @@
-import { listPromoCodes } from "@/lib/store";
+import { listPromoCodes, getAllProducts } from "@/lib/store";
 import PromosManager from "@/components/admin/PromosManager";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPromosPage() {
-  const promos = await listPromoCodes();
+  const [promos, products] = await Promise.all([
+    listPromoCodes(),
+    getAllProducts(),
+  ]);
+
+  const productOptions = products.map((p) => ({
+    slug: p.slug,
+    title: p.title,
+    price: p.price,
+  }));
 
   return (
     <div className="space-y-6">
@@ -16,11 +25,11 @@ export default async function AdminPromosPage() {
           Промокоди та знижки
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          Створюй промокоди у відсотках або фіксованій сумі. Користувачі вводять їх під час замовлення товару — ціна миттєво перераховується.
+          Створюй промокоди на знижку (відсоток/фіксована) або послугу (безкоштовне налаштування/хостинг), вибирай період дії, ліміт використань та обмеження за товарами.
         </p>
       </div>
 
-      <PromosManager initialPromos={promos} />
+      <PromosManager initialPromos={promos} availableProducts={productOptions} />
     </div>
   );
 }

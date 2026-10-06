@@ -151,15 +151,21 @@ export default function OrderForm({
   const [promoError, setPromoError] = useState<string | null>(null);
   const [appliedPromo, setAppliedPromo] = useState<{
     code: string;
+    promoType?: "discount" | "free_setup" | "free_hosting";
     discountType: "percent" | "fixed";
     discountValue: number;
     discountAmount: number;
+    description?: string;
   } | null>(null);
 
   const discountAmount = appliedPromo
-    ? appliedPromo.discountType === "percent"
-      ? Math.round((finalPrice * appliedPromo.discountValue) / 100)
-      : Math.min(finalPrice - 1, appliedPromo.discountValue)
+    ? appliedPromo.promoType === "free_setup"
+      ? Math.min(finalPrice - 1, 39)
+      : appliedPromo.promoType === "free_hosting"
+        ? Math.min(finalPrice - 1, 15)
+        : appliedPromo.discountType === "percent"
+          ? Math.round((finalPrice * appliedPromo.discountValue) / 100)
+          : Math.min(finalPrice - 1, appliedPromo.discountValue)
     : 0;
   const discountedPrice = Math.max(1, finalPrice - discountAmount);
 
@@ -190,11 +196,20 @@ export default function OrderForm({
         setAppliedPromo(null);
       } else {
         const promoObj = data.promo || data;
+        const pType = promoObj.promoType || data.promoType || "discount";
+        // Якщо промокод на послугу — автоматично активуємо відповідний serviceTier!
+        if (pType === "free_setup" && serviceTier !== "setup") {
+          setServiceTier("setup");
+        } else if (pType === "free_hosting" && serviceTier !== "hosting") {
+          setServiceTier("hosting");
+        }
         setAppliedPromo({
           code: promoObj.code || code,
+          promoType: pType,
           discountType: promoObj.discountType,
           discountValue: Number(promoObj.discountValue) || 0,
           discountAmount: Number(data.discountAmount) || 0,
+          description: promoObj.description || data.description,
         });
         setPromoInput("");
         setPromoError(null);
@@ -1090,7 +1105,13 @@ export default function OrderForm({
                   {appliedPromo.code}
                 </span>
                 <span className="text-xs font-mono text-neon-green">
-                  ({appliedPromo.discountType === "percent" ? `-${appliedPromo.discountValue}%` : `-$${appliedPromo.discountValue}`})
+                  {appliedPromo.promoType === "free_setup"
+                    ? "(Встановлення безкоштовно)"
+                    : appliedPromo.promoType === "free_hosting"
+                      ? "(Хостинг безкоштовно)"
+                      : appliedPromo.discountType === "percent"
+                        ? `(-${appliedPromo.discountValue}%)`
+                        : `(-$${appliedPromo.discountValue})`}
                 </span>
               </div>
               <div className="flex items-center gap-3 shrink-0">

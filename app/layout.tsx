@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { WelcomeSheet } from "@/components/site/WelcomeSheet";
 import SupportChatWidget from "@/components/site/SupportChatWidget";
+import { HeaderAnnouncementBar } from "@/components/site/HeaderAnnouncementBar";
 import "./globals.css";
 
 const GA_ID = "G-K7C0BNHPQ3"; // Google Analytics 4
@@ -103,6 +104,7 @@ gtag('js', new Date());
 gtag('config', '${GA_ID}');`}
         </Script>
         <NextIntlClientProvider messages={messages}>
+          <HeaderAnnouncementBar />
           {children}
           <WelcomeSheet />
           <SupportChatWidget />

@@ -18,6 +18,13 @@ export type SiteSettings = {
   supportEmail: string;
   supportPhone: string;
   workHours: string;
+  // Оголошення в хедері (статичне або рухомий рядок / маркі)
+  announcementEnabled: boolean;
+  announcementText: string;
+  announcementMode: "static" | "marquee"; // статичне або біжучий рядок
+  announcementBg: "neon-blue" | "gradient" | "neon-purple" | "neon-pink" | "surface";
+  announcementLink?: string;
+  announcementLinkText?: string;
 };
 
 export const SETTINGS_DEFAULTS: SiteSettings = {
@@ -30,6 +37,12 @@ export const SETTINGS_DEFAULTS: SiteSettings = {
   supportEmail: "",
   supportPhone: "",
   workHours: "Пн–Пт, 10:00–19:00 (Київ)",
+  announcementEnabled: false,
+  announcementText: "🔥 Знижка 20% на всі Telegram-боти за промокодом PHOTO20!",
+  announcementMode: "marquee",
+  announcementBg: "gradient",
+  announcementLink: "/catalog",
+  announcementLinkText: "До каталогу →",
 };
 
 const TAG = "site-settings";
@@ -60,8 +73,14 @@ export async function getSettings(): Promise<SiteSettings> {
     ...Object.fromEntries(
       Object.entries(raw).filter(([, v]) => typeof v === "string" && v !== ""),
     ),
-    // Тумблер зберігається рядком, як і решта — зводимо до boolean тут.
+    // Тумблери зберігаються рядком "1" — зводимо до boolean тут.
     legalEnabled: raw.legalEnabled === "1",
+    announcementEnabled: raw.announcementEnabled === "1",
+    announcementMode:
+      raw.announcementMode === "static" ? "static" : "marquee",
+    announcementBg:
+      (raw.announcementBg as SiteSettings["announcementBg"]) ||
+      SETTINGS_DEFAULTS.announcementBg,
   };
 }
 

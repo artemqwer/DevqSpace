@@ -1582,17 +1582,21 @@ export async function setPaymentToggles(
 // Promo Codes
 // =====================================================================
 
+export type PromoCodeType = "discount" | "free_setup" | "free_hosting";
+
 export type PromoCode = {
   code: string;
+  promoType?: PromoCodeType; // "discount" (за замовчуванням) або безкоштовна послуга "free_setup" / "free_hosting"
   discountType: "percent" | "fixed";
   discountValue: number;
   description?: string;
   minOrderAmount?: number;
   maxUses?: number;
   usedCount?: number;
-  expiresAt?: number;
+  startsAt?: number; // період: початок дії
+  expiresAt?: number; // період: кінець дії
   active: boolean;
-  applicableSlugs?: string[];
+  applicableSlugs?: string[]; // обмеження: діє лише на конкретні товари
 };
 
 export const SEED_PROMOS: PromoCode[] = [
@@ -1733,6 +1737,9 @@ export async function validatePromoCode(
   if (!promo.active) {
     return { ok: false, error: "Цей промокод наразі неактивний" };
   }
+  if (promo.startsAt && Date.now() < promo.startsAt) {
+    return { ok: false, error: "Дія цього промокоду ще не розпочалася" };
+  }
   if (promo.expiresAt && Date.now() > promo.expiresAt) {
     return { ok: false, error: "Термін дії промокоду закінчився" };
   }
@@ -1755,7 +1762,13 @@ export async function validatePromoCode(
 
   const basePrice = price ?? 0;
   let discountAmount = 0;
-  if (promo.discountType === "percent") {
+  if (promo.promoType === "free_setup") {
+    // Безкоштовне налаштування під ключ ($39)
+    discountAmount = Math.min(basePrice > 0 ? 39 : 0, 39);
+  } else if (promo.promoType === "free_hosting") {
+    // Безкоштовний перший місяць VPS хостингу ($15)
+    discountAmount = Math.min(basePrice > 0 ? 15 : 0, 15);
+  } else if (promo.discountType === "percent") {
     discountAmount = Math.round((basePrice * promo.discountValue) / 100);
   } else {
     discountAmount = Math.min(Math.max(0, basePrice - 1), promo.discountValue);
