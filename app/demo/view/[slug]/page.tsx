@@ -18,6 +18,8 @@ import { TmaFoodDeliveryDemo } from "@/components/demos/TmaFoodDeliveryDemo";
 import { TmaBeautyBookingDemo } from "@/components/demos/TmaBeautyBookingDemo";
 import { TmaPaywallClubDemo } from "@/components/demos/TmaPaywallClubDemo";
 import { TmaQuizFunnelDemo } from "@/components/demos/TmaQuizFunnelDemo";
+import { TmaTicketsEventsDemo } from "@/components/demos/TmaTicketsEventsDemo";
+import { TmaTableBookingDemo } from "@/components/demos/TmaTableBookingDemo";
 
 interface DemoViewProps {
   params: Promise<{ slug: string }>;
@@ -75,6 +77,10 @@ export default async function DemoViewPage({ params }: DemoViewProps) {
         return <TmaPaywallClubDemo />;
       case "tma-quiz-funnel":
         return <TmaQuizFunnelDemo />;
+      case "tma-tickets-events":
+        return <TmaTicketsEventsDemo />;
+      case "tma-table-booking":
+        return <TmaTableBookingDemo />;
       default:
         return (
           <div className="flex min-h-screen flex-col items-center justify-center p-8 text-center text-slate-300 bg-[#06070a]">
