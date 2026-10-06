@@ -1243,6 +1243,11 @@ export default function OrderForm({
             <button
               type="button"
               onClick={() => {
+                if (!validateForm()) return;
+                if (!envValid) {
+                  setError("Будь ласка, заповніть обов'язкові поля налаштування .env вище");
+                  return;
+                }
                 if (selectedMethod === "whop") handleWhop();
                 else if (selectedMethod === "paddle") handlePaddle();
                 else if (selectedMethod === "lemon") handleLemon();
@@ -1257,8 +1262,7 @@ export default function OrderForm({
                 lemonPaying ||
                 wfpPaying ||
                 jarPaying ||
-                paying ||
-                !envValid
+                paying
               }
               className="w-full flex items-center justify-center gap-2 font-display font-bold rounded-xl px-6 py-4 bg-gradient-to-r from-neon-blue to-neon-purple text-white shadow-[0_10px_30px_-10px_rgba(80,120,255,0.6)] active:scale-[0.98] transition-transform disabled:opacity-60 disabled:cursor-not-allowed mt-2"
             >
