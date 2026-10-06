@@ -17,12 +17,12 @@ const inter = Inter({
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
 });
 
 const jetBrainsMono = JetBrains_Mono({
   variable: "--font-mono-space",
-  subsets: ["latin"],
+  subsets: ["latin", "cyrillic"],
 });
 
 export const metadata: Metadata = {

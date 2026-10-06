@@ -22,8 +22,8 @@
   --color-neon-pink: #ff007f;
   --color-neon-green: #00ff66;
 
-  --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-display: var(--font-space-grotesk), system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-mono-space), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
