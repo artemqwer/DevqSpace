@@ -408,6 +408,10 @@ export async function getAllProducts(): Promise<Product[]> {
       if (seed.envFields?.length && (!p.envFields || p.envFields.length === 0)) {
         p.envFields = seed.envFields;
       }
+      if (seed.fileUrl && !p.fileUrl) {
+        p.fileUrl = seed.fileUrl;
+        p.fileName = seed.fileName;
+      }
     }
   }
   return list;
@@ -439,11 +443,15 @@ export async function getProductBySlug(
     }
     if (seed.envFields?.length && (!p.envFields || p.envFields.length === 0)) {
       p.envFields = seed.envFields;
-      if (redis) {
-        redis.set(K.product(slug), p).catch(() => {});
-      } else {
-        mem().products.set(slug, p);
-      }
+    }
+    if (seed.fileUrl && !p.fileUrl) {
+      p.fileUrl = seed.fileUrl;
+      p.fileName = seed.fileName;
+    }
+    if (redis) {
+      redis.set(K.product(slug), p).catch(() => {});
+    } else {
+      mem().products.set(slug, p);
     }
   }
   return p;
