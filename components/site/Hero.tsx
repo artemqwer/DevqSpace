@@ -1,6 +1,8 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "@phosphor-icons/react/dist/ssr";
 import { useTranslations } from "next-intl";
+import { RESCUE_PATH } from "@/lib/rescue-release-types";
 
 const services = ["s1", "s2", "s3", "s4"] as const;
 
@@ -138,6 +140,18 @@ export function Hero({
               <ArrowUpRight className="h-4 w-4 text-neon-purple transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </Link>
           </div>
+
+          <Link
+            href={RESCUE_PATH}
+            className="mt-5 flex w-fit max-w-full items-center gap-3 rounded-xl border border-[#d58e99]/35 bg-[#401a27]/65 py-2 pl-3 pr-4 text-[#f1c9d0] transition-colors hover:border-[#d58e99]/70 hover:bg-[#512330]"
+          >
+            <Image src="/shadxwrescue/mascot.webp" alt="" width={30} height={34} unoptimized />
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold">ShadxwRescue</span>
+              <span className="block text-xs leading-normal text-[#e8d5db]">{t("rescueDescription")}</span>
+            </span>
+            <ArrowUpRight aria-hidden className="h-4 w-4 shrink-0" />
+          </Link>
 
           {/* service index */}
           <div

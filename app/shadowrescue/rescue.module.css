@@ -39,9 +39,15 @@
   width: min(calc(100% - 2 * var(--gutter)), 1260px);
   margin-inline: auto;
 }
-.skip { position: absolute; z-index: 5; top: 8px; left: 8px; padding: 12px; background: var(--dark); transform: translateY(-160%); }
-.skip:focus { transform: none; }
+.skip {
+  position: absolute; z-index: 5; top: 8px; left: 8px; padding: 12px; background: var(--dark);
+}
+.skip:not(:focus-visible) {
+  width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
 .header {
+  position: relative;
   background: linear-gradient(110deg, var(--dark), var(--panel));
   border-bottom: 1px solid #d9dee838;
 }
@@ -59,21 +65,11 @@
 .nav a:hover, .host:hover, .mobileTools:hover, .textLink:hover { text-decoration: underline; text-underline-offset: 4px; }
 .host { color: var(--silver); }
 .hero {
-  isolation: isolate; position: relative;
   overflow: hidden;
-  background: radial-gradient(ellipse 72% 93% at 88% 49%, var(--wine), transparent 71%),
-    radial-gradient(ellipse 75% 77% at 59% 1%, var(--panel), transparent 76%),
-    linear-gradient(120deg, var(--dark) 21%, #171b24 64%, var(--tab));
-}
-.hero::before, .hero::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; }
-.hero::before {
-  background: radial-gradient(ellipse at 91% 43%, #d58e9929, transparent 54%),
-    repeating-linear-gradient(146deg, transparent 0 116px, #d9dee812 117px, transparent 118px 231px);
-  mask-image: linear-gradient(100deg, transparent 16%, #0007 60%, #000);
-}
-.hero::after {
-  opacity: .12;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.68' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23fff' opacity='.36' filter='url(%23grain)' d='M0 0h180v180H0z'/%3E%3C/svg%3E");
+  background:
+    radial-gradient(ellipse 72% 105% at 96% 54%, #512330 0%, #51233000 76%),
+    radial-gradient(ellipse 76% 101% at 62% 0%, #252933 0%, #25293300 79%),
+    linear-gradient(116deg, #0b0d10 8%, #171b24 64%, #311721 100%);
 }
 .heroInner {
   display: grid; grid-template-columns: minmax(0, .91fr) minmax(0, 1.09fr);

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { MagnifyingGlass, Globe, ArrowRight, ArrowLeft } from "@phosphor-icons/react";
 import { useTranslations, useLocale } from "next-intl";
 import { Wordmark } from "./Wordmark";
+import { RESCUE_PATH } from "@/lib/rescue-release-types";
 
 const navLinks = [
   { key: "catalog", href: "/catalog" },
@@ -13,6 +14,7 @@ const navLinks = [
   { key: "categories", href: "/categories" },
   { key: "cases", href: "/cases" },
   { key: "about", href: "/about" },
+  { key: "shadxwrescue", href: RESCUE_PATH },
 ] as const;
 
 function switchLocale(current: string) {
@@ -42,10 +44,16 @@ export function Navbar() {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const desktop = window.matchMedia("(min-width: 64rem)");
+    const onDesktop = (event: MediaQueryListEvent) => {
+      if (event.matches) setOpen(false);
+    };
     window.addEventListener("keydown", onKey);
+    desktop.addEventListener("change", onDesktop);
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
+      desktop.removeEventListener("change", onDesktop);
     };
   }, [open]);
 
@@ -97,12 +105,16 @@ export function Navbar() {
           </Link>
         </div>
 
-        <ul className="hidden items-center gap-8 md:flex">
+        <ul className="hidden items-center gap-5 lg:flex xl:gap-8">
           {navLinks.map((link) => (
             <li key={link.href}>
               <Link
                 href={link.href}
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className={`whitespace-nowrap text-sm transition-colors ${
+                  link.href === RESCUE_PATH
+                    ? "rounded-md border border-[#d58e99]/45 bg-[#401a27]/70 px-2.5 py-1.5 font-semibold text-[#f1c9d0] hover:bg-[#512330]"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
                 {t(link.key)}
               </Link>
@@ -110,7 +122,7 @@ export function Navbar() {
           ))}
         </ul>
 
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-3 lg:flex">
           <button
             onClick={() => switchLocale(locale)}
             className="grid h-9 min-w-9 place-items-center rounded-lg border border-border px-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground"
@@ -135,7 +147,7 @@ export function Navbar() {
 
         {/* animated burger */}
         <button
-          className={`relative grid h-10 w-10 place-items-center rounded-xl border transition-all duration-300 md:hidden ${
+          className={`relative grid h-10 w-10 place-items-center rounded-xl border transition-all duration-300 lg:hidden ${
             open
               ? "border-neon-blue/40 text-neon-blue shadow-[0_0_22px_-6px_rgba(0,240,255,0.7)]"
               : "border-border text-foreground hover:border-border-strong"
@@ -168,12 +180,12 @@ export function Navbar() {
       {open && (
         <>
           <button
-            className="menu-overlay fixed inset-x-0 bottom-0 top-16 z-40 cursor-default bg-black/60 backdrop-blur-sm md:hidden"
+            className="menu-overlay fixed inset-x-0 bottom-0 top-16 z-40 cursor-default bg-black/60 backdrop-blur-sm lg:hidden"
             aria-label="Закрити меню"
             tabIndex={-1}
             onClick={() => setOpen(false)}
           />
-          <div className="menu-panel absolute inset-x-0 top-full z-50 origin-top border-b border-border bg-background/95 backdrop-blur-xl md:hidden">
+          <div className="menu-panel absolute inset-x-0 top-full z-50 max-h-[calc(100dvh-4rem)] origin-top overflow-y-auto overscroll-contain border-b border-border bg-background/95 backdrop-blur-xl lg:hidden">
             <ul className="mx-auto flex max-w-7xl flex-col gap-1.5 px-4 py-5">
               {navLinks.map((link, i) => {
                 const active = isActive(link.href);
@@ -190,7 +202,9 @@ export function Navbar() {
                       className={`group relative flex items-center justify-between overflow-hidden rounded-xl border px-4 py-3.5 text-base font-medium transition-colors ${
                         active
                           ? "border-neon-blue/30 bg-surface-2 text-foreground"
-                          : "border-transparent text-muted-foreground hover:border-border hover:bg-surface-2 hover:text-foreground"
+                          : link.href === RESCUE_PATH
+                            ? "border-[#d58e99]/45 bg-[#401a27]/70 text-[#f1c9d0] hover:bg-[#512330]"
+                            : "border-transparent text-muted-foreground hover:border-border hover:bg-surface-2 hover:text-foreground"
                       }`}
                     >
                       {/* neon accent bar */}

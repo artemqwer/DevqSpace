@@ -6,7 +6,7 @@ import { getSettings } from "@/lib/settings";
 import { validateContact } from "@/lib/contact";
 
 import { Brand } from "./Brand";
-import { InfoDialog, ScreenPreview, Toolbox } from "./Interactive";
+import { InfoDialog, ScreenPreview, SkipLink, Toolbox } from "./Interactive";
 import { releaseDate } from "./ReleaseLinks";
 import { workspace } from "./screens";
 import styles from "./rescue.module.css";
@@ -30,8 +30,8 @@ export default async function RescuePage() {
 
   return (
     <>
-      <a href="#shadxw-main" className={styles.skip}>К содержанию</a>
       <header className={styles.header}>
+        <SkipLink targetId="shadxw-main" />
         <div className={styles.headerInner}>
           <Brand mascot />
           <nav aria-label="Разделы ShadxwRescue" className={styles.nav}>

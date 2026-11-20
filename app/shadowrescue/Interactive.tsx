@@ -5,6 +5,24 @@ import { useId, useRef, useState, type ReactNode } from "react";
 import { tools, type Screen } from "./screens";
 import styles from "./rescue.module.css";
 
+export function SkipLink({ targetId }: { targetId: string }) {
+  return (
+    <a
+      href={`#${targetId}`}
+      className={styles.skip}
+      onClick={(event) => {
+        const target = document.getElementById(targetId);
+        if (!target) return;
+        event.preventDefault();
+        target.focus({ preventScroll: true });
+        target.scrollIntoView({ block: "start", behavior: "instant" });
+      }}
+    >
+      К содержанию
+    </a>
+  );
+}
+
 export function ScreenPreview({ screen, hero = false }: { screen: Screen; hero?: boolean }) {
   const zoomDialog = useRef<HTMLDialogElement>(null);
   const scroll = useRef<HTMLDivElement>(null);
