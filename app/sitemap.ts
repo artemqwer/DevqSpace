@@ -9,6 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Статичні маршрути
   const staticRoutes: MetadataRoute.Sitemap = [
+    { url: baseUrl.replace(/\/$/, "") + "/shadowrescue", changeFrequency: "weekly", priority: 0.7 },
     {
       url: `${baseUrl}`,
       lastModified: now,

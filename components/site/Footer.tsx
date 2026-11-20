@@ -46,6 +46,7 @@ export async function Footer() {
       links: [
         { label: t("linkAbout"), href: "/about" },
         { label: t("linkCases"), href: "/cases" },
+        { label: "ShadxwRescue", href: "/shadowrescue" },
         { label: t("linkCustom"), href: "/custom" },
         { label: t("linkWarranty"), href: "/about" },
       ],

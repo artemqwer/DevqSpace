@@ -13,6 +13,7 @@ const LINKS = [
   { href: "/admin/announcements", label: "Оголошення", icon: "ph-megaphone" },
   { href: "/admin/payments", label: "Оплата", icon: "ph-credit-card" },
   { href: "/admin/content", label: "Тексти", icon: "ph-text-aa" },
+  { href: "/admin/shadxwrescue", label: "ShadxwRescue", icon: "ph-lifebuoy" },
   { href: "/admin/legal", label: "Реквізити", icon: "ph-scroll" },
 ];
 
@@ -112,14 +113,14 @@ export default function AdminNav({
         className="md:hidden fixed bottom-0 inset-x-0 z-40 glass border-t border-white/10"
         style={{ paddingBottom: "max(env(safe-area-inset-bottom), 6px)" }}
       >
-        <div className="flex justify-around items-center pt-2 pb-1">
+        <div className="flex items-center overflow-x-auto pt-2 pb-1">
           {LINKS.map((l) => {
             const active = isActive(l.href, l.exact);
             return (
               <Link
                 key={l.href}
                 href={l.href}
-                className="flex flex-col items-center gap-0.5 px-4 py-1"
+                className="flex shrink-0 flex-col items-center gap-0.5 px-4 py-1"
               >
                 <i
                   className={`text-xl ${active ? "ph-fill text-neon-blue" : "ph text-gray-500"} ${l.icon}`}

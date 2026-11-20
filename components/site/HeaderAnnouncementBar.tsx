@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { isRescuePath } from "@/lib/rescue-release-types";
 
 type AnnouncementData = {
   enabled: boolean;
@@ -19,7 +20,7 @@ export function HeaderAnnouncementBar() {
   const [data, setData] = useState<AnnouncementData | null>(null);
 
   useEffect(() => {
-    if (pathname?.startsWith("/admin")) return;
+    if ((pathname?.startsWith("/admin") || isRescuePath(pathname))) return;
 
     fetch("/api/settings", { cache: "no-store" })
       .then((r) => r.json())
@@ -34,7 +35,7 @@ export function HeaderAnnouncementBar() {
   }, [pathname]);
 
   // Не показувати банер в адмінці, якщо вимкнено або закрили вручну
-  if (pathname?.startsWith("/admin") || !data?.enabled || closed) {
+  if ((pathname?.startsWith("/admin") || isRescuePath(pathname)) || !data?.enabled || closed) {
     return null;
   }
 

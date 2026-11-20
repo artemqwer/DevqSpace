@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { isRescuePath } from "@/lib/rescue-release-types";
 import { useTranslations, useLocale } from "next-intl";
 import SupportMarkdown from "./SupportMarkdown";
 
@@ -32,7 +33,7 @@ export default function SupportChatWidget() {
   // 1. Initial check: DO NOT RENDER IF API IS NOT SET OR DISABLED
   useEffect(() => {
     // Не показувати чат на сторінках адмінки
-    if (pathname?.startsWith("/admin")) return;
+    if ((pathname?.startsWith("/admin") || isRescuePath(pathname))) return;
 
     async function checkConfig() {
       try {
@@ -108,7 +109,7 @@ export default function SupportChatWidget() {
   }, [enabled, isOpen, sessionId]);
 
   // If disabled, not configured, or on admin page -> RENDER NOTHING!
-  if (!enabled || pathname?.startsWith("/admin")) {
+  if (!enabled || (pathname?.startsWith("/admin") || isRescuePath(pathname))) {
     return null;
   }
 
