@@ -6,6 +6,7 @@ import { getLocale, getMessages } from "next-intl/server";
 import { WelcomeSheet } from "@/components/site/WelcomeSheet";
 import SupportChatWidget from "@/components/site/SupportChatWidget";
 import { HeaderAnnouncementBar } from "@/components/site/HeaderAnnouncementBar";
+import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
 
 const GA_ID = "G-K7C0BNHPQ3"; // Google Analytics 4
@@ -26,7 +27,7 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://devq.space"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "DevqSpace — Digital Studio: Ready-Made Products & Custom Development",
     template: "%s | DevqSpace",
@@ -60,7 +61,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://devq.space",
+    url: SITE_URL,
     siteName: "DevqSpace",
     title: "DevqSpace — Ready-Made Digital Products & Custom Development",
     description:
