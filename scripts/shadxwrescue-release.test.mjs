@@ -30,7 +30,7 @@ function getBlob(pathname) {
 
 globalThis[stateKey] = {
   Redis: class {
-    async hgetall() { return Object.fromEntries(rows); }
+    async hgetall() { return [...rows].flat(); }
     async hget(_key, id) { return rows.get(id) ?? null; }
     async hsetnx(_key, id, payload) {
       if (rows.has(id)) return 0;

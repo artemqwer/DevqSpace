@@ -43,8 +43,10 @@ export function privateBlobToken() {
 }
 
 export async function listReleases(): Promise<Release[]> {
-  const rows = await redis()?.hgetall<Record<string, string>>(KEY);
-  return Object.values(rows ?? {}).map((value) => JSON.parse(value) as Release);
+  // With automatic deserialization disabled, Upstash returns alternating field names and values.
+  const rows = await redis()?.hgetall<Record<string, string>>(KEY) as string[] | Record<string, string> | null | undefined;
+  const values = Array.isArray(rows) ? rows.filter((_value, index) => index % 2 === 1) : Object.values(rows ?? {});
+  return values.map((value) => JSON.parse(value) as Release);
 }
 
 export async function listPublicReleases(): Promise<PublicRelease[]> {
