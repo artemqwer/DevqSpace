@@ -80,11 +80,11 @@ export async function createDraft(input: Record<string, unknown>) {
   if (typeof size !== "number" || !Number.isSafeInteger(size) || size <= 0 || size > MAX_ISO_BYTES) {
     throw new ReleaseError("Розмір ISO має бути від 1 байта до 4 ГіБ.");
   }
-  if (!SHA256.test(sha256) || !COMMIT.test(commit)) {
-    throw new ReleaseError("Вкажіть SHA-256 образу та повний Git-коміт збірки.");
+  if (!SHA256.test(sha256) || (commit && !COMMIT.test(commit))) {
+    throw new ReleaseError("Вкажіть SHA-256 образу та, за наявності, повний Git-коміт збірки.");
   }
-  if (!notes || notes.length > 8_000 || !checks || checks.length > 4_000) {
-    throw new ReleaseError("Додайте список змін і результати перевірок.");
+  if (notes.length > 8_000 || checks.length > 4_000) {
+    throw new ReleaseError("Список змін або результати перевірок надто довгі.");
   }
   const id = version + "-" + arch;
   const draft: Release = {

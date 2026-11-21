@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { upload } from "@vercel/blob/client";
+import { sha256 } from "@noble/hashes/sha256";
+import { bytesToHex } from "@noble/hashes/utils";
 import { useRouter } from "next/navigation";
 import { ISO_CONTENT_TYPE, MAX_ISO_BYTES, isoSize, releaseUrl, type Release } from "@/lib/rescue-release-types";
 
@@ -27,6 +29,43 @@ export function RescueReleaseManager({ initialReleases, configured }: {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [hashing, setHashing] = useState(false);
+  const [hashProgress, setHashProgress] = useState(0);
+  const [size, setSize] = useState("");
+  const [hash, setHash] = useState("");
+  const fileSelection = useRef(0);
+
+  async function inspectFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    const selection = ++fileSelection.current;
+    setSize("");
+    setHash("");
+    setError("");
+    setHashProgress(0);
+    if (!file) { setHashing(false); return; }
+    if (!file.name.toLowerCase().endsWith(".iso") || file.size <= 0 || file.size > MAX_ISO_BYTES) {
+      setHashing(false);
+      setError("Оберіть ISO розміром до 4 ГіБ.");
+      return;
+    }
+    setSize(String(file.size));
+    setHashing(true);
+    try {
+      const digest = sha256.create();
+      const chunkSize = 8 * 1024 * 1024;
+      for (let offset = 0; offset < file.size; offset += chunkSize) {
+        const chunk = await file.slice(offset, offset + chunkSize).arrayBuffer();
+        if (selection !== fileSelection.current) return;
+        digest.update(new Uint8Array(chunk));
+        setHashProgress(Math.round(Math.min(offset + chunkSize, file.size) / file.size * 100));
+      }
+      setHash(bytesToHex(digest.digest()));
+    } catch {
+      if (selection === fileSelection.current) setError("Не вдалося прочитати ISO. Спробуйте вибрати файл ще раз.");
+    } finally {
+      if (selection === fileSelection.current) setHashing(false);
+    }
+  }
 
   async function run(label: string, operation: () => Promise<void>, done: string) {
     setBusy(true);
@@ -53,6 +92,8 @@ export function RescueReleaseManager({ initialReleases, configured }: {
         size: Number(data.get("size")), sha256: field(data, "sha256"), commit: field(data, "commit"),
         notes: field(data, "notes"), checks: field(data, "checks") });
       formElement.reset();
+      setSize("");
+      setHash("");
     }, "Чернетку створено. Завантажте відповідний ISO.");
   }
 
@@ -82,16 +123,19 @@ export function RescueReleaseManager({ initialReleases, configured }: {
       {status && <p role="status">{status}</p>}
       {error && <p role="alert" className="text-rose-300">{error}</p>}
       <form onSubmit={create} className="rounded-lg border border-white/15 p-4">
-        <h2 className="mb-4 font-semibold">Нова чернетка</h2>
+        <h2 className="font-semibold">Новий випуск</h2>
+        <p className="mb-4 mt-1 text-sm text-gray-300">Оберіть ISO та створіть чернетку. Далі завантажте файл і перевірте його перед публікацією.</p>
         <fieldset disabled={!configured || busy} className="grid min-w-0 grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+          <label className="sm:col-span-2">Файл ISO для перевірки<input type="file" accept=".iso" onChange={inspectFile} className={INPUT} /><span className="mt-1 block text-gray-300">Розмір і SHA-256 розраховуються у браузері. Файл буде завантажено на наступному кроці.</span></label>
+          {hashing && <p role="status" className="sm:col-span-2">Обчислення SHA-256: {hashProgress}%</p>}
           <label>Версія<input name="version" placeholder="1.0.0-beta.1" maxLength={50} required className={INPUT} /></label>
           <label>Архітектура<select name="arch" className={INPUT}><option>x86-64</option><option>x86</option></select></label>
-          <label>Розмір ISO в байтах<input name="size" type="number" min={1} max={MAX_ISO_BYTES} step={1} required className={INPUT} /></label>
-          <label>SHA-256 ISO<input name="sha256" minLength={64} maxLength={64} required className={INPUT} /></label>
-          <label className="sm:col-span-2">Повний Git-коміт збірки<input name="commit" minLength={40} maxLength={64} required className={INPUT} /></label>
-          <label>Що змінилося<textarea name="notes" rows={3} maxLength={8000} required className={INPUT} /></label>
-          <label>Результати перевірок<textarea name="checks" rows={3} maxLength={4000} required className={INPUT} /></label>
-          <button type="submit" className={BUTTON + " justify-self-start"}>Створити чернетку</button>
+          <label>Розмір ISO в байтах<input name="size" type="number" min={1} max={MAX_ISO_BYTES} step={1} required value={size} onChange={(event) => setSize(event.target.value)} className={INPUT} /></label>
+          <label>SHA-256 ISO<input name="sha256" minLength={64} maxLength={64} required value={hash} onChange={(event) => setHash(event.target.value)} className={INPUT} /></label>
+          <label className="sm:col-span-2">Повний Git-коміт збірки <span className="text-gray-400">(необов’язково)</span><input name="commit" minLength={40} maxLength={64} placeholder="Повний хеш, якщо відомий" className={INPUT} /></label>
+          <label>Що змінилося <span className="text-gray-400">(необов’язково)</span><textarea name="notes" rows={3} maxLength={8000} className={INPUT} /></label>
+          <label>Результати перевірок <span className="text-gray-400">(необов’язково)</span><textarea name="checks" rows={3} maxLength={4000} className={INPUT} /></label>
+          <button type="submit" disabled={hashing} className={BUTTON + " justify-self-start"}>Створити чернетку</button>
         </fieldset>
       </form>
 

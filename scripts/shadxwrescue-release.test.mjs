@@ -136,6 +136,16 @@ test("release lifecycle from API to public download", async (t) => {
     assert.equal((await adminAction("create", draftFields)).status, 401);
     authorized = true;
     assert.equal((await adminAction("create", { ...draftFields, sha256: "invalid" })).status, 400);
+    assert.equal((await adminAction("create", { ...draftFields, commit: "bad" })).status, 400);
+  });
+
+  await t.test("accepts a draft without optional build details", async () => {
+    const created = await adminAction("create", { ...draftFields, version: "1.0.0-beta.2", commit: "", notes: "", checks: "" });
+    assert.equal(created.status, 201);
+    const result = await created.json();
+    assert.equal(result.commit, "");
+    assert.equal(result.notes, "");
+    assert.equal(result.checks, "");
   });
 
   await t.test("keeps a new draft private and prevents duplicates", async () => {

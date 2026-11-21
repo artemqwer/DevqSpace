@@ -27,9 +27,9 @@ export default async function ReleasePage({ params }: Props) {
       {release.status === "withdrawn" ?
         <div className={styles.withdrawn}><h2>Образ отозван</h2><p>{release.reason}</p></div>
         : <><ReleaseLinks release={release} /><h2>SHA-256</h2><code>{release.sha256}</code></>}
-      <h2>Что изменилось</h2><p className={styles.multiline}>{release.notes}</p>
-      <h2>Результаты проверок</h2><p className={styles.multiline}>{release.checks}</p>
-      <h2>Коммит сборки</h2><code>{release.commit}</code>
+      <h2>Что изменилось</h2><p className={styles.multiline}>{release.notes || "Информация пока не указана."}</p>
+      <h2>Результаты проверок</h2><p className={styles.multiline}>{release.checks || "Результаты пока не указаны."}</p>
+      <h2>Коммит сборки</h2><code>{release.commit || "Не указан"}</code>
     </main>
   );
 }
