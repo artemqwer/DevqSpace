@@ -17,7 +17,7 @@ function getBlob(pathname) {
   const { bytes, etag } = file;
   return {
     statusCode: 200,
-    blob: { size: bytes.length, etag },
+    blob: { size: file.reportedSize ?? bytes.length, etag },
     stream: new ReadableStream({
       start(controller) {
         controller.enqueue(bytes.subarray(0, 2));
@@ -47,7 +47,10 @@ globalThis[stateKey] = {
     verifyOptions = options;
     return getBlob(path);
   },
-  async head(path) { return getBlob(path)?.blob ?? null; },
+  async head(path) {
+    const file = blobs.get(path);
+    return file ? { size: file.bytes.length, etag: file.etag } : null;
+  },
   async issueSignedToken(options) {
     issuedFor = options;
     return { delegationToken: "fixture", clientSigningToken: "fixture" };
@@ -191,7 +194,8 @@ test("release lifecycle from API to public download", async (t) => {
     assert.notEqual(draft.pathname, previous.pathname);
     assert.equal((await uploadToken(previous.pathname)).status, 409);
 
-    blobs.set(draft.pathname, { bytes: body, etag: "verified" });
+    // Some Blob responses have no Content-Length, which the SDK represents as zero.
+    blobs.set(draft.pathname, { bytes: body, etag: "verified", reportedSize: 0 });
     const attempts = await Promise.all([adminAction("publish"), adminAction("publish")]);
     assert.deepEqual(attempts.map((res) => res.status).sort(), [200, 409]);
     assert.equal(verifyOptions.access, "private");

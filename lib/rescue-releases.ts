@@ -132,10 +132,6 @@ export async function verifyAndPublish(release: Release, abortSignal: AbortSigna
     throw error;
   }
   if (!file || file.statusCode !== 200) throw new ReleaseError("ISO ще не завантажено.", 409);
-  if (file.blob.size !== release.size) {
-    await file.stream.cancel();
-    throw new ReleaseError("Розмір завантаженого ISO не збігається з чернеткою.", 422);
-  }
   const hash = createHash("sha256");
   let bytes = 0;
   const reader = file.stream.getReader();
@@ -156,7 +152,10 @@ export async function verifyAndPublish(release: Release, abortSignal: AbortSigna
   } finally {
     reader.releaseLock();
   }
-  if (bytes !== release.size || !timingSafeEqual(hash.digest(), Buffer.from(release.sha256, "hex"))) {
+  if (bytes !== release.size) {
+    throw new ReleaseError("Розмір завантаженого ISO не збігається з чернеткою.", 422);
+  }
+  if (!timingSafeEqual(hash.digest(), Buffer.from(release.sha256, "hex"))) {
     throw new ReleaseError("SHA-256 завантаженого ISO не збігається з чернеткою.", 422);
   }
 
