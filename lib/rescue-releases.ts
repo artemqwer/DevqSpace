@@ -230,7 +230,13 @@ export async function withdrawRelease(release: Release, rawReason: unknown) {
 
 export async function resolveIsoDownload(release: PublishedRelease, abortSignal: AbortSignal) {
   const token = privateBlobToken();
-  const file = await head(release.pathname, { token });
+  let file: Awaited<ReturnType<typeof head>>;
+  try {
+    file = await head(release.pathname, { token });
+  } catch (error) {
+    console.error("[shadxwrescue] blob metadata", error instanceof Error ? error.name : "UnknownError");
+    throw new ReleaseError("Не вдалося отримати відомості про образ.", 503);
+  }
   if (!file.etag || file.size !== release.size) {
     throw new ReleaseError("Образ у сховищі змінився після перевірки.", 503);
   }
@@ -239,11 +245,16 @@ export async function resolveIsoDownload(release: PublishedRelease, abortSignal:
     await saveTransition(release, { ...release, etag });
   }
   const validUntil = Date.now() + 60 * 60_000;
-  const permission = await issueSignedToken({
-    pathname: release.pathname, operations: ["get"], validUntil, token,
-  });
-  const { presignedUrl } = await presignUrl(permission, {
-    pathname: release.pathname, operation: "get", access: "private",
-  });
-  return presignedUrl;
+  try {
+    const permission = await issueSignedToken({
+      pathname: release.pathname, operations: ["get"], validUntil, token,
+    });
+    const { presignedUrl } = await presignUrl(permission, {
+      pathname: release.pathname, operation: "get", access: "private",
+    });
+    return presignedUrl;
+  } catch (error) {
+    console.error("[shadxwrescue] signed download", error instanceof Error ? error.name : "UnknownError");
+    throw new ReleaseError("Не вдалося створити посилання для завантаження.", 503);
+  }
 }
