@@ -226,7 +226,9 @@ test("release lifecycle from API to public download", async (t) => {
 
   await t.test("rejects a changed blob and stops issuing URLs after withdrawal", async () => {
     blobs.set(draft.pathname, { bytes: body, etag: "new-etag" });
-    assert.equal((await isoRequest()).status, 503);
+    assert.equal((await isoRequest()).status, 307);
+    blobs.set(draft.pathname, { bytes: Buffer.alloc(body.length, 1), etag: "changed" });
+    assert.equal((await isoRequest()).status, 422);
     assert.equal((await adminAction("withdraw", { reason: "  " })).status, 400);
     const result = await adminAction("withdraw", { reason: "Fixture withdrawal" });
     assert.equal(result.status, 200);

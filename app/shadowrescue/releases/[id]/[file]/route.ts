@@ -2,8 +2,9 @@ import { getRelease, ReleaseError, resolveIsoDownload } from "@/lib/rescue-relea
 import { isoName } from "@/lib/rescue-release-types";
 
 const NO_STORE = { "Cache-Control": "no-store" };
+export const maxDuration = 300;
 
-export async function GET(_request: Request, context: { params: Promise<{ id: string; file: string }> }) {
+export async function GET(request: Request, context: { params: Promise<{ id: string; file: string }> }) {
   const { id, file } = await context.params;
   if (file !== "iso" && file !== "sha256") return new Response(null, { status: 404, headers: NO_STORE });
   try {
@@ -20,7 +21,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
       });
     }
     return new Response(null, {
-      status: 307, headers: { ...NO_STORE, Location: await resolveIsoDownload(release), "Referrer-Policy": "no-referrer" },
+      status: 307, headers: { ...NO_STORE, Location: await resolveIsoDownload(release, request.signal), "Referrer-Policy": "no-referrer" },
     });
   } catch (error) {
     if (error instanceof ReleaseError) return new Response(error.message, { status: error.status, headers: NO_STORE });

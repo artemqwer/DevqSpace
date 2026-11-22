@@ -152,8 +152,9 @@ export async function selectStoredIso(release: Release, pathname: unknown) {
   return next;
 }
 
-export async function verifyAndPublish(release: Release, abortSignal: AbortSignal) {
-  if (release.status !== "draft") throw new ReleaseError("Публікувати можна лише чернетку.", 409);
+const normalizeEtag = (etag: string) => etag.replace(/^W\//, "").replace(/^"|"$/g, "");
+
+async function verifyStoredIso(release: Release, abortSignal: AbortSignal) {
   const token = privateBlobToken();
   let file: Awaited<ReturnType<typeof get>>;
   const signal = AbortSignal.any([abortSignal, AbortSignal.timeout(265_000)]);
@@ -164,6 +165,15 @@ export async function verifyAndPublish(release: Release, abortSignal: AbortSigna
     throw error;
   }
   if (!file || file.statusCode !== 200) throw new ReleaseError("ISO ще не завантажено.", 409);
+  const before = await head(release.pathname, { token, abortSignal: signal });
+  if (!before.etag || before.size !== release.size) {
+    await file.stream.cancel();
+    throw new ReleaseError("Розмір завантаженого ISO не збігається з чернеткою.", 422);
+  }
+  if (file.blob.etag && normalizeEtag(file.blob.etag) !== normalizeEtag(before.etag)) {
+    await file.stream.cancel();
+    throw new ReleaseError("Образ у сховищі змінився під час перевірки.", 409);
+  }
   const hash = createHash("sha256");
   let bytes = 0;
   const reader = file.stream.getReader();
@@ -190,9 +200,18 @@ export async function verifyAndPublish(release: Release, abortSignal: AbortSigna
   if (!timingSafeEqual(hash.digest(), Buffer.from(release.sha256, "hex"))) {
     throw new ReleaseError("SHA-256 завантаженого ISO не збігається з чернеткою.", 422);
   }
+  const after = await head(release.pathname, { token, abortSignal: signal });
+  if (after.size !== before.size || normalizeEtag(after.etag) !== normalizeEtag(before.etag)) {
+    throw new ReleaseError("Образ у сховищі змінився під час перевірки.", 409);
+  }
+  return after.etag;
+}
 
+export async function verifyAndPublish(release: Release, abortSignal: AbortSignal) {
+  if (release.status !== "draft") throw new ReleaseError("Публікувати можна лише чернетку.", 409);
+  const etag = await verifyStoredIso(release, abortSignal);
   const published: PublishedRelease = {
-    ...release, status: "published", publishedAt: new Date().toISOString(), etag: file.blob.etag,
+    ...release, status: "published", publishedAt: new Date().toISOString(), etag,
   };
   await saveTransition(release, published);
   return published;
@@ -209,11 +228,15 @@ export async function withdrawRelease(release: Release, rawReason: unknown) {
   return withdrawn;
 }
 
-export async function resolveIsoDownload(release: PublishedRelease) {
+export async function resolveIsoDownload(release: PublishedRelease, abortSignal: AbortSignal) {
   const token = privateBlobToken();
   const file = await head(release.pathname, { token });
-  if (file.etag !== release.etag || file.size !== release.size) {
+  if (!file.etag || file.size !== release.size) {
     throw new ReleaseError("Образ у сховищі змінився після перевірки.", 503);
+  }
+  if (!release.etag || normalizeEtag(file.etag) !== normalizeEtag(release.etag)) {
+    const etag = await verifyStoredIso(release, abortSignal);
+    await saveTransition(release, { ...release, etag });
   }
   const validUntil = Date.now() + 60 * 60_000;
   const permission = await issueSignedToken({
