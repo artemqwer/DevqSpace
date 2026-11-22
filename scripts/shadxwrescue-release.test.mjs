@@ -51,6 +51,9 @@ globalThis[stateKey] = {
     const file = blobs.get(path);
     return file ? { size: file.bytes.length, etag: file.etag } : null;
   },
+  async list() {
+    return { blobs: [...blobs].map(([pathname, file]) => ({ pathname, size: file.bytes.length, uploadedAt: new Date("2026-01-01T00:00:00Z") })), hasMore: false };
+  },
   async issueSignedToken(options) {
     issuedFor = options;
     return { delegationToken: "fixture", clientSigningToken: "fixture" };
@@ -75,7 +78,7 @@ const mockedModule = (names) =>
 const mocks = {
   "server-only": "data:text/javascript,export%20%7B%7D",
   "@upstash/redis": mockedModule("Redis"),
-  "@vercel/blob": mockedModule("get, head, issueSignedToken, presignUrl"),
+  "@vercel/blob": mockedModule("get, head, list, issueSignedToken, presignUrl"),
   "@vercel/blob/client": mockedModule("handleUpload"),
   "@/lib/session": mockedModule("getSession"),
 };
@@ -94,7 +97,7 @@ const hooks = registerHooks({
 const admin = await import("../app/api/admin/shadxwrescue/route.ts");
 const upload = await import("../app/api/admin/shadxwrescue/upload/route.ts");
 const download = await import("../app/shadowrescue/releases/[id]/[file]/route.ts");
-const { listPublicReleases } = await import("../lib/rescue-releases.ts");
+const { listPublicReleases, listStoredIsos } = await import("../lib/rescue-releases.ts");
 hooks.deregister();
 
 process.env.UPSTASH_REDIS_REST_URL = "http://127.0.0.1:1";
@@ -193,6 +196,14 @@ test("release lifecycle from API to public download", async (t) => {
     draft = await reset.json();
     assert.notEqual(draft.pathname, previous.pathname);
     assert.equal((await uploadToken(previous.pathname)).status, 409);
+
+    blobs.set(previous.pathname, { bytes: body, etag: "old" });
+    assert.equal((await listStoredIsos()).some((file) => file.pathname === previous.pathname), true);
+    assert.equal((await adminAction("select-iso", { pathname: "other/path.iso" })).status, 400);
+    const selected = await adminAction("select-iso", { pathname: previous.pathname });
+    assert.equal(selected.status, 200);
+    draft = await selected.json();
+    assert.equal(draft.pathname, previous.pathname);
 
     // Some Blob responses have no Content-Length, which the SDK represents as zero.
     blobs.set(draft.pathname, { bytes: body, etag: "verified", reportedSize: 0 });

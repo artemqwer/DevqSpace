@@ -1,10 +1,10 @@
 import "server-only";
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { Redis } from "@upstash/redis";
-import { get, head, issueSignedToken, presignUrl } from "@vercel/blob";
+import { get, head, issueSignedToken, list, presignUrl } from "@vercel/blob";
 import {
   MAX_ISO_BYTES, RELEASE_ID, RELEASE_VERSION, isoName,
-  type PublishedRelease, type PublicRelease, type Release,
+  type PublishedRelease, type PublicRelease, type Release, type StoredIso,
 } from "./rescue-release-types";
 
 const KEY = "shadxwrescue:releases:v1";
@@ -116,6 +116,38 @@ export async function resetDraftUpload(release: Release) {
   const next: Release = {
     ...release, pathname: "shadxwrescue/" + randomUUID() + "/" + isoName(release),
   };
+  await saveTransition(release, next);
+  return next;
+}
+
+export async function listStoredIsos(): Promise<StoredIso[]> {
+  const token = privateBlobToken();
+  const files: StoredIso[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await list({ token, prefix: "shadxwrescue/", cursor });
+    for (const blob of page.blobs) {
+      if (/^shadxwrescue\/[0-9a-f-]{36}\/ShadxwRescue-.+\.iso$/.test(blob.pathname)) {
+        files.push({ pathname: blob.pathname, size: blob.size, uploadedAt: blob.uploadedAt.toISOString() });
+      }
+    }
+    if (page.hasMore && !page.cursor) throw new Error("Blob pagination cursor missing");
+    cursor = page.hasMore ? page.cursor : undefined;
+  } while (cursor);
+  return files.sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt));
+}
+
+export async function selectStoredIso(release: Release, pathname: unknown) {
+  if (release.status !== "draft") throw new ReleaseError("Змінювати ISO можна лише в чернетці.", 409);
+  if (typeof pathname !== "string") throw new ReleaseError("Цей ISO не належить до випуску.", 400);
+  const parts = pathname.split("/");
+  if (parts.length !== 3 || parts[0] !== "shadxwrescue" || !/^[0-9a-f-]{36}$/.test(parts[1]) || parts[2] !== isoName(release)) {
+    throw new ReleaseError("Цей ISO не належить до випуску.", 400);
+  }
+  const file = await head(pathname, { token: privateBlobToken() });
+  if (file.size !== release.size) throw new ReleaseError("Розмір ISO не збігається з чернеткою.", 422);
+  if (pathname === release.pathname) return release;
+  const next: Release = { ...release, pathname };
   await saveTransition(release, next);
   return next;
 }

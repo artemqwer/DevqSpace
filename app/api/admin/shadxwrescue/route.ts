@@ -1,6 +1,6 @@
 import { getSession } from "@/lib/session";
 import {
-  createDraft, getRelease, ReleaseError, resetDraftUpload, verifyAndPublish, withdrawRelease,
+  createDraft, getRelease, ReleaseError, resetDraftUpload, selectStoredIso, verifyAndPublish, withdrawRelease,
 } from "@/lib/rescue-releases";
 
 export const maxDuration = 300;
@@ -21,6 +21,7 @@ export async function POST(request: Request) {
       case "publish": return Response.json(await verifyAndPublish(release, request.signal));
       case "withdraw": return Response.json(await withdrawRelease(release, input.reason));
       case "reset-upload": return Response.json(await resetDraftUpload(release));
+      case "select-iso": return Response.json(await selectStoredIso(release, input.pathname));
       default: throw new ReleaseError("Невідома дія.");
     }
   } catch (error) {

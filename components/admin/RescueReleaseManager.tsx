@@ -5,7 +5,7 @@ import { upload } from "@vercel/blob/client";
 import { sha256 } from "@noble/hashes/sha256";
 import { bytesToHex } from "@noble/hashes/utils";
 import { useRouter } from "next/navigation";
-import { ISO_CONTENT_TYPE, MAX_ISO_BYTES, isoSize, releaseUrl, type Release } from "@/lib/rescue-release-types";
+import { ISO_CONTENT_TYPE, MAX_ISO_BYTES, isoName, isoSize, releaseUrl, type Release, type StoredIso } from "@/lib/rescue-release-types";
 
 const ENDPOINT = "/api/admin/shadxwrescue";
 const INPUT = "w-full rounded-md border border-white/20 bg-surface2 px-3 py-2 text-white";
@@ -21,9 +21,11 @@ async function action(body: Record<string, string | number>) {
   return result;
 }
 
-export function RescueReleaseManager({ initialReleases, configured }: {
+export function RescueReleaseManager({ initialReleases, configured, storedIsos, storageListError }: {
   initialReleases: Release[];
   configured: boolean;
+  storedIsos: StoredIso[];
+  storageListError: boolean;
 }) {
   const router = useRouter();
   const [status, setStatus] = useState("");
@@ -120,6 +122,7 @@ export function RescueReleaseManager({ initialReleases, configured }: {
         <p className="mt-2 text-gray-300">Створіть чернетку, завантажте ISO у приватне сховище й опублікуйте після перевірки розміру та SHA-256.</p>
       </header>
       {!configured && <p role="status" className="rounded-md border border-yellow-500/40 p-3 text-yellow-200">Для керування випусками потрібні Redis і токен окремого приватного Vercel Blob.</p>}
+      {storageListError && <p role="alert" className="text-rose-300">Не вдалося отримати список ISO зі сховища. Спробуйте оновити сторінку.</p>}
       {status && <p role="status">{status}</p>}
       {error && <p role="alert" className="text-rose-300">{error}</p>}
       <form onSubmit={create} className="rounded-lg border border-white/15 p-4">
@@ -147,6 +150,26 @@ export function RescueReleaseManager({ initialReleases, configured }: {
           {release.status === "withdrawn" && <p>{release.reason}</p>}
           {release.status === "draft" && (
             <>
+              {(() => {
+                const candidates = storedIsos.filter((file) => file.pathname.split("/").at(-1) === isoName(release));
+                const selected = candidates.find((file) => file.pathname === release.pathname);
+                return <div className="space-y-2">
+                  <p className="text-sm text-gray-300">{selected ? `ISO у сховищі: ${isoSize(selected.size)}. Файл збережено після оновлення сторінки.` : "За поточним шляхом ISO ще не знайдено."}</p>
+                  {candidates.length > 0 && <form className="flex flex-wrap items-end gap-2" onSubmit={(event) => {
+                    event.preventDefault();
+                    const pathname = field(new FormData(event.currentTarget), "pathname");
+                    void run("Обираю ISO зі сховища…", async () => {
+                      await action({ action: "select-iso", id: release.id, pathname });
+                    }, "ISO обрано. Перевірте його перед публікацією.");
+                  }}>
+                    <label className="min-w-0 text-sm">ISO у сховищі<select name="pathname" defaultValue={selected?.pathname ?? candidates[0].pathname} disabled={busy || !configured} className={INPUT}>
+                      {candidates.map((file) => <option key={file.pathname} value={file.pathname}>{new Date(file.uploadedAt).toLocaleString("uk-UA")} · {isoSize(file.size)}{file.pathname === release.pathname ? " · поточний" : ""}</option>)}
+                    </select></label>
+                    <button type="submit" className={BUTTON} disabled={busy || !configured}>Обрати ISO</button>
+                  </form>}
+                  <p className="text-sm text-gray-400">Перед публікацією сервер перевірить розмір і SHA-256 обраного файлу.</p>
+                </div>;
+              })()}
               <form className="flex flex-wrap items-end gap-2" key={release.pathname} onSubmit={(event) => sendFile(event, release)}>
                 <label className="min-w-0 text-sm">Файл ISO<input name="iso" type="file" accept=".iso" disabled={busy || !configured} required className={INPUT} /></label>
                 <button type="submit" className={BUTTON} disabled={busy || !configured}>Завантажити ISO</button>

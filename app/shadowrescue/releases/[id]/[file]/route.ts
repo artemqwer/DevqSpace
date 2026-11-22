@@ -1,4 +1,4 @@
-import { getRelease, resolveIsoDownload } from "@/lib/rescue-releases";
+import { getRelease, ReleaseError, resolveIsoDownload } from "@/lib/rescue-releases";
 import { isoName } from "@/lib/rescue-release-types";
 
 const NO_STORE = { "Cache-Control": "no-store" };
@@ -22,7 +22,8 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     return new Response(null, {
       status: 307, headers: { ...NO_STORE, Location: await resolveIsoDownload(release), "Referrer-Policy": "no-referrer" },
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof ReleaseError) return new Response(error.message, { status: error.status, headers: NO_STORE });
     return new Response("Хранилище образов временно недоступно.", { status: 503, headers: NO_STORE });
   }
 }

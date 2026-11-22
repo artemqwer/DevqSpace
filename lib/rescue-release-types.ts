@@ -5,6 +5,7 @@ export const RELEASE_VERSION = /^\d{1,4}\.\d{1,4}\.\d{1,4}(?:-[a-z0-9]+(?:[.-][a
 export const RELEASE_ID = /^\d{1,4}\.\d{1,4}\.\d{1,4}(?:-[a-z0-9]+(?:[.-][a-z0-9]+)*)?-(?:x86-64|x86)$/;
 
 export type ReleaseArch = "x86-64" | "x86";
+export type StoredIso = { pathname: string; size: number; uploadedAt: string };
 export type Release = {
   id: string;
   version: string;
