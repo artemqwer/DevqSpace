@@ -146,6 +146,9 @@ export function RescueReleaseManager({ initialReleases, configured, storedIsos, 
         <article key={release.id} className="space-y-3 rounded-lg border border-white/15 p-4">
           <h2 className="break-all font-semibold">{release.version} · {release.arch} · {isoSize(release.size)}</h2>
           <p className="text-sm text-gray-300">{release.status === "draft" ? "Чернетка" : release.status === "published" ? "Опубліковано" : "Відкликано"}</p>
+          {release.status !== "draft" && storedIsos.some((file) => file.pathname === release.pathname) && (
+            <p className="text-sm text-gray-300">ISO збережено у сховищі · {isoSize(release.size)}</p>
+          )}
           {release.status !== "draft" && <a href={releaseUrl(release.id)} className="text-neon-blue underline">Сторінка випуску</a>}
           {release.status === "withdrawn" && <p>{release.reason}</p>}
           {release.status === "draft" && (
