@@ -5,11 +5,13 @@ import { upload } from "@vercel/blob/client";
 import { sha256 } from "@noble/hashes/sha256";
 import { bytesToHex } from "@noble/hashes/utils";
 import { useRouter } from "next/navigation";
+import { Archive, ArrowSquareOut, CheckCircle, CloudArrowUp, HardDrives } from "@phosphor-icons/react";
 import { ISO_CONTENT_TYPE, MAX_ISO_BYTES, isoName, isoSize, releaseUrl, type Release, type StoredIso } from "@/lib/rescue-release-types";
 
 const ENDPOINT = "/api/admin/shadxwrescue";
-const INPUT = "w-full rounded-md border border-white/20 bg-surface2 px-3 py-2 text-white";
-const BUTTON = "min-h-11 rounded-md border border-white/20 px-3 py-2 text-sm font-medium text-white hover:bg-white/10 disabled:opacity-50";
+const INPUT = "mt-2 w-full min-w-0 rounded-lg border border-white/10 bg-[#0b1119] px-3.5 py-2.5 text-white outline-none transition-colors placeholder:text-gray-600 focus:border-[#70cbd5] focus:ring-2 focus:ring-[#70cbd5]/20 file:mr-3 file:rounded-md file:border-0 file:bg-[#24323d] file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white";
+const BUTTON = "min-h-11 rounded-lg border border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-medium text-white transition-colors hover:border-[#70cbd5]/40 hover:bg-[#70cbd5]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#70cbd5] disabled:cursor-not-allowed disabled:opacity-50";
+const PRIMARY = BUTTON + " border-[#70cbd5]/40 bg-[#17373e] hover:bg-[#20515b]";
 const field = (form: FormData, name: string) => String(form.get(name) ?? "");
 
 async function action(body: Record<string, string | number>) {
@@ -116,20 +118,25 @@ export function RescueReleaseManager({ initialReleases, configured, storedIsos, 
   }
 
   return (
-    <section className="space-y-6 text-white">
-      <header>
-        <h1 className="text-2xl font-bold">Випуски ShadxwRescue</h1>
-        <p className="mt-2 text-gray-300">Створіть чернетку, завантажте ISO у приватне сховище й опублікуйте після перевірки розміру та SHA-256.</p>
+    <section className="space-y-6 text-white sm:space-y-8">
+      <header className="relative overflow-hidden rounded-2xl border border-white/10 bg-[radial-gradient(ellipse_at_top_right,#18383d,transparent_60%),linear-gradient(125deg,#121b27,#121218)] px-5 py-6 sm:px-8 sm:py-8">
+        <div className="relative flex flex-wrap items-start justify-between gap-5">
+          <div className="max-w-2xl">
+            <div className="mb-4 flex items-center gap-2 text-sm font-medium text-[#9bd9df]"><HardDrives size={19} aria-hidden="true" /> Керування образами</div>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Випуски ShadxwRescue</h1>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">Готуйте образи до публікації та керуйте випусками. Перед публікацією перевіряються розмір і SHA-256.</p>
+          </div>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-slate-300"><Archive size={17} aria-hidden="true" /> Випусків: {initialReleases.length}</span>
+        </div>
       </header>
       {!configured && <p role="status" className="rounded-md border border-yellow-500/40 p-3 text-yellow-200">Для керування випусками потрібні Redis і токен окремого приватного Vercel Blob.</p>}
       {storageListError && <p role="alert" className="text-rose-300">Не вдалося отримати список ISO зі сховища. Спробуйте оновити сторінку.</p>}
-      {status && <p role="status">{status}</p>}
-      {error && <p role="alert" className="text-rose-300">{error}</p>}
-      <form onSubmit={create} className="rounded-lg border border-white/15 p-4">
-        <h2 className="font-semibold">Новий випуск</h2>
-        <p className="mb-4 mt-1 text-sm text-gray-300">Оберіть ISO та створіть чернетку. Далі завантажте файл і перевірте його перед публікацією.</p>
-        <fieldset disabled={!configured || busy} className="grid min-w-0 grid-cols-1 gap-4 text-sm sm:grid-cols-2">
-          <label className="sm:col-span-2">Файл ISO для перевірки<input type="file" accept=".iso" onChange={inspectFile} className={INPUT} /><span className="mt-1 block text-gray-300">Розмір і SHA-256 розраховуються у браузері. Файл буде завантажено на наступному кроці.</span></label>
+      {status && <p role="status" className="rounded-xl border border-[#6cc9b0]/25 bg-[#14362d]/50 px-4 py-3 text-sm text-emerald-100">{status}</p>}
+      {error && <p role="alert" className="rounded-xl border border-rose-400/30 bg-rose-950/30 px-4 py-3 text-sm text-rose-200">{error}</p>}
+      <form onSubmit={create} className="rounded-2xl border border-white/10 bg-[#121923] p-5 shadow-[0_18px_55px_rgba(0,0,0,0.18)] sm:p-7">
+        <div className="mb-6 flex items-start gap-3 border-b border-white/10 pb-5"><div className="rounded-lg bg-[#70cbd5]/10 p-2.5 text-[#9bd9df]"><CloudArrowUp size={22} aria-hidden="true" /></div><div><h2 className="text-lg font-semibold">Новий випуск</h2><p className="mt-1 text-sm leading-6 text-slate-400">Оберіть ISO, створіть чернетку та завантажте файл у сховище.</p></div></div>
+        <fieldset disabled={!configured || busy} className="grid min-w-0 grid-cols-1 gap-5 text-sm text-slate-200 sm:grid-cols-2">
+          <label className="block rounded-xl border border-dashed border-[#70cbd5]/30 bg-[#70cbd5]/[0.04] p-4 sm:col-span-2">Файл ISO для перевірки<input type="file" accept=".iso" onChange={inspectFile} className={INPUT} /><span className="mt-2 block text-xs leading-5 text-slate-400">Розмір і SHA-256 розраховуються у браузері. Файл завантажується після створення чернетки.</span></label>
           {hashing && <p role="status" className="sm:col-span-2">Обчислення SHA-256: {hashProgress}%</p>}
           <label>Версія<input name="version" placeholder="1.0.0-beta.1" maxLength={50} required className={INPUT} /></label>
           <label>Архітектура<select name="arch" className={INPUT}><option>x86-64</option><option>x86</option></select></label>
@@ -138,18 +145,18 @@ export function RescueReleaseManager({ initialReleases, configured, storedIsos, 
           <label className="sm:col-span-2">Повний Git-коміт збірки <span className="text-gray-400">(необов’язково)</span><input name="commit" minLength={40} maxLength={64} placeholder="Повний хеш, якщо відомий" className={INPUT} /></label>
           <label>Що змінилося <span className="text-gray-400">(необов’язково)</span><textarea name="notes" rows={3} maxLength={8000} className={INPUT} /></label>
           <label>Результати перевірок <span className="text-gray-400">(необов’язково)</span><textarea name="checks" rows={3} maxLength={4000} className={INPUT} /></label>
-          <button type="submit" disabled={hashing} className={BUTTON + " justify-self-start"}>Створити чернетку</button>
+          <button type="submit" disabled={hashing} className={PRIMARY + " justify-self-start"}>Створити чернетку</button>
         </fieldset>
       </form>
 
+      {initialReleases.length > 0 && <div className="flex items-center gap-3"><h2 className="text-lg font-semibold">Історія випусків</h2><span className="h-px flex-1 bg-white/10" /></div>}
       {initialReleases.map((release) => (
-        <article key={release.id} className="space-y-3 rounded-lg border border-white/15 p-4">
-          <h2 className="break-all font-semibold">{release.version} · {release.arch} · {isoSize(release.size)}</h2>
-          <p className="text-sm text-gray-300">{release.status === "draft" ? "Чернетка" : release.status === "published" ? "Опубліковано" : "Відкликано"}</p>
+        <article key={release.id} className="space-y-4 rounded-2xl border border-white/10 bg-[#121923] p-5 sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="break-all text-lg font-semibold tracking-tight">{release.version}</h3><p className="mt-1 text-sm text-slate-400">{release.arch} · {isoSize(release.size)}</p></div><span className="rounded-lg border border-[#70cbd5]/20 bg-[#70cbd5]/[0.07] px-3 py-1.5 text-xs font-medium text-[#a4d9db]">{release.status === "draft" ? "Чернетка" : release.status === "published" ? "Опубліковано" : "Відкликано"}</span></div>
           {release.status !== "draft" && storedIsos.some((file) => file.pathname === release.pathname) && (
-            <p className="text-sm text-gray-300">ISO збережено у сховищі · {isoSize(release.size)}</p>
+            <p className="flex items-center gap-2 text-sm text-emerald-200"><CheckCircle size={18} aria-hidden="true" /> ISO збережено у сховищі · {isoSize(release.size)}</p>
           )}
-          {release.status !== "draft" && <a href={releaseUrl(release.id)} className="text-neon-blue underline">Сторінка випуску</a>}
+          {release.status !== "draft" && <a href={releaseUrl(release.id)} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#9bd9df] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#70cbd5]">Сторінка випуску <ArrowSquareOut size={16} aria-hidden="true" /></a>}
           {release.status === "withdrawn" && <p>{release.reason}</p>}
           {release.status === "draft" && (
             <>
@@ -178,7 +185,7 @@ export function RescueReleaseManager({ initialReleases, configured, storedIsos, 
                 <button type="submit" className={BUTTON} disabled={busy || !configured}>Завантажити ISO</button>
               </form>
               <div className="flex flex-wrap gap-2">
-                <button type="button" className={BUTTON} disabled={busy || !configured} onClick={() => {
+                <button type="button" className={PRIMARY} disabled={busy || !configured} onClick={() => {
                   if (!window.confirm("Опублікувати цей випуск після перевірки завантаженого ISO?")) return;
                   void run("Сервер перевіряє розмір і SHA-256. Це може тривати кілька хвилин…", async () => {
                     await action({ action: "publish", id: release.id });
